@@ -1,22 +1,22 @@
 import Foundation
 import Combine
 
-public final class Store<State, Action, Environment> {
+public final class Store<State, Action, Effect, Environment> {
     private enum WrappedAction {
         case parentUpdated(State)
         case action(Action)
     }
+    private let environment: Environment
     private let actions = PassthroughSubject<WrappedAction, Never>()
     private var cancellables = Set<AnyCancellable>()
-    private let environment: Environment
     @Published public private(set) var state: State
     
-    public init(initialState: State, reducer: Reducer<State, Action, Environment>, environment: Environment) {
+    public init(initialState: State, environment: Environment, component: UIComponentValue<State, Action, Effect, Environment>) {
         self.state = initialState
         self.environment = environment
         
-        let applySideEffect = { [weak self] (sideEffect: SideEffect<Environment, Action>) -> Void in
-            self?.applySideEffects(sideEffect)
+        let applySideEffect = { [weak self] (sideEffect: SideEffect<Effect>) -> Void in
+            self?.applySideEffects(sideEffect, using: { component.sideEffectHandler($0, environment) })
         }
         
         let start = Just(initialState).eraseToAnyPublisher()
@@ -25,7 +25,7 @@ public final class Store<State, Action, Environment> {
             case let .action(realAction):
                 return Self.handleAction(state: state,
                                          action: realAction,
-                                         reducer: reducer,
+                                         reducer: component.reducer,
                                          applySideEffects: applySideEffect)
             case let .parentUpdated(newState):
                 return Self.handleParentUpdate(state: state, newState: newState)
@@ -41,14 +41,18 @@ public final class Store<State, Action, Environment> {
     }
         
     public func map<LocalState, LocalAction>(toLocalState: @escaping (State) -> LocalState,
-                                               fromLocalAction: @escaping (LocalAction) -> Action) -> Store<LocalState, LocalAction, Environment> {
-        let localReducer = Reducer<LocalState, LocalAction, Environment> { [weak self] state, action, sideEffect in
-            self?.apply(fromLocalAction(action))
-            return state
-        }
-        let localStore = Store<LocalState, LocalAction, Environment>(initialState: toLocalState(state),
-                                                                     reducer: localReducer,
-                                                                     environment: environment)
+                                             fromLocalAction: @escaping (LocalAction) -> Action) -> Store<LocalState, LocalAction, Effect, Environment> {
+        let localComponentValue = UIComponentValue<LocalState, LocalAction, Effect, Environment>(reducer: { [weak self] state, action, sideEffect in
+                self?.apply(fromLocalAction(action))
+                return state
+            },
+            sideEffectHandler: { _, _ -> AnyPublisher<LocalAction, Never> in
+                // this store shouldn't be doing anything.
+                return Empty(completeImmediately: true).eraseToAnyPublisher()
+            })
+        let localStore = Store<LocalState, LocalAction, Effect, Environment>(initialState: toLocalState(state),
+                                                                             environment: environment,
+                                                                             component: localComponentValue)
         
         // As our state changes, make sure that updates our child's state
         $state.sink(receiveValue: { [weak localStore] state in
@@ -61,17 +65,17 @@ public final class Store<State, Action, Environment> {
 }
 
 private extension Store {
-    func applySideEffects(_ sideEffect: SideEffect<Environment, Action>) {
-        sideEffect.apply(in: environment)
+    func applySideEffects(_ sideEffect: SideEffect<Effect>, using sideEffectHandler: @escaping (Effect) -> AnyPublisher<Action, Never>) {
+        sideEffect.apply(using: sideEffectHandler)
             .map { .action($0) }
             .subscribe(actions)
             .store(in: &cancellables)
     }
     
-    static func handleAction(state: AnyPublisher<State, Never>, action: Action, reducer: Reducer<State, Action, Environment>, applySideEffects: @escaping (SideEffect<Environment, Action>) -> Void) -> AnyPublisher<State, Never> {
+    static func handleAction(state: AnyPublisher<State, Never>, action: Action, reducer: @escaping (State, Action, SideEffect<Effect>) -> State, applySideEffects: @escaping (SideEffect<Effect>) -> Void) -> AnyPublisher<State, Never> {
         state.map { s  in
-            let sideEffect = SideEffect<Environment, Action>()
-            let newState = reducer(state: s, action: action, sideEffect: sideEffect)
+            let sideEffect = SideEffect<Effect>()
+            let newState = reducer(s, action, sideEffect)
             
             applySideEffects(sideEffect)
             

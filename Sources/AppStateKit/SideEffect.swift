@@ -1,53 +1,33 @@
 import Foundation
 import Combine
 
-public final class SideEffect<Environment, Action> {
-    private var actionFactories = [(Environment) -> AnyPublisher<Action, Never>]()
+public final class SideEffect<Effect> {
+    struct Serial {
+        let effects: [Effect]
+        
+        fileprivate func apply<Action>(using sideEffectHandler: @escaping (Effect) -> AnyPublisher<Action, Never>) -> AnyPublisher<Action, Never> {
+            SerialPublisher(input: effects, factory: sideEffectHandler).eraseToAnyPublisher()
+        }
+    }
+    
+    private(set) var effects = [Serial]()
     
     init() {
     }
     
-    public func callAsFunction(_ action: Action) {
-        actionFactories.append({ _ in Just(action).eraseToAnyPublisher() })
+    public func callAsFunction(_ effects: Effect...) {
+        self.effects.append(Serial(effects: effects))
     }
     
-    public func callAsFunction(_ factory: @escaping (Environment) -> Action) {
-        actionFactories.append({ environment in
-            Just(factory(environment)).eraseToAnyPublisher()
-        })
-    }
-    
-    public func callAsFunction(_ factory: @escaping (Environment) -> AnyPublisher<Action, Never>) {
-        actionFactories.append(factory)
-    }
-    
-    func apply(in environment: Environment) -> AnyPublisher<Action, Never> {
-        let publishers = actionFactories.map { $0(environment) }
-        return Publishers.MergeMany(publishers).eraseToAnyPublisher()
-    }
-    
-    func combine<LocalEnvironment, LocalAction>(
-        _ sideEffect: SideEffect<LocalEnvironment, LocalAction>,
-        toLocalEnvironment: @escaping (Environment) -> LocalEnvironment,
-        toGlobalAction: @escaping (LocalAction) -> Action) {
-        let factory = { (env: Environment) -> AnyPublisher<Action, Never> in
-            let localEnv = toLocalEnvironment(env)
-            return sideEffect.apply(in: localEnv)
-                .map(toGlobalAction)
-                .eraseToAnyPublisher()
+    func combine<LocalEffect>(_ localEffects: SideEffect<LocalEffect>, using toGlobalEffect: (LocalEffect) -> Effect) {
+        let newEffects = localEffects.effects.map { localSerial in
+            Serial(effects: localSerial.effects.map { toGlobalEffect($0) })
         }
-        actionFactories.append(factory)
+        effects.append(contentsOf: newEffects)
     }
     
-    func combine<LocalAction>(
-        _ sideEffect: SideEffect<Environment, LocalAction>,
-        toGlobalAction: @escaping (LocalAction) -> Action) {
-        let factory = { (env: Environment) -> AnyPublisher<Action, Never> in
-            return sideEffect.apply(in: env)
-                .map(toGlobalAction)
-                .eraseToAnyPublisher()
-        }
-        actionFactories.append(factory)
+    func apply<Action>(using sideEffectHandler: @escaping (Effect) -> AnyPublisher<Action, Never>) -> AnyPublisher<Action, Never> {
+        Publishers.MergeMany(effects.map { $0.apply(using: sideEffectHandler) }).eraseToAnyPublisher()
     }
-
 }
+

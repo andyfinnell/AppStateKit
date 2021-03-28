@@ -4,44 +4,49 @@ import AppStateKit
 
 struct MailFolderComponent: UIComponent {
     struct State: Updatable {
-        struct Message: Updatable {
-            let id: String
-            let from: String
-            let subject: String
-        }
-        struct Info: Equatable {
-            var uidNext: Int
-            var uidValidity: Int
-            var highestModseq: Int
-            var exists: Int
-        }
         var name: String
         let id: String
+        let accountId: String
         let systemImage: String
         var loadedMessages: [Message]
-        var info: Info?
+        var info: MailFolderInfo?
         var infoStatus: LoadStatus
     }
 
     enum Action {
         case startSync
         case processSync(MailFolderSync)
-        case updateInfo(State.Info)
+        case updateInfo(MailFolderInfo)
         case infoUpdateFailed
     }
 
-    struct MailFolderSync {
-        let newMessages: [State.Message]
-        let deletedMessageIds: [String]
-        let isReset: Bool // if validity is changed
-    }
-
     struct Environment {
-        let fetchInfo: (String) -> AnyPublisher<State.Info, Error>
-        let sync: (String, State.Info?, State.Info) -> AnyPublisher<MailFolderSync, Error>
+        let mailStore: MailStore
     }
 
-    static let reducer = Reducer<State, Action, Environment>() { state, action, sideEffect in
+    enum Effect {
+        case fetchInfo(accountId: String, folderId: String)
+        case sync(accountId: String, folderId: String, oldInfo: MailFolderInfo?, newInfo: MailFolderInfo)
+    }
+    
+    static func performSideEffect(_ effect: Effect, in environment: Environment) -> AnyPublisher<Action, Never> {
+        switch effect {
+        case let .fetchInfo(accountId, folderId):
+            return environment.mailStore.fetchInfo(for: accountId, folderId: folderId)
+                .map { Action.updateInfo($0) }
+                .replaceError(with: .infoUpdateFailed)
+                .eraseToAnyPublisher()
+
+        case let .sync(accountId, folderId, oldInfo, newInfo):
+            return environment.mailStore.sync(for: accountId, folderId: folderId, oldInfo: oldInfo, newInfo: newInfo)
+                .map { Action.processSync($0) }
+                .catch { _ in Empty(completeImmediately: true).eraseToAnyPublisher() }
+                .eraseToAnyPublisher()
+        }
+
+    }
+    
+    static func reduce(_ state: State, action: Action, sideEffects: SideEffect<Effect>) -> State {
         switch action {
         case .startSync:
             // If we're already in a sync, bail
@@ -49,29 +54,19 @@ struct MailFolderComponent: UIComponent {
                 return state
             }
             
-            sideEffect { env in
-                env.fetchInfo(state.id)
-                    .map { Action.updateInfo($0) }
-                    .replaceError(with: .infoUpdateFailed)
-                    .eraseToAnyPublisher()
-            }
+            sideEffects(.fetchInfo(accountId: state.accountId, folderId: state.id))
             
             return state.update(\.infoStatus, to: .loading)
         case .infoUpdateFailed:
             return state.update(\.infoStatus, to: .idle)
         case let .updateInfo(newInfo):
-            sideEffect { env in
-                env.sync(state.id, state.info, newInfo)
-                    .map { Action.processSync($0) }
-                    .catch { _ in Empty(completeImmediately: true).eraseToAnyPublisher() }
-                    .eraseToAnyPublisher()
-            }
+            sideEffects(.sync(accountId: state.accountId, folderId: state.id, oldInfo: state.info, newInfo: newInfo))
             
             return state
                 .update(\.infoStatus, to: .loaded)
                 .update(\.info, to: newInfo)
         case let .processSync(sync):
-            let messages: [State.Message]
+            let messages: [Message]
             if sync.isReset {
                 messages = sync.newMessages
             } else {
@@ -84,4 +79,6 @@ struct MailFolderComponent: UIComponent {
             return state.update(\.loadedMessages, to: messages)
         }
     }
+    
+    static var value: UIComponentValue<State, Action, Effect, Environment> { internalValue }
 }

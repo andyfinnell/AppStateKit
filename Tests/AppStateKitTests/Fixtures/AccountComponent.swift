@@ -2,7 +2,7 @@ import Foundation
 import Combine
 import AppStateKit
 
-struct AccountComponent: UIComponent {    
+struct AccountComponent: UIComponent {
     struct State: Updatable, Identifiable, Equatable {
         struct Folder: Updatable, Equatable {
             var name: String
@@ -16,6 +16,11 @@ struct AccountComponent: UIComponent {
         var folders: [Folder]
     }
 
+    enum Effect {
+        case renameFolder(accountId: String, folderId: String, newName: String)
+        case loadFolders(accountId: String)
+    }
+    
     enum Action {
         case renameFolder(folderId: String, newName: String)
         case refreshFolders
@@ -26,20 +31,35 @@ struct AccountComponent: UIComponent {
     }
 
     struct Environment {
-        let loadFolders: (String) -> AnyPublisher<[MailFolder], Error>
-        let renameFolder: (String, String, String) -> AnyPublisher<MailFolder, Error>
+        let mailStore: MailStore
     }
 
-    static let reducer = Reducer<State, Action, Environment> { state, action, sideEffect in
+    static func performSideEffect(_ effect: Effect, in environment: Environment) -> AnyPublisher<Action, Never> {
+        switch effect {
+        case let .renameFolder(accountId, folderId, newName):
+            return environment.mailStore.renameFolder(accountId: accountId,
+                                            folderId: folderId,
+                                            folderName: newName)
+                .catch { _ -> AnyPublisher<MailFolder, Never> in
+                    Empty(completeImmediately: true).eraseToAnyPublisher()
+                }.map { folder in Action.finishedRename(folder: folder) }
+                .eraseToAnyPublisher()
+            
+        case let .loadFolders(accountId):
+            return environment.mailStore.loadFolders(for: accountId)
+                .map { Action.finishedLoading($0) }
+                .replaceError(with: .finishedLoading([]))
+                .prepend(.beginLoading)
+                .eraseToAnyPublisher()
+        }
+    }
+    
+    static func reduce(_ state: State, action: Action, sideEffects: SideEffect<Effect>) -> State {
         switch action {
         case let .renameFolder(folderId: folderId, newName: newName):
-            sideEffect { env in
-                env.renameFolder(state.id, folderId, newName)
-                    .catch { _ in
-                        Empty(completeImmediately: true).eraseToAnyPublisher()
-                    }.map { folder in Action.finishedRename(folder: folder) }
-                    .eraseToAnyPublisher()
-            }
+            sideEffects(.renameFolder(accountId: state.id,
+                                     folderId: folderId,
+                                     newName: newName))
             return state
         case let .finishedRename(folder: folder):
             var updatedFolders = state.folders
@@ -49,13 +69,7 @@ struct AccountComponent: UIComponent {
             }
             return state.update(\.folders, to: updatedFolders)
         case .refreshFolders:
-            sideEffect { env in
-                env.loadFolders(state.id)
-                    .map { Action.finishedLoading($0) }
-                    .replaceError(with: .finishedLoading([]))
-                    .prepend(.beginLoading)
-                    .eraseToAnyPublisher()
-            }
+            sideEffects(.loadFolders(accountId: state.id))
             return state
         case .beginLoading:
             return state.update(\.foldersStatus, to: .loading)
@@ -66,6 +80,10 @@ struct AccountComponent: UIComponent {
                 .update(\.foldersStatus, to: .loaded)
         }
     }
+    
+    static var value: UIComponentValue<State, Action, Effect, Environment> {
+        internalValue
+    }
 }
 
 extension AccountComponent.State: DefaultInitializable {
@@ -74,12 +92,5 @@ extension AccountComponent.State: DefaultInitializable {
         name = "<ERROR>"
         foldersStatus = .idle
         folders = []
-    }
-}
-
-extension AccountComponent.Environment: DefaultInitializable {
-    init() {
-        loadFolders = { _ in Just([]).setFailureType(to: Error.self).eraseToAnyPublisher() }
-        renameFolder = { _, _, _ in Fail(error: TestError.fail).eraseToAnyPublisher() }
     }
 }

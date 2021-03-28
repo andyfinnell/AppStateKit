@@ -2,11 +2,6 @@ import Foundation
 import Combine
 import AppStateKit
 
-struct Account {
-    let id: String
-    let name: String
-}
-
 struct AppComponent: UIComponent {
     struct State: Updatable {
         var accounts: [AccountComponent.State]
@@ -24,30 +19,32 @@ struct AppComponent: UIComponent {
     }
     
     struct Environment {
-        let loadAccounts: () -> AnyPublisher<[Account], Error>
-        var accountEnvironment: AccountComponent.Environment {
-            AccountComponent.Environment()
+        let mailStore: MailStore
+    }
+    
+    enum InternalEffect {
+        case loadAccounts
+    }
+    
+    enum Effect {
+        case app(InternalEffect)
+        case account(AccountComponent.Effect, String)
+    }
+    
+    static func performSideEffect(_ effect: InternalEffect, in environment: Environment) -> AnyPublisher<InternalAction, Never> {
+        switch effect {
+        case .loadAccounts:
+            return environment.mailStore.load()
+                .map { InternalAction.loaded($0) }
+                .replaceError(with: .loaded([]))
+                .eraseToAnyPublisher()
         }
     }
 
-    static let reducer = Reducer<State, Action, Environment>.combine(
-        AccountComponent.reducer.arrayById(state: \.accounts,
-                                           toLocalAction: Action.toAccount,
-                                           fromLocalAction: Action.account,
-                                           tolocalEnvironment: { $0.accountEnvironment }),
-        Self.internalReducer.external(toLocalAction: Action.toInternal,
-                                      fromLocalAction: Action.app)
-    )
-    
-    private static let internalReducer = Reducer<State, InternalAction, Environment> { state, action, sideEffect in
+    static func reduce(_ state: State, action: InternalAction, sideEffects: SideEffect<InternalEffect>) -> State {
         switch action {
         case .start:
-            sideEffect { env in
-                env.loadAccounts()
-                    .map { InternalAction.loaded($0) }
-                    .replaceError(with: .loaded([]))
-                    .eraseToAnyPublisher()
-            }
+            sideEffects(.loadAccounts)
             return state.update(\.loadStatus, to: .loading)
         case let .loaded(accounts):
             let accountsState = accounts.map {
@@ -61,6 +58,19 @@ struct AppComponent: UIComponent {
                 .update(\.loadStatus, to: .loaded)
         }
     }
+    
+    static let value = UIComponentValue<State, Action, Effect, Environment>.combine(
+        AccountComponent.value.arrayById(state: \.accounts,
+                                           toLocalAction: Action.toAccount,
+                                           fromLocalAction: Action.account,
+                                           toLocalEffect: Effect.toAccount,
+                                           fromLocalEffect: Effect.account,
+                                           toLocalEnvironment: { AccountComponent.Environment(mailStore: $0.mailStore) }),
+        internalValue.external(toLocalAction: Action.toInternal,
+                               fromLocalAction: Action.app,
+                               toLocalEffect: Effect.toInternal,
+                               fromLocalEffect: Effect.app)
+    )
 }
 
 private extension AppComponent.Action {
@@ -81,15 +91,28 @@ private extension AppComponent.Action {
     }
 }
 
+private extension AppComponent.Effect {
+    static func toAccount(_ a: Self) -> (AccountComponent.Effect, String)? {
+        if case let .account(action, id) = a {
+            return (action, id)
+        } else {
+            return nil
+        }
+    }
+    
+    static func toInternal(_ a: Self) -> AppComponent.InternalEffect? {
+        if case let .app(action) = a {
+            return action
+        } else {
+            return nil
+        }
+    }
+
+}
+
 extension AppComponent.State: DefaultInitializable {
     init() {
         accounts = []
         loadStatus = .idle
-    }
-}
-
-extension AppComponent.Environment: DefaultInitializable {
-    init() {
-        loadAccounts = { Just([]).setFailureType(to: Error.self).eraseToAnyPublisher() }
     }
 }
