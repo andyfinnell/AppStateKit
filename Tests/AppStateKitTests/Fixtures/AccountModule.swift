@@ -2,7 +2,9 @@ import Foundation
 import Combine
 import AppStateKit
 
-struct AccountComponent: UIComponent {
+// TODO: finish fleshing out the various modules down to a message module.
+//  Make sure it can model switching between messages, folders, and accounts
+struct AccountModule: UIModule {
     struct State: Updatable, Identifiable, Equatable {
         struct Folder: Updatable, Equatable {
             var name: String
@@ -81,12 +83,12 @@ struct AccountComponent: UIComponent {
         }
     }
     
-    static var value: UIComponentValue<State, Action, Effect, Environment> {
+    static var value: UIModuleValue<State, Action, Effect, Environment> {
         internalValue
     }
 }
 
-extension AccountComponent.State: DefaultInitializable {
+extension AccountModule.State: DefaultInitializable {
     init() {
         id = ""
         name = "<ERROR>"

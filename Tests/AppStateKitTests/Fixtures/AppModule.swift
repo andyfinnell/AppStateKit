@@ -2,14 +2,14 @@ import Foundation
 import Combine
 import AppStateKit
 
-struct AppComponent: UIComponent {
+struct AppModule: UIModule {
     struct State: Updatable {
-        var accounts: [AccountComponent.State]
+        var accounts: [AccountModule.State]
         var loadStatus: LoadStatus
     }
 
     enum Action {
-        case account(AccountComponent.Action, String)
+        case account(AccountModule.Action, String)
         case app(InternalAction)
     }
 
@@ -28,7 +28,7 @@ struct AppComponent: UIComponent {
     
     enum Effect {
         case app(InternalEffect)
-        case account(AccountComponent.Effect, String)
+        case account(AccountModule.Effect, String)
     }
     
     static func performSideEffect(_ effect: InternalEffect, in environment: Environment) -> AnyPublisher<InternalAction, Never> {
@@ -48,7 +48,7 @@ struct AppComponent: UIComponent {
             return state.update(\.loadStatus, to: .loading)
         case let .loaded(accounts):
             let accountsState = accounts.map {
-                AccountComponent.State(id: $0.id,
+                AccountModule.State(id: $0.id,
                                        name: $0.name,
                                        foldersStatus: .idle,
                                        folders: [])
@@ -59,13 +59,13 @@ struct AppComponent: UIComponent {
         }
     }
     
-    static let value = UIComponentValue<State, Action, Effect, Environment>.combine(
-        AccountComponent.value.arrayById(state: \.accounts,
+    static let value = UIModuleValue<State, Action, Effect, Environment>.combine(
+        AccountModule.value.arrayById(state: \.accounts,
                                            toLocalAction: Action.toAccount,
                                            fromLocalAction: Action.account,
                                            toLocalEffect: Effect.toAccount,
                                            fromLocalEffect: Effect.account,
-                                           toLocalEnvironment: { AccountComponent.Environment(mailStore: $0.mailStore) }),
+                                           toLocalEnvironment: { AccountModule.Environment(mailStore: $0.mailStore) }),
         internalValue.external(toLocalAction: Action.toInternal,
                                fromLocalAction: Action.app,
                                toLocalEffect: Effect.toInternal,
@@ -73,8 +73,8 @@ struct AppComponent: UIComponent {
     )
 }
 
-private extension AppComponent.Action {
-    static func toAccount(_ a: Self) -> (AccountComponent.Action, String)? {
+private extension AppModule.Action {
+    static func toAccount(_ a: Self) -> (AccountModule.Action, String)? {
         if case let .account(action, id) = a {
             return (action, id)
         } else {
@@ -82,7 +82,7 @@ private extension AppComponent.Action {
         }
     }
     
-    static func toInternal(_ a: Self) -> AppComponent.InternalAction? {
+    static func toInternal(_ a: Self) -> AppModule.InternalAction? {
         if case let .app(action) = a {
             return action
         } else {
@@ -91,8 +91,8 @@ private extension AppComponent.Action {
     }
 }
 
-private extension AppComponent.Effect {
-    static func toAccount(_ a: Self) -> (AccountComponent.Effect, String)? {
+private extension AppModule.Effect {
+    static func toAccount(_ a: Self) -> (AccountModule.Effect, String)? {
         if case let .account(action, id) = a {
             return (action, id)
         } else {
@@ -100,7 +100,7 @@ private extension AppComponent.Effect {
         }
     }
     
-    static func toInternal(_ a: Self) -> AppComponent.InternalEffect? {
+    static func toInternal(_ a: Self) -> AppModule.InternalEffect? {
         if case let .app(action) = a {
             return action
         } else {
@@ -110,7 +110,7 @@ private extension AppComponent.Effect {
 
 }
 
-extension AppComponent.State: DefaultInitializable {
+extension AppModule.State: DefaultInitializable {
     init() {
         accounts = []
         loadStatus = .idle

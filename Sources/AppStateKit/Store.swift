@@ -11,12 +11,12 @@ public final class Store<State, Action, Effect, Environment> {
     private var cancellables = Set<AnyCancellable>()
     @Published public private(set) var state: State
     
-    public init(initialState: State, environment: Environment, component: UIComponentValue<State, Action, Effect, Environment>) {
+    public init(initialState: State, environment: Environment, module: UIModuleValue<State, Action, Effect, Environment>) {
         self.state = initialState
         self.environment = environment
         
         let applySideEffect = { [weak self] (sideEffect: SideEffect<Effect>) -> Void in
-            self?.applySideEffects(sideEffect, using: { component.sideEffectHandler($0, environment) })
+            self?.applySideEffects(sideEffect, using: { module.sideEffectHandler($0, environment) })
         }
         
         let start = Just(initialState).eraseToAnyPublisher()
@@ -25,7 +25,7 @@ public final class Store<State, Action, Effect, Environment> {
             case let .action(realAction):
                 return Self.handleAction(state: state,
                                          action: realAction,
-                                         reducer: component.reducer,
+                                         reducer: module.reducer,
                                          applySideEffects: applySideEffect)
             case let .parentUpdated(newState):
                 return Self.handleParentUpdate(state: state, newState: newState)
@@ -42,7 +42,7 @@ public final class Store<State, Action, Effect, Environment> {
         
     public func map<LocalState, LocalAction>(toLocalState: @escaping (State) -> LocalState,
                                              fromLocalAction: @escaping (LocalAction) -> Action) -> Store<LocalState, LocalAction, Effect, Environment> {
-        let localComponentValue = UIComponentValue<LocalState, LocalAction, Effect, Environment>(reducer: { [weak self] state, action, sideEffect in
+        let localModuleValue = UIModuleValue<LocalState, LocalAction, Effect, Environment>(reducer: { [weak self] state, action, sideEffect in
                 self?.apply(fromLocalAction(action))
                 return state
             },
@@ -52,7 +52,7 @@ public final class Store<State, Action, Effect, Environment> {
             })
         let localStore = Store<LocalState, LocalAction, Effect, Environment>(initialState: toLocalState(state),
                                                                              environment: environment,
-                                                                             component: localComponentValue)
+                                                                             module: localModuleValue)
         
         // As our state changes, make sure that updates our child's state
         $state.sink(receiveValue: { [weak localStore] state in

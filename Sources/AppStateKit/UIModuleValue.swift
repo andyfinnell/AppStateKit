@@ -1,7 +1,7 @@
 import Foundation
 import Combine
 
-public struct UIComponentValue<State, Action, Effect, Environment> {
+public struct UIModuleValue<State, Action, Effect, Environment> {
     let reducer: (State, Action, SideEffect<Effect>) -> State
     let sideEffectHandler: (Effect, Environment) -> AnyPublisher<Action, Never>
 
@@ -10,12 +10,12 @@ public struct UIComponentValue<State, Action, Effect, Environment> {
         self.sideEffectHandler = sideEffectHandler
     }
         
-    public static func combine(_ components: Self...) -> Self {
+    public static func combine(_ modules: Self...) -> Self {
         Self(reducer: { state, action, sideEffect in
-            components.reduce(state) { $1.reducer($0, action, sideEffect) }
+            modules.reduce(state) { $1.reducer($0, action, sideEffect) }
         }, sideEffectHandler: { effect, environment in
             Publishers.MergeMany(
-                components.map { $0.sideEffectHandler(effect, environment) }
+                modules.map { $0.sideEffectHandler(effect, environment) }
             ).eraseToAnyPublisher()
         })
     }
@@ -25,8 +25,8 @@ public struct UIComponentValue<State, Action, Effect, Environment> {
         fromLocalAction: @escaping (Action) -> GlobalAction,
         toLocalEffect: @escaping (GlobalEffect) -> Effect?,
         fromLocalEffect: @escaping (Effect) -> GlobalEffect
-    ) -> UIComponentValue<State, GlobalAction, GlobalEffect, Environment> {
-        UIComponentValue<State, GlobalAction, GlobalEffect, Environment>(reducer: { state, globalAction, globalSideEffects in
+    ) -> UIModuleValue<State, GlobalAction, GlobalEffect, Environment> {
+        UIModuleValue<State, GlobalAction, GlobalEffect, Environment>(reducer: { state, globalAction, globalSideEffects in
             guard let localAction = toLocalAction(globalAction) else {
                 return state
             }
@@ -53,8 +53,8 @@ public struct UIComponentValue<State, Action, Effect, Environment> {
         toLocalEffect: @escaping (GlobalEffect) -> Effect?,
         fromLocalEffect: @escaping (Effect) -> GlobalEffect,
         toLocalEnvironment: @escaping (GlobalEnvironment) -> Environment
-    ) -> UIComponentValue<GlobalState, GlobalAction, GlobalEffect, GlobalEnvironment> {
-        UIComponentValue<GlobalState, GlobalAction, GlobalEffect, GlobalEnvironment>(reducer: { globalState, globalAction, globalSideEffect in
+    ) -> UIModuleValue<GlobalState, GlobalAction, GlobalEffect, GlobalEnvironment> {
+        UIModuleValue<GlobalState, GlobalAction, GlobalEffect, GlobalEnvironment>(reducer: { globalState, globalAction, globalSideEffect in
             guard let localAction = toLocalAction(globalAction) else {
                 return globalState
             }
@@ -78,8 +78,8 @@ public struct UIComponentValue<State, Action, Effect, Environment> {
         })
     }
     
-    public func optional() -> UIComponentValue<State?, Action, Effect, Environment> {
-        UIComponentValue<State?, Action, Effect, Environment>(reducer: { optionalState, action, sideEffect in
+    public func optional() -> UIModuleValue<State?, Action, Effect, Environment> {
+        UIModuleValue<State?, Action, Effect, Environment>(reducer: { optionalState, action, sideEffect in
             guard let state = optionalState else {
                 return nil
             }
@@ -94,8 +94,8 @@ public struct UIComponentValue<State, Action, Effect, Environment> {
         toLocalEffect: @escaping (GlobalEffect) -> (Effect, Int)?,
         fromLocalEffect: @escaping (Effect, Int) -> GlobalEffect,
         toLocalEnvironment: @escaping (GlobalEnvironment) -> Environment
-    ) -> UIComponentValue<GlobalState, GlobalAction, GlobalEffect, GlobalEnvironment> {
-        UIComponentValue<GlobalState, GlobalAction, GlobalEffect, GlobalEnvironment>(reducer: { globalState, globalAction, globalSideEffect in
+    ) -> UIModuleValue<GlobalState, GlobalAction, GlobalEffect, GlobalEnvironment> {
+        UIModuleValue<GlobalState, GlobalAction, GlobalEffect, GlobalEnvironment>(reducer: { globalState, globalAction, globalSideEffect in
             guard let (localAction, localIndex) = toLocalAction(globalAction) else {
                 return globalState
             }
@@ -129,8 +129,8 @@ public struct UIComponentValue<State, Action, Effect, Environment> {
         toLocalEffect: @escaping (GlobalEffect) -> (Effect, State.ID)?,
         fromLocalEffect: @escaping (Effect, State.ID) -> GlobalEffect,
         toLocalEnvironment: @escaping (GlobalEnvironment) -> Environment
-    ) -> UIComponentValue<GlobalState, GlobalAction, GlobalEffect, GlobalEnvironment> where State: Identifiable {
-        UIComponentValue<GlobalState, GlobalAction, GlobalEffect, GlobalEnvironment>(reducer: { globalState, globalAction, globalSideEffect in
+    ) -> UIModuleValue<GlobalState, GlobalAction, GlobalEffect, GlobalEnvironment> where State: Identifiable {
+        UIModuleValue<GlobalState, GlobalAction, GlobalEffect, GlobalEnvironment>(reducer: { globalState, globalAction, globalSideEffect in
             guard let (localAction, localId) = toLocalAction(globalAction),
                   let localIndex =  globalState[keyPath: state].firstIndex(where: { $0.id == localId }) else {
                 return globalState
@@ -162,8 +162,8 @@ public struct UIComponentValue<State, Action, Effect, Environment> {
         toLocalEffect: @escaping (GlobalEffect) -> (Effect, Key)?,
         fromLocalEffect: @escaping (Effect, Key) -> GlobalEffect,
         toLocalEnvironment: @escaping (GlobalEnvironment) -> Environment
-    ) -> UIComponentValue<GlobalState, GlobalAction, GlobalEffect, GlobalEnvironment> {
-        UIComponentValue<GlobalState, GlobalAction, GlobalEffect, GlobalEnvironment>(reducer: { globalState, globalAction, globalSideEffect in
+    ) -> UIModuleValue<GlobalState, GlobalAction, GlobalEffect, GlobalEnvironment> {
+        UIModuleValue<GlobalState, GlobalAction, GlobalEffect, GlobalEnvironment>(reducer: { globalState, globalAction, globalSideEffect in
             guard let (localAction, localKey) = toLocalAction(globalAction),
                   let inputLocalState =  globalState[keyPath: state][localKey] else {
                 return globalState

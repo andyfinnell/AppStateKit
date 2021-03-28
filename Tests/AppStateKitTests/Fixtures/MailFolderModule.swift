@@ -2,7 +2,7 @@ import Foundation
 import Combine
 import AppStateKit
 
-struct MailFolderComponent: UIComponent {
+struct MailFolderModule: UIModule {
     struct State: Updatable {
         var name: String
         let id: String
@@ -80,5 +80,5 @@ struct MailFolderComponent: UIComponent {
         }
     }
     
-    static var value: UIComponentValue<State, Action, Effect, Environment> { internalValue }
+    static var value: UIModuleValue<State, Action, Effect, Environment> { internalValue }
 }
