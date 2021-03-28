@@ -42,6 +42,8 @@ protocol MailStore {
     
     func fetchInfo(for accountId: String, folderId: String) -> AnyPublisher<MailFolderInfo, Error>
     func sync(for accountId: String, folderId: String, oldInfo: MailFolderInfo?, newInfo: MailFolderInfo) -> AnyPublisher<MailFolderSync, Error>
+    
+    func loadMessage(for accountId: String, folderId: String, messageId: String) -> AnyPublisher<String, Error>
 }
 
 final class FakeMailStore: MailStore {
@@ -65,6 +67,11 @@ final class FakeMailStore: MailStore {
     
     func sync(for accountId: String, folderId: String, oldInfo: MailFolderInfo?, newInfo: MailFolderInfo) -> AnyPublisher<MailFolderSync, Error> {
         Just(MailFolderSync(newMessages: [], deletedMessageIds: [], isReset: false))
+            .setFailureType(to: Error.self).eraseToAnyPublisher()
+    }
+    
+    func loadMessage(for accountId: String, folderId: String, messageId: String) -> AnyPublisher<String, Error> {
+        Just("Hello world")
             .setFailureType(to: Error.self).eraseToAnyPublisher()
     }
 }

@@ -11,42 +11,70 @@ struct MailFolderModule: UIModule {
         var loadedMessages: [Message]
         var info: MailFolderInfo?
         var infoStatus: LoadStatus
+        
+        var selectedMessage: MessageModule.State?
     }
 
-    enum Action {
+    enum Action: Extractable {
+        case folder(InternalAction)
+        case message(MessageModule.Action)
+        
+        static func reroute(_ internalAction: InternalAction) -> Action {
+            switch internalAction {
+            case .messageLoad:
+                return Action.message(.load)
+            default:
+                return Action.folder(internalAction)
+            }
+        }
+
+    }
+    
+    enum InternalAction {
         case startSync
         case processSync(MailFolderSync)
         case updateInfo(MailFolderInfo)
         case infoUpdateFailed
+        case selectMessage(messageId: String)
+        case messageLoad
     }
 
     struct Environment {
         let mailStore: MailStore
     }
 
-    enum Effect {
-        case fetchInfo(accountId: String, folderId: String)
-        case sync(accountId: String, folderId: String, oldInfo: MailFolderInfo?, newInfo: MailFolderInfo)
+    enum Effect: Extractable {
+        case folder(InternalEffect)
+        case message(MessageModule.Effect)
     }
     
-    static func performSideEffect(_ effect: Effect, in environment: Environment) -> AnyPublisher<Action, Never> {
+    enum InternalEffect {
+        case fetchInfo(accountId: String, folderId: String)
+        case sync(accountId: String, folderId: String, oldInfo: MailFolderInfo?, newInfo: MailFolderInfo)
+        case loadMessage
+    }
+    
+    static func performSideEffect(_ effect: InternalEffect, in environment: Environment) -> AnyPublisher<InternalAction, Never> {
         switch effect {
         case let .fetchInfo(accountId, folderId):
             return environment.mailStore.fetchInfo(for: accountId, folderId: folderId)
-                .map { Action.updateInfo($0) }
+                .map { InternalAction.updateInfo($0) }
                 .replaceError(with: .infoUpdateFailed)
                 .eraseToAnyPublisher()
 
         case let .sync(accountId, folderId, oldInfo, newInfo):
             return environment.mailStore.sync(for: accountId, folderId: folderId, oldInfo: oldInfo, newInfo: newInfo)
-                .map { Action.processSync($0) }
+                .map { InternalAction.processSync($0) }
                 .catch { _ in Empty(completeImmediately: true).eraseToAnyPublisher() }
                 .eraseToAnyPublisher()
+            
+        case .loadMessage:
+            return Just(.messageLoad).eraseToAnyPublisher()
         }
 
     }
     
-    static func reduce(_ state: State, action: Action, sideEffects: SideEffects<Effect>) -> State {
+    static func reduce(_ state: State, action: InternalAction, sideEffects: SideEffects<InternalEffect>) -> State {
         switch action {
         case .startSync:
             // If we're already in a sync, bail
@@ -77,8 +105,39 @@ struct MailFolderModule: UIModule {
 
             }
             return state.update(\.loadedMessages, to: messages)
+            
+        case let .selectMessage(messageId: messageId):
+            guard let message = state.loadedMessages.first(where: { $0.id == messageId }) else {
+                return state
+            }
+            
+            let messageState = MessageModule.State(accountId: state.accountId,
+                                                   folderId: state.id,
+                                                   messageId: messageId,
+                                                   from: message.from,
+                                                   subject: message.subject,
+                                                   fullText: "",
+                                                   loadStatus: .idle)
+            
+            sideEffects(.loadMessage)
+            
+            return state.update(\.selectedMessage, to: messageState)
+
+        case .messageLoad:
+            return state // nop, gets re-routed
         }
     }
     
-    static var value: UIModuleValue<State, Action, Effect, Environment> { internalValue }
+    static let value = UIModuleValue<State, Action, Effect, Environment>.combine(
+        MessageModule.value.optional().property(state: \.selectedMessage,
+                                                   toLocalAction: Action.extractor(Action.message),
+                                                   fromLocalAction: Action.message,
+                                                   toLocalEffect: Effect.extractor(Effect.message),
+                                                   fromLocalEffect: Effect.message,
+                                                   toLocalEnvironment: { MessageModule.Environment(mailStore: $0.mailStore) }),
+        internalValue.external(toLocalAction: Action.extractor(Action.folder),
+                               fromLocalAction: Action.reroute,
+                               toLocalEffect: Effect.extractor(Effect.folder),
+                               fromLocalEffect: Effect.folder)
+    )
 }

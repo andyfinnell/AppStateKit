@@ -1,16 +1,16 @@
 import Foundation
 import Combine
 
-final class SerialPublisher<Input, Output, Failure: Error>: Publisher {
+public final class SerialPublisher<Input, Output, Failure: Error>: Publisher {
     private let input: [Input]
     private let factory: (Input) -> AnyPublisher<Output, Failure>
     
-    init(input: [Input], factory: @escaping (Input) -> AnyPublisher<Output, Failure>) {
+    public init(input: [Input], factory: @escaping (Input) -> AnyPublisher<Output, Failure>) {
         self.input = input
         self.factory = factory
     }
     
-    func receive<S>(subscriber: S) where S: Subscriber, Failure == S.Failure, Output == S.Input {
+    public func receive<S>(subscriber: S) where S: Subscriber, Failure == S.Failure, Output == S.Input {
         let subscription = SerialSubscription(subscriber: subscriber,
                                               input: input,
                                               factory: factory)

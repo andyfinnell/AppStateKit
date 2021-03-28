@@ -38,7 +38,7 @@ struct AccountModule: UIModule {
         static func reroute(_ internalAction: InternalAction) -> Action {
             switch internalAction {
             case .startSync:
-                return Action.folder(.startSync)
+                return Action.folder(.folder(.startSync))
             default:
                 return Action.account(internalAction)
             }

@@ -6,6 +6,4 @@ public enum Loadable<T> {
     case loaded(T)
 }
 
-extension Loadable: Equatable where T: Equatable {
-    
-}
+extension Loadable: Equatable where T: Equatable {}

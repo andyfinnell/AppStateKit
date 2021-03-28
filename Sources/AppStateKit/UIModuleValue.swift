@@ -20,6 +20,7 @@ public struct UIModuleValue<State, Action, Effect, Environment> {
         })
     }
     
+    // TODO: can we make the to/from Action/Effect less verbose now that we have Extractable?
     public func external<GlobalAction, GlobalEffect>(
         toLocalAction: @escaping (GlobalAction) -> Action?,
         fromLocalAction: @escaping (Action) -> GlobalAction,
