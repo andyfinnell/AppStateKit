@@ -11,7 +11,7 @@ public protocol UIModule {
     associatedtype InternalEffect
 
     static func performSideEffect(_ effect: InternalEffect, in environment: Environment) -> AnyPublisher<InternalAction, Never>
-    static func reduce(_ state: State, action: InternalAction, sideEffects: SideEffect<InternalEffect>) -> State
+    static func reduce(_ state: State, action: InternalAction, sideEffects: SideEffects<InternalEffect>) -> State
     static var internalValue: UIModuleValue<State, InternalAction, InternalEffect, Environment> { get }
 
     static var value: UIModuleValue<State, Action, Effect, Environment> { get }

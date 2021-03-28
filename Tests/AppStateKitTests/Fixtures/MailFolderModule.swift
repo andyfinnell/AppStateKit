@@ -3,7 +3,7 @@ import Combine
 import AppStateKit
 
 struct MailFolderModule: UIModule {
-    struct State: Updatable {
+    struct State: Updatable, Equatable {
         var name: String
         let id: String
         let accountId: String
@@ -46,7 +46,7 @@ struct MailFolderModule: UIModule {
 
     }
     
-    static func reduce(_ state: State, action: Action, sideEffects: SideEffect<Effect>) -> State {
+    static func reduce(_ state: State, action: Action, sideEffects: SideEffects<Effect>) -> State {
         switch action {
         case .startSync:
             // If we're already in a sync, bail

@@ -1,7 +1,7 @@
 import Foundation
 import Combine
 
-public final class SideEffect<Effect> {
+public final class SideEffects<Effect> {
     struct Serial {
         let effects: [Effect]
         
@@ -19,7 +19,7 @@ public final class SideEffect<Effect> {
         self.effects.append(Serial(effects: effects))
     }
     
-    func combine<LocalEffect>(_ localEffects: SideEffect<LocalEffect>, using toGlobalEffect: (LocalEffect) -> Effect) {
+    func combine<LocalEffect>(_ localEffects: SideEffects<LocalEffect>, using toGlobalEffect: (LocalEffect) -> Effect) {
         let newEffects = localEffects.effects.map { localSerial in
             Serial(effects: localSerial.effects.map { toGlobalEffect($0) })
         }

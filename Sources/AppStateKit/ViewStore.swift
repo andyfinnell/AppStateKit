@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import SwiftUI
 
 @dynamicMemberLookup
 public final class ViewStore<State, Action, Effect, Environment>: ObservableObject {
@@ -23,6 +24,13 @@ public final class ViewStore<State, Action, Effect, Environment>: ObservableObje
     
     public subscript<T>(dynamicMember keyPath: KeyPath<State, T>) -> T {
         state[keyPath: keyPath]
+    }
+    
+    public func binding<T>(_ keyPath: KeyPath<State, T>, apply: @escaping (T) -> Action) -> Binding<T> {
+        Binding<T>(get: { self.state[keyPath: keyPath] }, set: { [weak self] newValue in
+            let action = apply(newValue)
+            self?.apply(action)
+        })
     }
     
     // TODO: eventually will need bindings

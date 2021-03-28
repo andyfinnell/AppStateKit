@@ -1,31 +1,31 @@
 import Foundation
 import Combine
 
-struct Account {
+struct Account: Equatable {
     let id: String
     let name: String
 }
 
-struct Message {
+struct Message: Equatable {
     let id: String
     let from: String
     let subject: String
 }
 
-struct MailFolderInfo {
+struct MailFolderInfo: Equatable {
     let uidNext: Int
     let uidValidity: Int
     let highestModseq: Int
     let exists: Int
 }
 
-struct MailFolderSync {
+struct MailFolderSync: Equatable {
     let newMessages: [Message]
     let deletedMessageIds: [String]
     let isReset: Bool // if validity is changed
 }
 
-struct MailFolder: Identifiable {
+struct MailFolder: Identifiable, Equatable {
     let id: String
     let name: String
     let systemImage: String

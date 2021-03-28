@@ -2,10 +2,10 @@ import Foundation
 import Combine
 
 public struct UIModuleValue<State, Action, Effect, Environment> {
-    let reducer: (State, Action, SideEffect<Effect>) -> State
+    let reducer: (State, Action, SideEffects<Effect>) -> State
     let sideEffectHandler: (Effect, Environment) -> AnyPublisher<Action, Never>
 
-    public init(reducer: @escaping (State, Action, SideEffect<Effect>) -> State, sideEffectHandler: @escaping (Effect, Environment) -> AnyPublisher<Action, Never>) {
+    public init(reducer: @escaping (State, Action, SideEffects<Effect>) -> State, sideEffectHandler: @escaping (Effect, Environment) -> AnyPublisher<Action, Never>) {
         self.reducer = reducer
         self.sideEffectHandler = sideEffectHandler
     }
@@ -30,7 +30,7 @@ public struct UIModuleValue<State, Action, Effect, Environment> {
             guard let localAction = toLocalAction(globalAction) else {
                 return state
             }
-            let localSideEffects = SideEffect<Effect>()
+            let localSideEffects = SideEffects<Effect>()
             let newState = self.reducer(state, localAction, localSideEffects)
             globalSideEffects.combine(localSideEffects, using: fromLocalEffect)
             
@@ -58,7 +58,7 @@ public struct UIModuleValue<State, Action, Effect, Environment> {
             guard let localAction = toLocalAction(globalAction) else {
                 return globalState
             }
-            let localSideEffects = SideEffect<Effect>()
+            let localSideEffects = SideEffects<Effect>()
             let localState = self.reducer(globalState[keyPath: state],
                                           localAction,
                                           localSideEffects)
@@ -102,7 +102,7 @@ public struct UIModuleValue<State, Action, Effect, Environment> {
             guard localIndex >= globalState[keyPath: state].startIndex && localIndex < globalState[keyPath: state].endIndex else {
                 return globalState
             }
-            let localSideEffect = SideEffect<Effect>()
+            let localSideEffect = SideEffects<Effect>()
             let localState = self.reducer(globalState[keyPath: state][localIndex],
                                           localAction,
                                           localSideEffect)
@@ -135,7 +135,7 @@ public struct UIModuleValue<State, Action, Effect, Environment> {
                   let localIndex =  globalState[keyPath: state].firstIndex(where: { $0.id == localId }) else {
                 return globalState
             }
-            let localSideEffect = SideEffect<Effect>()
+            let localSideEffect = SideEffects<Effect>()
             let localState = self.reducer(globalState[keyPath: state][localIndex],
                                           localAction,
                                           localSideEffect)
@@ -168,7 +168,7 @@ public struct UIModuleValue<State, Action, Effect, Environment> {
                   let inputLocalState =  globalState[keyPath: state][localKey] else {
                 return globalState
             }
-            let localSideEffect = SideEffect<Effect>()
+            let localSideEffect = SideEffects<Effect>()
             let localState = self.reducer(inputLocalState,
                                           localAction,
                                           localSideEffect)

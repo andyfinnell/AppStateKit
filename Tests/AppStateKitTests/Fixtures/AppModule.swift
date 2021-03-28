@@ -8,7 +8,7 @@ struct AppModule: UIModule {
         var loadStatus: LoadStatus
     }
 
-    enum Action {
+    enum Action: Extractable {
         case account(AccountModule.Action, String)
         case app(InternalAction)
     }
@@ -26,7 +26,7 @@ struct AppModule: UIModule {
         case loadAccounts
     }
     
-    enum Effect {
+    enum Effect: Extractable {
         case app(InternalEffect)
         case account(AccountModule.Effect, String)
     }
@@ -41,7 +41,7 @@ struct AppModule: UIModule {
         }
     }
 
-    static func reduce(_ state: State, action: InternalAction, sideEffects: SideEffect<InternalEffect>) -> State {
+    static func reduce(_ state: State, action: InternalAction, sideEffects: SideEffects<InternalEffect>) -> State {
         switch action {
         case .start:
             sideEffects(.loadAccounts)
@@ -61,53 +61,16 @@ struct AppModule: UIModule {
     
     static let value = UIModuleValue<State, Action, Effect, Environment>.combine(
         AccountModule.value.arrayById(state: \.accounts,
-                                           toLocalAction: Action.toAccount,
-                                           fromLocalAction: Action.account,
-                                           toLocalEffect: Effect.toAccount,
-                                           fromLocalEffect: Effect.account,
-                                           toLocalEnvironment: { AccountModule.Environment(mailStore: $0.mailStore) }),
-        internalValue.external(toLocalAction: Action.toInternal,
+                                      toLocalAction: Action.extractor(Action.account),
+                                      fromLocalAction: Action.account,
+                                      toLocalEffect: Effect.extractor(Effect.account),
+                                      fromLocalEffect: Effect.account,
+                                      toLocalEnvironment: { AccountModule.Environment(mailStore: $0.mailStore) }),
+        internalValue.external(toLocalAction: Action.extractor(Action.app),
                                fromLocalAction: Action.app,
-                               toLocalEffect: Effect.toInternal,
+                               toLocalEffect: Effect.extractor(Effect.app),
                                fromLocalEffect: Effect.app)
     )
-}
-
-private extension AppModule.Action {
-    static func toAccount(_ a: Self) -> (AccountModule.Action, String)? {
-        if case let .account(action, id) = a {
-            return (action, id)
-        } else {
-            return nil
-        }
-    }
-    
-    static func toInternal(_ a: Self) -> AppModule.InternalAction? {
-        if case let .app(action) = a {
-            return action
-        } else {
-            return nil
-        }
-    }
-}
-
-private extension AppModule.Effect {
-    static func toAccount(_ a: Self) -> (AccountModule.Effect, String)? {
-        if case let .account(action, id) = a {
-            return (action, id)
-        } else {
-            return nil
-        }
-    }
-    
-    static func toInternal(_ a: Self) -> AppModule.InternalEffect? {
-        if case let .app(action) = a {
-            return action
-        } else {
-            return nil
-        }
-    }
-
 }
 
 extension AppModule.State: DefaultInitializable {

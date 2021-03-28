@@ -15,7 +15,7 @@ public final class Store<State, Action, Effect, Environment> {
         self.state = initialState
         self.environment = environment
         
-        let applySideEffect = { [weak self] (sideEffect: SideEffect<Effect>) -> Void in
+        let applySideEffect = { [weak self] (sideEffect: SideEffects<Effect>) -> Void in
             self?.applySideEffects(sideEffect, using: { module.sideEffectHandler($0, environment) })
         }
         
@@ -65,16 +65,16 @@ public final class Store<State, Action, Effect, Environment> {
 }
 
 private extension Store {
-    func applySideEffects(_ sideEffect: SideEffect<Effect>, using sideEffectHandler: @escaping (Effect) -> AnyPublisher<Action, Never>) {
+    func applySideEffects(_ sideEffect: SideEffects<Effect>, using sideEffectHandler: @escaping (Effect) -> AnyPublisher<Action, Never>) {
         sideEffect.apply(using: sideEffectHandler)
             .map { .action($0) }
             .subscribe(actions)
             .store(in: &cancellables)
     }
     
-    static func handleAction(state: AnyPublisher<State, Never>, action: Action, reducer: @escaping (State, Action, SideEffect<Effect>) -> State, applySideEffects: @escaping (SideEffect<Effect>) -> Void) -> AnyPublisher<State, Never> {
+    static func handleAction(state: AnyPublisher<State, Never>, action: Action, reducer: @escaping (State, Action, SideEffects<Effect>) -> State, applySideEffects: @escaping (SideEffects<Effect>) -> Void) -> AnyPublisher<State, Never> {
         state.map { s  in
-            let sideEffect = SideEffect<Effect>()
+            let sideEffect = SideEffects<Effect>()
             let newState = reducer(s, action, sideEffect)
             
             applySideEffects(sideEffect)
