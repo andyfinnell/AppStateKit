@@ -14,6 +14,8 @@ public extension Updatable {
 
 public extension Array {
     func update(_ index: Index, to value: Element) -> Self {
+        guard index >= startIndex && index < endIndex else { return self }
+        
         var copy = self
         copy[index] = value
         return copy

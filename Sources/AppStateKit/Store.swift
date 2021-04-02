@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 
+// TODO: would a different name help? PrimaryStore or ModuleStore or AppStore (lol)?
 public final class Store<State, Action, Effect, Environment> {
     private let environment: Environment
     private let actions = PassthroughSubject<Action, Never>()

@@ -20,7 +20,6 @@ public struct UIModuleValue<State, Action, Effect, Environment> {
         })
     }
     
-    // TODO: can we make the to/from Action/Effect less verbose now that we have Extractable?
     public func external<GlobalAction, GlobalEffect>(
         toLocalAction: @escaping (GlobalAction) -> Action?,
         fromLocalAction: @escaping (Action) -> GlobalAction,
@@ -72,7 +71,6 @@ public struct UIModuleValue<State, Action, Effect, Environment> {
                 return Empty(completeImmediately: true).eraseToAnyPublisher()
             }
             
-            // TODO: is converting the environment what we want here?
             return self.sideEffectHandler(localEffect, toLocalEnvironment(environment))
                 .map { fromLocalAction($0) }
                 .eraseToAnyPublisher()
@@ -109,14 +107,12 @@ public struct UIModuleValue<State, Action, Effect, Environment> {
                                           localSideEffect)
             globalSideEffect.combine(localSideEffect, using: { fromLocalEffect($0, localIndex) })
 
-            // TODO: with/update not super composable. It'd be nice if it were
             return globalState.update(state, to: globalState[keyPath: state].update(localIndex, to: localState))
         }, sideEffectHandler: { globalEffect, globalEnvironment in
             guard let (localEffect, localIndex) = toLocalEffect(globalEffect) else {
                 return Empty(completeImmediately: true).eraseToAnyPublisher()
             }
             
-            // TODO: is converting the environment what we want here?
             return self.sideEffectHandler(localEffect, toLocalEnvironment(globalEnvironment))
                 .map { fromLocalAction($0, localIndex) }
                 .eraseToAnyPublisher()
@@ -142,14 +138,12 @@ public struct UIModuleValue<State, Action, Effect, Environment> {
                                           localSideEffect)
             globalSideEffect.combine(localSideEffect, using: { fromLocalEffect($0, localId) })
 
-            // TODO: with/update not super composable. It'd be nice if it were
             return globalState.update(state, to: globalState[keyPath: state].update(localIndex, to: localState))
         }, sideEffectHandler: { globalEffect, globalEnvironment in
             guard let (localEffect, localId) = toLocalEffect(globalEffect) else {
                 return Empty(completeImmediately: true).eraseToAnyPublisher()
             }
             
-            // TODO: is converting the environment what we want here?
             return self.sideEffectHandler(localEffect, toLocalEnvironment(globalEnvironment))
                 .map { fromLocalAction($0, localId) }
                 .eraseToAnyPublisher()
@@ -175,14 +169,12 @@ public struct UIModuleValue<State, Action, Effect, Environment> {
                                           localSideEffect)
             globalSideEffect.combine(localSideEffect, using: { fromLocalEffect($0, localKey) })
 
-            // TODO: with/update not super composable. It'd be nice if it were
             return globalState.update(state, to: globalState[keyPath: state].update(localKey, to: localState))
         }, sideEffectHandler: { globalEffect, globalEnvironment in
             guard let (localEffect, localKey) = toLocalEffect(globalEffect) else {
                 return Empty(completeImmediately: true).eraseToAnyPublisher()
             }
             
-            // TODO: is converting the environment what we want here?
             return self.sideEffectHandler(localEffect, toLocalEnvironment(globalEnvironment))
                 .map { fromLocalAction($0, localKey) }
                 .eraseToAnyPublisher()
