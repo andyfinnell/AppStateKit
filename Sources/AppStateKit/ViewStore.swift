@@ -3,17 +3,17 @@ import Combine
 import SwiftUI
 
 @dynamicMemberLookup
-public final class ViewStore<State, Action, Effect, Environment>: ObservableObject {
+public final class ViewStore<State, Action>: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private let applyThunk: (Action) -> Void
     @Published public private(set) var state: State
     
-    public init(store: Store<State, Action, Effect, Environment>, removeDuplicatesBy isDuplicate: @escaping (State, State) -> Bool) {
+    public init<S: Storable>(store: S, removeDuplicatesBy isDuplicate: @escaping (S.State, S.State) -> Bool) where S.State == State, S.Action == Action {
         state = store.state
         applyThunk = { [weak store] action in
             store?.apply(action)
         }
-        store.$state.removeDuplicates(by: isDuplicate).sink { [weak self] state in
+        store.statePublisher.removeDuplicates(by: isDuplicate).sink { [weak self] state in
             self?.state = state
         }.store(in: &cancellables)
     }
@@ -32,12 +32,10 @@ public final class ViewStore<State, Action, Effect, Environment>: ObservableObje
             self?.apply(action)
         })
     }
-    
-    // TODO: eventually will need bindings
 }
 
 public extension ViewStore where State: Equatable {
-    convenience init(store: Store<State, Action, Effect, Environment>) {
+    convenience init<S: Storable>(store: S) where S.State == State, S.Action == Action {
         self.init(store: store, removeDuplicatesBy: ==)
     }
 }

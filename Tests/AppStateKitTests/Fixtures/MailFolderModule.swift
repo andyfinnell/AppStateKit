@@ -101,8 +101,6 @@ struct MailFolderModule: UIModule {
                 let deletedIds = Set(sync.deletedMessageIds)
                 messages = sync.newMessages
                     + state.loadedMessages.filter { !deletedIds.contains($0.id) }
-                // TODO: sort by date?
-
             }
             return state.update(\.loadedMessages, to: messages)
             
