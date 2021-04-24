@@ -32,6 +32,24 @@ public final class ViewStore<State, Action>: ObservableObject {
             self?.apply(action)
         })
     }
+    
+    public func binding<T>(get: @escaping (State) -> T, apply: @escaping (T) -> Action) -> Binding<T> {
+        Binding<T>(get: {
+            get(self.state)
+        }, set: { [weak self] newValue in
+            let action = apply(newValue)
+            self?.apply(action)
+        })
+    }
+
+    public func binding<T>(get: @escaping (State) -> T) -> Binding<T> {
+        Binding<T>(get: {
+            get(self.state)
+        }, set: { _ in
+            // nop
+        })
+    }
+
 }
 
 public extension ViewStore where State: Equatable {
