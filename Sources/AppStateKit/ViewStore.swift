@@ -27,18 +27,18 @@ public final class ViewStore<State, Action>: ObservableObject {
     }
     
     public func binding<T>(_ keyPath: KeyPath<State, T>, apply: @escaping (T) -> Action) -> Binding<T> {
-        Binding<T>(get: { self.state[keyPath: keyPath] }, set: { [weak self] newValue in
+        Binding<T>(get: { self.state[keyPath: keyPath] }, set: { [weak self] newValue, transaction in
             let action = apply(newValue)
-            self?.apply(action)
+            self?.apply(action, transaction: transaction)
         })
     }
     
     public func binding<T>(get: @escaping (State) -> T, apply: @escaping (T) -> Action) -> Binding<T> {
         Binding<T>(get: {
             get(self.state)
-        }, set: { [weak self] newValue in
+        }, set: { [weak self] newValue, transaction in
             let action = apply(newValue)
-            self?.apply(action)
+            self?.apply(action, transaction: transaction)
         })
     }
 
@@ -50,6 +50,18 @@ public final class ViewStore<State, Action>: ObservableObject {
         })
     }
 
+}
+
+private extension ViewStore {
+    func apply(_ action: Action, transaction: Transaction) {
+        if transaction.animation != nil {
+            withTransaction(transaction) {
+                apply(action)
+            }
+        } else {
+            apply(action)
+        }
+    }
 }
 
 public extension ViewStore where State: Equatable {
