@@ -3,11 +3,23 @@ import XCTest
 import Combine
 @testable import AppStateKit
 
+protocol LoadAtIndexEffect {
+    func callAsFunction(index: Int) -> FutureEffect<String>
+}
+
+protocol SaveEffect {
+    func callAsFunction(index: Int, content: String) -> FutureEffect<Void>
+}
+
+protocol UpdateEffect {
+    func callAsFunction(index: Int, content: String) -> FutureEffect<String>
+}
+
 final class SideEffects2Tests: XCTestCase {
     
     struct Effects {
-        let loadAtIndex: EffectDecl<Int, String>
-        let save: EffectDecl<(index: Int, content: String), Void>
+        let loadAtIndex: any LoadAtIndexEffect
+        let save: any SaveEffect
     }
         
     enum Action: Hashable {
@@ -17,24 +29,46 @@ final class SideEffects2Tests: XCTestCase {
     }
         
     struct ChildEffects {
-        let update: EffectDecl<(index: Int, content: String), String>
+        let update: any UpdateEffect
     }
 
     enum ChildAction: Hashable {
         case updated(String)
     }
     
-    func testParallelEffects() async {
-        let subject = SideEffects2<Effects, Action>(environment: .init(
-            loadAtIndex: .init({ (index: Int) async -> String in
+    struct LoadAtIndexEffectHandler: LoadAtIndexEffect {
+        func callAsFunction(index: Int) -> FutureEffect<String> {
+            .init {
                 "loaded index \(index)"
-            }),
-            save: .init({ (index: Int, content: String) async -> Void in
-                
-            })))
+            }
+        }
+    }
+    
+    struct SaveEffectHandler: SaveEffect {
+        func callAsFunction(index: Int, content: String) -> FutureEffect<Void> {
+            .init {
+                // nop
+            }
+        }
+    }
+    
+    struct UpdateEffectHandler: UpdateEffect {
+        func callAsFunction(index: Int, content: String) -> FutureEffect<String> {
+            .init {
+                "update \(content) to \(index)"
+            }
+        }
+    }
+    
+    func testParallelEffects() async {
+        let effects = Effects(loadAtIndex: LoadAtIndexEffectHandler(),
+                              save: SaveEffectHandler())
         
-        subject.loadAtIndex(4, Action.loaded)
-        subject.save((index: 3, content: "my content"), { .saved })
+        let subject = SideEffects2 {
+            effects.loadAtIndex(index: 4) ~> Action.loaded
+            
+            effects.save(index: 3, content: "my content") ~> Action.saved
+        }
         
         let actions = AsyncSet<Action>()
         await subject.apply(using: {
@@ -50,28 +84,26 @@ final class SideEffects2Tests: XCTestCase {
     }
     
     func testCombinedEffects() async {
-        let subject = SideEffects2<Effects, Action>(environment: .init(
-            loadAtIndex: .init({ (index: Int) async -> String in
-                "loaded index \(index)"
-            }),
-            save: .init({ (index: Int, content: String) async -> Void in
-                
-            })))
+        let effects = Effects(loadAtIndex: LoadAtIndexEffectHandler(),
+                              save: SaveEffectHandler())
         
-        subject.loadAtIndex(4, Action.loaded)
-        subject.save((index: 3, content: "my content"), { .saved })
+        let subject = SideEffects2 {
+            effects.loadAtIndex(index: 4) ~> Action.loaded
+            
+            effects.save(index: 3, content: "my content") ~> Action.saved
+        }
 
-        let childSubject = SideEffects2<ChildEffects, ChildAction>(environment: .init(
-            update: .init({ (index: Int, content: String) -> String in
-            "update \(content) to \(index)"
-        })))
+
+        let childEffects = ChildEffects(update: UpdateEffectHandler())
+
+        let childSubject = SideEffects2 {
+            childEffects.update(index: 2, content: "frank") ~> ChildAction.updated
+        }
         
-        childSubject.update((index: 2, content: "frank"), ChildAction.updated)
-        
-        subject.append(childSubject, using: Action.child)
+        let results = subject.appending(childSubject, using: Action.child)
         
         let actions = AsyncSet<Action>()
-        await subject.apply(using: {
+        await results.apply(using: {
             await actions.insert($0)
         })
 
