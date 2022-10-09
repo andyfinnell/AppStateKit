@@ -4,8 +4,8 @@ A Redux-like framework for building SwiftUI based apps. Influenced by Pointfree 
 
 ## Requirements
 
-- Swift 5.3 or greater
-- iOS/tvOS 9 or greater OR macOS 10.11 or greater
+- Swift 5.7 or greater
+- iOS/tvOS 15 or greater OR macOS 12 or greater
 
 ## Installation
 

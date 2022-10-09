@@ -28,6 +28,10 @@ public struct SideEffects2<ReturnType> {
         return SideEffects2(effects: effects + transformedEffects)
     }
     
+    func map<ToAction>(_ transform: @escaping (ReturnType) -> ToAction) -> SideEffects2<ToAction> {
+        SideEffects2<ToAction>(effects: effects.map { $0.map(transform) })
+    }
+
     func apply(using send: @escaping (ReturnType) async -> Void) async {
         await withTaskGroup(of: Void.self) { taskGroup in
             for effect in effects {
@@ -39,6 +43,9 @@ public struct SideEffects2<ReturnType> {
         }
     }
 
+    static func +(lhs: SideEffects2, rhs: SideEffects2) -> SideEffects2 {
+        SideEffects2(effects: lhs.effects + rhs.effects)
+    }
 }
 
 public final class SideEffects<Effect> {
