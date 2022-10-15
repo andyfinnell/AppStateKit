@@ -10,7 +10,7 @@ public final class FixtureStore<State, Action>: Storable {
         stateSubject = CurrentValueSubject(initialState)
     }
     
-    public func apply(_ action: Action) {
+    public func apply(_ action: Action) async {
         // nop
     }
 }

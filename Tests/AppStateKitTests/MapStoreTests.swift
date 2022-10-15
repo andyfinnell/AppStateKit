@@ -4,8 +4,8 @@ import AppStateKit
 import Combine
 
 final class MapStoreTests: XCTestCase {
-    enum ParentModule {
-        struct State: Updatable, Equatable {
+    enum ParentReducer {
+        struct State: Equatable {
             var value: String
         }
         
@@ -15,8 +15,8 @@ final class MapStoreTests: XCTestCase {
         }
     }
     
-    enum TestModule {
-        struct State: Updatable, Equatable {
+    enum TestReducer {
+        struct State: Equatable {
             var isOn: Bool
         }
         
@@ -25,31 +25,31 @@ final class MapStoreTests: XCTestCase {
         }
     }
     
-    private var parentStore: FakeStore<ParentModule.State, ParentModule.Action>!
-    private var subject: MapStore<TestModule.State, TestModule.Action>!
+    private var parentStore: FakeStore<ParentReducer.State, ParentReducer.Action>!
+    private var subject: MapStore<TestReducer.State, TestReducer.Action>!
     
     override func setUp() {
         super.setUp()
         
-        parentStore = FakeStore(state: ParentModule.State(value: "idle"))
-        subject = parentStore.map(toLocalState: {
-            TestModule.State(isOn: $0.value == "finish")
-        }, fromLocalAction: { (action: TestModule.Action) -> ParentModule.Action in
+        parentStore = FakeStore(state: ParentReducer.State(value: "idle"))
+        subject = parentStore.map(state: {
+            TestReducer.State(isOn: $0.value == "finish")
+        }, action: { (action: TestReducer.Action) -> ParentReducer.Action in
             switch action {
             case .doWhat: return .doWhat
             }
         })
     }
 
-    func testActionApply() {
-        subject.apply(.doWhat)
+    func testActionApply() async {
+        await subject.apply(.doWhat)
         
         XCTAssertEqual(parentStore.appliedActions, [.doWhat])
     }
 
     func testParentStateChanged() {
         var cancellables = Set<AnyCancellable>()
-        var history = [TestModule.State]()
+        var history = [TestReducer.State]()
         let finishExpectation = expectation(description: "finish")
         
         subject.$state.sink { state in
@@ -60,13 +60,13 @@ final class MapStoreTests: XCTestCase {
             }
         }.store(in: &cancellables)
         
-        parentStore.currentState.value = ParentModule.State(value: "finish")
+        parentStore.currentState.value = ParentReducer.State(value: "finish")
         
         waitForExpectations(timeout: 1, handler: nil)
         
         let expected = [
-            TestModule.State(isOn: false),
-            TestModule.State(isOn: true),
+            TestReducer.State(isOn: false),
+            TestReducer.State(isOn: true),
         ]
         XCTAssertEqual(history, expected)
     }

@@ -1,37 +1,25 @@
 import Foundation
 import Combine
 
-// TODO: would a different name help? PrimaryStore or ModuleStore or AppStore (lol)?
-public final class Store<State, Action, Effect, Environment> {
-    private let environment: Environment
-    private let actions = PassthroughSubject<Action, Never>()
-    private var cancellables = Set<AnyCancellable>()
+public final class Store<State, Action, Effects> {
+    private let effects: Effects
+    private var actions = [Action]()
+    private var isProcessing = false
+    private let reduce: (inout State, Action, Effects) -> SideEffects<Action>
+    
     @Published public private(set) var state: State
     
-    public init(initialState: State, environment: Environment, module: UIModuleValue<State, Action, Effect, Environment>) {
-        self.state = initialState
-        self.environment = environment
-        
-        let applySideEffect = { [weak self] (sideEffect: SideEffects<Effect>) -> Void in
-            self?.applySideEffects(sideEffect, using: { module.sideEffectHandler($0, environment) })
-        }
-        
-        actions.scan(initialState) { state, action in
-            let sideEffects = SideEffects<Effect>()
-            let newState = module.reducer(state, action, sideEffects)
-            
-            applySideEffect(sideEffects)
-
-            return newState
-        }
-        .receive(on: RunLoop.main)
-        .sink { [weak self] value in
-            self?.state = value
-        }.store(in: &cancellables)
+    public init<R: Reducer>(state: State, effects: Effects, reducer: R)
+    where R.State == State, R.Action == Action, R.Effects == Effects {
+        self.state = state
+        self.effects = effects
+        reduce = { reducer.reduce(&$0, action: $1, effects: $2) }
     }
- 
-    public func apply(_ action: Action) {
-        actions.send(action)
+    
+    @MainActor
+    public func apply(_ action: Action) async {
+        actions.append(action)
+        await processNextActionIfPossible()
     }
 }
 
@@ -40,19 +28,20 @@ extension Store: Storable {
 }
 
 private extension Store {
-    func applySideEffects(_ sideEffect: SideEffects<Effect>, using sideEffectHandler: @escaping (Effect) -> AnyPublisher<Action, Never>) {
-        var cancellable: AnyCancellable?
-        cancellable = sideEffect.apply(using: sideEffectHandler)
-            // If we don't make this receive on the main run loop, the actions
-            //  resulting from the sideEffects will be applied before the initiating
-            //  action is appliied.
-            .receive(on: RunLoop.main)
-            .sink(receiveCompletion: { _ in
-                _ = cancellable // silence the compiler warning about not being read
-
-                cancellable = nil // we're done, so let go
-            }, receiveValue: { [weak self] action in
-                self?.apply(action)
-            })
+    @MainActor
+    func processNextActionIfPossible() async {
+        guard !isProcessing,
+              let nextAction = actions.first else {
+            return
+        }
+        isProcessing = true
+        actions.removeFirst()
+        let sideEffects = reduce(&state, nextAction, effects)
+        isProcessing = false
+        
+        await sideEffects.apply(using: apply)
+        
+        // recurse
+        await processNextActionIfPossible()
     }
 }

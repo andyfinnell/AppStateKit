@@ -39,13 +39,13 @@ final class OptionalReducerTests: XCTestCase {
             case let .save(value):
                 state.value = value
                 
-                return SideEffects2 {
+                return SideEffects {
                     effects.save(index: 0, content: value) ~> ChildAction.saved
                 }
                 
             case .saved:
                 state.value = "done"
-                return SideEffects2.none()
+                return SideEffects.none()
             }
         }
         

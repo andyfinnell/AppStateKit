@@ -8,6 +8,7 @@ final class FakeStore<State, Action>: Storable {
     var statePublisher: AnyPublisher<State, Never> { currentState.eraseToAnyPublisher() }
     private(set) var appliedActions = [Action]()
     
+    @MainActor
     func apply(_ action: Action) {
         appliedActions.append(action)
     }

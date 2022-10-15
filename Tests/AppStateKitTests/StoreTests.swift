@@ -3,55 +3,45 @@ import Combine
 import XCTest
 import AppStateKit
 
-fileprivate struct TestModule: UIModule {
-    struct State: Updatable, Equatable {
+fileprivate struct TestReducer: Reducer {
+    struct State: Equatable {
         var value: String
     }
     
     enum Action {
         case doWhat
-        case finishBigEffect
+        case finishBigEffect(String)
     }
-    
-    enum Effect {
-        case big
+        
+    struct Effects {
+        let load: any LoadAtIndexEffect
     }
-    
-    struct Environment {
-        let globalValue: String
-    }
-    
-    static func performSideEffect(_ effect: Effect, in environment: Environment) -> AnyPublisher<Action, Never> {
-        switch effect {
-        case .big:
-            return Just(Action.finishBigEffect).eraseToAnyPublisher()
-        }
-    }
-    
-    static func reduce(_ state: State, action: Action, sideEffects: SideEffects<Effect>) -> State {
+        
+    func reduce(_ state: inout State, action: Action, effects: Effects) -> SideEffects<Action> {
         switch action {
         case .doWhat:
-            sideEffects(.big)
+            state.value = "loading"
             
-            return state.update(\.value, to: "loading")
+            return SideEffects {
+                effects.load(index: 0) ~> Action.finishBigEffect
+            }
             
-        case .finishBigEffect:
+        case let .finishBigEffect(value):
+            state.value = value
             
-            return state.update(\.value, to: "big effect")
+            return .none()
         }
     }
-    
-    static var value: UIModuleValue<State, Action, Effect, Environment> { internalValue }
 }
 
 final class StoreTests: XCTestCase {
     
-    func testActionApply() {
-        let env = TestModule.Environment(globalValue: "bob")
-        let initialState = TestModule.State(value: "idle")
-        let subject = TestModule.makeStore(initialState: initialState, environment: env)
+    func testActionApply() async {
+        let initialState = TestReducer.State(value: "idle")
+        let effects = TestReducer.Effects(load: LoadAtIndexEffectHandler())
+        let subject = Store(state: initialState, effects: effects, reducer: TestReducer())
         var cancellables = Set<AnyCancellable>()
-        var history = [TestModule.State]()
+        var history = [TestReducer.State]()
         let finishExpectation = expectation(description: "finish")
         
         subject.$state.sink { state in
@@ -62,14 +52,14 @@ final class StoreTests: XCTestCase {
             }
         }.store(in: &cancellables)
         
-        subject.apply(.doWhat)
+        await subject.apply(.doWhat)
         
-        waitForExpectations(timeout: 1, handler: nil)
+        await waitForExpectations(timeout: 1, handler: nil)
         
         let expected = [
-            TestModule.State(value: "idle"),
-            TestModule.State(value: "loading"),
-            TestModule.State(value: "big effect")
+            TestReducer.State(value: "idle"),
+            TestReducer.State(value: "loading"),
+            TestReducer.State(value: "loaded index 0")
         ]
         XCTAssertEqual(history, expected)
     }

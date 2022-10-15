@@ -14,7 +14,7 @@ public struct IfLetView<State, Action, Content: View>: View {
     public var body: some View {
         StoreView(store, removeDuplicatesBy: { ($0 == nil) == ($1 == nil) }) { viewStore in
             if let state = viewStore.state {
-                ifContent(store.map(toLocalState: { $0 ?? state }, fromLocalAction: { $0 }))
+                ifContent(store.map(state: { $0 ?? state }, action: { $0 }))
             }
         }
     }
@@ -36,7 +36,7 @@ public struct IfLetElseView<State, Action, IfContent: View, ElseContent: View>: 
     public var body: some View {
         StoreView(store, removeDuplicatesBy: { ($0 == nil) == ($1 == nil) }) { viewStore in
             if let state = viewStore.state {
-                ifContent(store.map(toLocalState: { $0 ?? state }, fromLocalAction: { $0 }))
+                ifContent(store.map(state: { $0 ?? state }, action: { $0 }))
             } else {
                 elseContent()
             }

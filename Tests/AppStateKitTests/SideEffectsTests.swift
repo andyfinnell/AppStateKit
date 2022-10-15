@@ -1,99 +1,81 @@
 import Foundation
 import XCTest
-import Combine
 @testable import AppStateKit
 
 final class SideEffectsTests: XCTestCase {
     
-    enum Effect: Equatable {
-        case causes(Action)
-        case subeffect(SubEffect)
+    struct Effects {
+        let loadAtIndex: any LoadAtIndexEffect
+        let save: any SaveEffect
     }
-    
-    enum SubEffect: Equatable {
-        case subcause(Action)
+        
+    enum Action: Hashable {
+        case loaded(String)
+        case saved
+        case child(ChildAction)
     }
-    
-    enum Action: Equatable {
-        case one, two, three
-    }
-    
-    func testSerialEffects() {
-        var cancellables = Set<AnyCancellable>()
-        let finishExpectation = expectation(description: "finish")
-        var output = [Action]()
-        let subject = SideEffects<Effect>()
         
-        subject(.causes(.one), .causes(.two))
-        
-        subject.apply(using: SideEffectsTests.effectToAction).sink(receiveCompletion: { completion in
-            finishExpectation.fulfill()
-        }, receiveValue: { action in
-            output.append(action)
-        }).store(in: &cancellables)
-        
-        waitForExpectations(timeout: 1.0, handler: nil)
-        
-        // Should always be in this order
-        XCTAssertEqual(output, [.one, .two])
-    }
-    
-    func testParallelEffects() {
-        var cancellables = Set<AnyCancellable>()
-        let finishExpectation = expectation(description: "finish")
-        var output = Set<Action>()
-        let subject = SideEffects<Effect>()
-        
-        subject(.causes(.one))
-        subject(.causes(.two))
-        subject(.causes(.three))
-
-        subject.apply(using: SideEffectsTests.effectToAction).sink(receiveCompletion: { completion in
-            finishExpectation.fulfill()
-        }, receiveValue: { action in
-            output.insert(action)
-        }).store(in: &cancellables)
-        
-        waitForExpectations(timeout: 1.0, handler: nil)
-        
-        // These can be in any order
-        XCTAssertEqual(output, Set([.one, .two, .three]))
-    }
-    
-    func testCombinedEffects() {
-        var cancellables = Set<AnyCancellable>()
-        let finishExpectation = expectation(description: "finish")
-        var output = Set<Action>()
-        let subject = SideEffects<Effect>()
-        
-        subject(.causes(.one), .causes(.two))
-        
-        let localSubject = SideEffects<SubEffect>()
-        localSubject(.subcause(.three))
-        subject.combine(localSubject, using: Effect.subeffect)
-        
-        subject.apply(using: SideEffectsTests.effectToAction).sink(receiveCompletion: { completion in
-            finishExpectation.fulfill()
-        }, receiveValue: { action in
-            output.insert(action)
-        }).store(in: &cancellables)
-        
-        waitForExpectations(timeout: 1.0, handler: nil)
-        
-        // These can be in any order
-        XCTAssertEqual(output, Set([.one, .two, .three]))
+    struct ChildEffects {
+        let update: any UpdateEffect
     }
 
-
-    private static func effectToAction(_ effect: Effect) -> AnyPublisher<Action, Never> {
-        switch effect {
-        case let .causes(action):
-            return Just(action).eraseToAnyPublisher()
-        case let .subeffect(subeffect):
-            switch subeffect {
-            case let .subcause(action):
-                return Just(action).eraseToAnyPublisher()
-            }
+    enum ChildAction: Hashable {
+        case updated(String)
+    }
+    
+    func testParallelEffects() async {
+        let effects = Effects(loadAtIndex: LoadAtIndexEffectHandler(),
+                              save: SaveEffectHandler())
+        
+        let subject = SideEffects {
+            effects.loadAtIndex(index: 4) ~> Action.loaded
+            
+            effects.save(index: 3, content: "my content") ~> Action.saved
         }
+        
+        let actions = AsyncSet<Action>()
+        await subject.apply(using: {
+            await actions.insert($0)
+        })
+        
+        let expected = Set<Action>([
+            .loaded("loaded index 4"),
+            .saved
+        ])
+        let actual = await actions.set
+        XCTAssertEqual(actual, expected)
+    }
+    
+    func testCombinedEffects() async {
+        let effects = Effects(loadAtIndex: LoadAtIndexEffectHandler(),
+                              save: SaveEffectHandler())
+        
+        let subject = SideEffects {
+            effects.loadAtIndex(index: 4) ~> Action.loaded
+            
+            effects.save(index: 3, content: "my content") ~> Action.saved
+        }
+
+
+        let childEffects = ChildEffects(update: UpdateEffectHandler())
+
+        let childSubject = SideEffects {
+            childEffects.update(index: 2, content: "frank") ~> ChildAction.updated
+        }
+        
+        let results = subject.appending(childSubject, using: Action.child)
+        
+        let actions = AsyncSet<Action>()
+        await results.apply(using: {
+            await actions.insert($0)
+        })
+
+        let expected = Set<Action>([
+            .loaded("loaded index 4"),
+            .saved,
+            .child(.updated("update frank to 2"))
+        ])
+        let actual = await actions.set
+        XCTAssertEqual(actual, expected)
     }
 }
