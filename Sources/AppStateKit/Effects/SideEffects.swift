@@ -19,7 +19,7 @@ public struct SideEffects<ReturnType> {
         self.effects = builder().effects
     }
     
-    public static func none() -> SideEffects<ReturnType> {
+    public static var none: SideEffects<ReturnType> {
         SideEffects(effects: [])
     }
     

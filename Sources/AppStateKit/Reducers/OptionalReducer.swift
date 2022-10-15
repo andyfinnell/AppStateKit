@@ -7,7 +7,7 @@ public struct OptionalReducer<State, Action, Effects>: Reducer {
     where State == R.State?, Action == R.Action, Effects == R.Effects {
         impl = { state, action, effects -> SideEffects<Action> in
             guard var stateCopy = state else {
-                return SideEffects.none()
+                return SideEffects.none
             }
             let sideEffects = builder().reduce(&stateCopy, action: action, effects: effects)
             state = stateCopy

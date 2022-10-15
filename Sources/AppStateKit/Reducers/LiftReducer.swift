@@ -9,7 +9,7 @@ public struct LiftReducer<State, Action, Effects>: Reducer {
     where R.State == State {
         impl = { state, action, effects -> SideEffects<Action> in
             guard let innerAction = actionBinding.toAction(action) else {
-                return SideEffects.none()
+                return SideEffects.none
             }
             let innerEffects = toEffects(effects)
             return builder().reduce(&state, action: innerAction, effects: innerEffects)

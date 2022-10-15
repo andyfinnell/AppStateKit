@@ -13,7 +13,7 @@ public struct IdentifiableReducer<State, Action, Effects>: Reducer {
                   let index = state[keyPath: keyPath].firstIndex(where: { $0.id == innerID }),
                   index >= state[keyPath: keyPath].startIndex,
                   index < state[keyPath: keyPath].endIndex else {
-                return SideEffects.none()
+                return SideEffects.none
             }
             
             

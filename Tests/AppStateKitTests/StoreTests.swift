@@ -29,7 +29,7 @@ fileprivate struct TestReducer: Reducer {
         case let .finishBigEffect(value):
             state.value = value
             
-            return .none()
+            return .none
         }
     }
 }

@@ -11,8 +11,9 @@ public final class MapStore<State, Action> {
                              action fromLocalAction: @escaping (Action) -> S.Action) {
         
         state = toLocalState(store.state)
-        applyThunk = { [weak store] action in
-            await store?.apply(fromLocalAction(action))
+        // Intentionally holding parent in memory
+        applyThunk = { action in
+            await store.apply(fromLocalAction(action))
         }
         store.statePublisher.sink { [weak self] state in
             self?.state = toLocalState(state)

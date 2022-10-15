@@ -41,7 +41,7 @@ final class LiftReducerTests: XCTestCase {
                 
             case .saved:
                 state.value = "done"
-                return SideEffects.none()
+                return SideEffects.none
             }
         }
         

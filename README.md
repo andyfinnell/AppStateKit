@@ -19,7 +19,7 @@ Open the Package.swift file and edit it:
 1. Add AppStateKit as a dependency of the target that will use it
 
 ```Swift
-// swift-tools-version:5.3
+// swift-tools-version:5.7
 
 import PackageDescription
 

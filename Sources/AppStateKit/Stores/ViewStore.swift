@@ -13,8 +13,9 @@ public final class ViewStore<State, Action>: ObservableObject {
     public init<S: Storable>(store: S, removeDuplicatesBy isDuplicate: @escaping (S.State, S.State) -> Bool) where S.State == State, S.Action == Action {
         state = store.state
         stateSubject = CurrentValueSubject(store.state)
-        applyThunk = { [weak store] action in
-            await store?.apply(action)
+        // Intentionally holding parent in memory
+        applyThunk = { action in
+            await store.apply(action)
         }
         store.statePublisher.removeDuplicates(by: isDuplicate).sink { [weak self] state in
             self?.state = state
@@ -70,6 +71,20 @@ private extension ViewStore {
         } else {
             apply(action)
         }
+    }
+}
+
+public extension Storable {
+    @MainActor
+    func forView(removeDuplicatesBy isDuplicate: @escaping (State, State) -> Bool) -> ViewStore<State, Action> {
+        ViewStore(store: self, removeDuplicatesBy: isDuplicate)
+    }
+}
+
+public extension Storable where State: Equatable {
+    @MainActor
+    func forView() -> ViewStore<State, Action> {
+        ViewStore(store: self)
     }
 }
 

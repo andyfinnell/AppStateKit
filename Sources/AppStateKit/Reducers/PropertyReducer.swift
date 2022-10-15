@@ -9,7 +9,7 @@ public struct PropertyReducer<State, Action, Effects>: Reducer {
                             @ReducerBuilder builder: @escaping () -> R) {
         impl = { state, action, effects -> SideEffects<Action> in
             guard let innerAction = actionBinding.toAction(action) else {
-                return SideEffects.none()
+                return SideEffects.none
             }
             let innerEffects = toEffects(effects)
             return builder().reduce(&state[keyPath: keyPath], action: innerAction, effects: innerEffects)

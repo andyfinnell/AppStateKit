@@ -11,7 +11,7 @@ public struct ArrayReducer<State, Action, Effects>: Reducer {
             guard let (innerAction, index) = actionBinding.toAction(action),
                   index >= state[keyPath: keyPath].startIndex,
                   index < state[keyPath: keyPath].endIndex else {
-                return SideEffects.none()
+                return SideEffects.none
             }
             
             

@@ -10,7 +10,7 @@ public struct DictionaryReducer<State, Action, Effects>: Reducer {
         impl = { state, action, effects -> SideEffects<Action> in
             guard let (innerAction, innerKey) = actionBinding.toAction(action),
                   var stateCopy = state[keyPath: keyPath][innerKey] else {
-                return SideEffects.none()
+                return SideEffects.none
             }
             
             let innerEffects = toEffects(effects)
