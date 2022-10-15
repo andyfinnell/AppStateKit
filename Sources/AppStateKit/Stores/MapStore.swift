@@ -1,11 +1,10 @@
 import Foundation
 import Combine
-import SwiftUI
 
 public final class MapStore<State, Action> {
     private var cancellables = Set<AnyCancellable>()
     private let applyThunk: (Action) async -> Void
-    @Published public private(set) var state: State
+    @PublishedState public private(set) var state: State
      
     public init<S: Storable>(store: S,
                              state toLocalState: @escaping (S.State) -> State,
@@ -26,7 +25,7 @@ public final class MapStore<State, Action> {
 }
 
 extension MapStore: Storable {
-    public var statePublisher: AnyPublisher<State, Never> { $state.eraseToAnyPublisher() }
+    public var statePublisher: AnyPublisher<State, Never> { $state }
 }
 
 public extension Storable {

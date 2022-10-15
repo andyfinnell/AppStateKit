@@ -7,15 +7,18 @@ import SwiftUI
 public final class ViewStore<State, Action>: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private let applyThunk: (Action) async -> Void
+    private let stateSubject: CurrentValueSubject<State, Never>
     @Published public private(set) var state: State
     
     public init<S: Storable>(store: S, removeDuplicatesBy isDuplicate: @escaping (S.State, S.State) -> Bool) where S.State == State, S.Action == Action {
         state = store.state
+        stateSubject = CurrentValueSubject(store.state)
         applyThunk = { [weak store] action in
             await store?.apply(action)
         }
         store.statePublisher.removeDuplicates(by: isDuplicate).sink { [weak self] state in
             self?.state = state
+            self?.stateSubject.value = state
         }.store(in: &cancellables)
     }
     
@@ -55,7 +58,7 @@ public final class ViewStore<State, Action>: ObservableObject {
 }
 
 extension ViewStore: Storable {
-    public var statePublisher: AnyPublisher<State, Never> { $state.eraseToAnyPublisher() }
+    public var statePublisher: AnyPublisher<State, Never> { stateSubject.eraseToAnyPublisher() }
 }
 
 private extension ViewStore {

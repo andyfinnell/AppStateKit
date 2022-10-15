@@ -7,7 +7,7 @@ public final class Store<State, Action, Effects> {
     private var isProcessing = false
     private let reduce: (inout State, Action, Effects) -> SideEffects<Action>
     
-    @Published public private(set) var state: State
+    @PublishedState public private(set) var state: State
     
     public init<R: Reducer>(state: State, effects: Effects, reducer: R)
     where R.State == State, R.Action == Action, R.Effects == Effects {
@@ -24,7 +24,7 @@ public final class Store<State, Action, Effects> {
 }
 
 extension Store: Storable {
-    public var statePublisher: AnyPublisher<State, Never> { $state.eraseToAnyPublisher() }
+    public var statePublisher: AnyPublisher<State, Never> { $state }
 }
 
 private extension Store {
