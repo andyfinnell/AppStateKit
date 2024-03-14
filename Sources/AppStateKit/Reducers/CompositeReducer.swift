@@ -8,7 +8,7 @@ public protocol CompositeReducer: Reducer {
 }
 
 public extension CompositeReducer {
-    func reduce(_ state: inout State, action: Action, effects: Effects) -> SideEffects<Action> {
-        body.reduce(&state, action: action, effects: effects)
+    func reduce(_ state: inout State, action: Action, effects: Effects, sideEffects: SideEffects<Action>)  {
+        body.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
     }
 }

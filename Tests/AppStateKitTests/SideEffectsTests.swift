@@ -5,8 +5,8 @@ import XCTest
 final class SideEffectsTests: XCTestCase {
     
     struct Effects {
-        let loadAtIndex: any LoadAtIndexEffect
-        let save: any SaveEffect
+        let loadAtIndex: Effect<String, Never, Int>
+        let save: Effect<Void, Never, Int, String>
     }
         
     enum Action: Hashable {
@@ -16,7 +16,7 @@ final class SideEffectsTests: XCTestCase {
     }
         
     struct ChildEffects {
-        let update: any UpdateEffect
+        let update: Effect<String, Never, Int, String>
     }
 
     enum ChildAction: Hashable {
@@ -24,15 +24,18 @@ final class SideEffectsTests: XCTestCase {
     }
     
     func testParallelEffects() async {
-        let effects = Effects(loadAtIndex: LoadAtIndexEffectHandler(),
-                              save: SaveEffectHandler())
+        let dependencies = DependencySpace()
+        let effects = Effects(loadAtIndex: LoadAtIndexEffect.makeDefault(with: dependencies),
+                              save: SaveEffect.makeDefault(with: dependencies))
+        let subject = SideEffects<Action>()
         
-        let subject = SideEffects {
-            effects.loadAtIndex(index: 4) ~> Action.loaded
-            
-            effects.save(index: 3, content: "my content") ~> Action.saved
+        subject.perform(effects.loadAtIndex, with: 4) {
+            .loaded($0)
         }
-        
+        subject.perform(effects.save, with: 3, "my content") {
+            .saved
+        }
+                
         let actions = AsyncSet<Action>()
         await subject.apply(using: {
             await actions.insert($0)
@@ -47,26 +50,30 @@ final class SideEffectsTests: XCTestCase {
     }
     
     func testCombinedEffects() async {
-        let effects = Effects(loadAtIndex: LoadAtIndexEffectHandler(),
-                              save: SaveEffectHandler())
+        let dependencies = DependencySpace()
+        let effects = Effects(loadAtIndex: LoadAtIndexEffect.makeDefault(with: dependencies),
+                              save: SaveEffect.makeDefault(with: dependencies))
+        let subject = SideEffects<Action>()
         
-        let subject = SideEffects {
-            effects.loadAtIndex(index: 4) ~> Action.loaded
-            
-            effects.save(index: 3, content: "my content") ~> Action.saved
+        subject.perform(effects.loadAtIndex, with: 4) {
+            .loaded($0)
+        }
+        subject.perform(effects.save, with: 3, "my content") {
+            .saved
         }
 
+        let childEffects = ChildEffects(update: UpdateEffect.makeDefault(with: dependencies))
 
-        let childEffects = ChildEffects(update: UpdateEffectHandler())
-
-        let childSubject = SideEffects {
-            childEffects.update(index: 2, content: "frank") ~> ChildAction.updated
+        let childSubject = SideEffects<ChildAction>()
+        
+        childSubject.perform(childEffects.update, with: 2, "frank") {
+            .updated($0)
         }
         
-        let results = subject.appending(childSubject, using: Action.child)
+        subject.appending(childSubject, using: Action.child)
         
         let actions = AsyncSet<Action>()
-        await results.apply(using: {
+        await subject.apply(using: {
             await actions.insert($0)
         })
 

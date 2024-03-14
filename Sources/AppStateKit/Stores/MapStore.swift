@@ -5,10 +5,12 @@ public final class MapStore<State, Action> {
     private var cancellables = Set<AnyCancellable>()
     private let applyThunk: (Action) async -> Void
     @PublishedState public private(set) var state: State
-     
-    public init<S: Storable>(store: S,
-                             state toLocalState: @escaping (S.State) -> State,
-                             action fromLocalAction: @escaping (Action) -> S.Action) {
+    
+    public init<S: Storable>(
+        store: S,
+        state toLocalState: @escaping (S.State) -> State,
+        action fromLocalAction: @escaping (Action) -> S.Action
+    ) {
         
         state = toLocalState(store.state)
         // Intentionally holding parent in memory
@@ -19,7 +21,7 @@ public final class MapStore<State, Action> {
             self?.state = toLocalState(state)
         }.store(in: &cancellables)
     }
-
+    
     public func apply(_ action: Action) async {
         await applyThunk(action)
     }
@@ -30,8 +32,10 @@ extension MapStore: Storable {
 }
 
 public extension Storable {
-    func map<LocalState, LocalAction>(state toLocalState: @escaping (State) -> LocalState,
-                                      action fromLocalAction: @escaping (LocalAction) -> Action) -> MapStore<LocalState, LocalAction> {
+    func map<LocalState, LocalAction>(
+        state toLocalState: @escaping (State) -> LocalState,
+        action fromLocalAction: @escaping (LocalAction) -> Action
+    ) -> MapStore<LocalState, LocalAction> {
         MapStore(store: self, state: toLocalState, action: fromLocalAction)
     }
 }

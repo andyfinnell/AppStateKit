@@ -39,19 +39,15 @@ struct CounterModule: Module {
         }
     }
     
-    func reduce(_ state: inout State, action: Action, effects: Effects) -> SideEffects<Action> {
+    func reduce(_ state: inout State, action: Action, effects: Effects, sideEffects: SideEffects<Action>) {
         switch action {
         case .decrement:
             state.count -= 1
             state.countText = "\(state.count)"
             
-            return .none
-            
         case .increment:
             state.count += 1
             state.countText = "\(state.count)"
-            
-            return .none
         }
     }
 }

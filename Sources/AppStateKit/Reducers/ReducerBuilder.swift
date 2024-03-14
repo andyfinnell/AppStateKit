@@ -14,9 +14,9 @@ public struct ReducerBuilder {
         _ r0: R0, _ r1: R1
     ) -> AnonymousReducer<R0.State, R0.Action, R0.Effects>
     where R0.State == R1.State, R0.Action == R1.Action, R0.Effects == R1.Effects {
-        AnonymousReducer { state, action, effects in
-            r0.reduce(&state, action: action, effects: effects)
-            + r1.reduce(&state, action: action, effects: effects)
+        AnonymousReducer { state, action, effects, sideEffects in
+            r0.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r1.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
         }
     }
     
@@ -25,10 +25,10 @@ public struct ReducerBuilder {
     ) -> AnonymousReducer<R0.State, R0.Action, R0.Effects>
     where R0.State == R1.State, R0.Action == R1.Action, R0.Effects == R1.Effects,
           R0.State == R2.State, R0.Action == R2.Action, R0.Effects == R2.Effects {
-        AnonymousReducer { state, action, effects in
-            r0.reduce(&state, action: action, effects: effects)
-            + r1.reduce(&state, action: action, effects: effects)
-            + r2.reduce(&state, action: action, effects: effects)
+        AnonymousReducer { state, action, effects, sideEffects in
+            r0.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r1.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r2.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
         }
     }
 
@@ -38,11 +38,11 @@ public struct ReducerBuilder {
     where R0.State == R1.State, R0.Action == R1.Action, R0.Effects == R1.Effects,
           R0.State == R2.State, R0.Action == R2.Action, R0.Effects == R2.Effects,
           R0.State == R3.State, R0.Action == R3.Action, R0.Effects == R3.Effects {
-        AnonymousReducer { state, action, effects in
-            r0.reduce(&state, action: action, effects: effects)
-            + r1.reduce(&state, action: action, effects: effects)
-            + r2.reduce(&state, action: action, effects: effects)
-            + r3.reduce(&state, action: action, effects: effects)
+        AnonymousReducer { state, action, effects, sideEffects in
+            r0.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r1.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r2.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r3.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
         }
     }
 
@@ -53,12 +53,12 @@ public struct ReducerBuilder {
           R0.State == R2.State, R0.Action == R2.Action, R0.Effects == R2.Effects,
           R0.State == R3.State, R0.Action == R3.Action, R0.Effects == R3.Effects,
           R0.State == R4.State, R0.Action == R4.Action, R0.Effects == R4.Effects {
-        AnonymousReducer { state, action, effects in
-            r0.reduce(&state, action: action, effects: effects)
-            + r1.reduce(&state, action: action, effects: effects)
-            + r2.reduce(&state, action: action, effects: effects)
-            + r3.reduce(&state, action: action, effects: effects)
-            + r4.reduce(&state, action: action, effects: effects)
+        AnonymousReducer { state, action, effects, sideEffects in
+            r0.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r1.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r2.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r3.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r4.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
         }
     }
 
@@ -70,13 +70,13 @@ public struct ReducerBuilder {
           R0.State == R3.State, R0.Action == R3.Action, R0.Effects == R3.Effects,
           R0.State == R4.State, R0.Action == R4.Action, R0.Effects == R4.Effects,
           R0.State == R5.State, R0.Action == R5.Action, R0.Effects == R5.Effects {
-        AnonymousReducer { state, action, effects in
-            r0.reduce(&state, action: action, effects: effects)
-            + r1.reduce(&state, action: action, effects: effects)
-            + r2.reduce(&state, action: action, effects: effects)
-            + r3.reduce(&state, action: action, effects: effects)
-            + r4.reduce(&state, action: action, effects: effects)
-            + r5.reduce(&state, action: action, effects: effects)
+        AnonymousReducer { state, action, effects, sideEffects in
+            r0.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r1.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r2.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r3.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r4.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r5.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
         }
     }
 
@@ -89,14 +89,14 @@ public struct ReducerBuilder {
           R0.State == R4.State, R0.Action == R4.Action, R0.Effects == R4.Effects,
           R0.State == R5.State, R0.Action == R5.Action, R0.Effects == R5.Effects,
           R0.State == R6.State, R0.Action == R6.Action, R0.Effects == R6.Effects {
-        AnonymousReducer { state, action, effects in
-            r0.reduce(&state, action: action, effects: effects)
-            + r1.reduce(&state, action: action, effects: effects)
-            + r2.reduce(&state, action: action, effects: effects)
-            + r3.reduce(&state, action: action, effects: effects)
-            + r4.reduce(&state, action: action, effects: effects)
-            + r5.reduce(&state, action: action, effects: effects)
-            + r6.reduce(&state, action: action, effects: effects)
+        AnonymousReducer { state, action, effects, sideEffects in
+            r0.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r1.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r2.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r3.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r4.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r5.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r6.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
         }
     }
 
@@ -110,15 +110,15 @@ public struct ReducerBuilder {
           R0.State == R5.State, R0.Action == R5.Action, R0.Effects == R5.Effects,
           R0.State == R6.State, R0.Action == R6.Action, R0.Effects == R6.Effects,
           R0.State == R7.State, R0.Action == R7.Action, R0.Effects == R7.Effects {
-        AnonymousReducer { state, action, effects in
-            r0.reduce(&state, action: action, effects: effects)
-            + r1.reduce(&state, action: action, effects: effects)
-            + r2.reduce(&state, action: action, effects: effects)
-            + r3.reduce(&state, action: action, effects: effects)
-            + r4.reduce(&state, action: action, effects: effects)
-            + r5.reduce(&state, action: action, effects: effects)
-            + r6.reduce(&state, action: action, effects: effects)
-            + r7.reduce(&state, action: action, effects: effects)
+        AnonymousReducer { state, action, effects, sideEffects in
+            r0.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r1.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r2.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r3.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r4.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r5.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r6.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r7.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
         }
     }
 
@@ -133,16 +133,16 @@ public struct ReducerBuilder {
           R0.State == R6.State, R0.Action == R6.Action, R0.Effects == R6.Effects,
           R0.State == R7.State, R0.Action == R7.Action, R0.Effects == R7.Effects,
           R0.State == R8.State, R0.Action == R8.Action, R0.Effects == R8.Effects {
-        AnonymousReducer { state, action, effects in
-            r0.reduce(&state, action: action, effects: effects)
-            + r1.reduce(&state, action: action, effects: effects)
-            + r2.reduce(&state, action: action, effects: effects)
-            + r3.reduce(&state, action: action, effects: effects)
-            + r4.reduce(&state, action: action, effects: effects)
-            + r5.reduce(&state, action: action, effects: effects)
-            + r6.reduce(&state, action: action, effects: effects)
-            + r7.reduce(&state, action: action, effects: effects)
-            + r8.reduce(&state, action: action, effects: effects)
+        AnonymousReducer { state, action, effects, sideEffects in
+            r0.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r1.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r2.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r3.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r4.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r5.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r6.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r7.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r8.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
         }
     }
 
@@ -158,17 +158,17 @@ public struct ReducerBuilder {
           R0.State == R7.State, R0.Action == R7.Action, R0.Effects == R7.Effects,
           R0.State == R8.State, R0.Action == R8.Action, R0.Effects == R8.Effects,
           R0.State == R9.State, R0.Action == R9.Action, R0.Effects == R9.Effects {
-        AnonymousReducer { state, action, effects in
-            r0.reduce(&state, action: action, effects: effects)
-            + r1.reduce(&state, action: action, effects: effects)
-            + r2.reduce(&state, action: action, effects: effects)
-            + r3.reduce(&state, action: action, effects: effects)
-            + r4.reduce(&state, action: action, effects: effects)
-            + r5.reduce(&state, action: action, effects: effects)
-            + r6.reduce(&state, action: action, effects: effects)
-            + r7.reduce(&state, action: action, effects: effects)
-            + r8.reduce(&state, action: action, effects: effects)
-            + r9.reduce(&state, action: action, effects: effects)
+        AnonymousReducer { state, action, effects, sideEffects in
+            r0.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r1.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r2.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r3.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r4.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r5.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r6.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r7.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r8.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+            r9.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
         }
     }
 

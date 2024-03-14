@@ -8,8 +8,8 @@ final class LiftReducerTests: XCTestCase {
     }
         
     struct ParentEffects {
-        let loadAtIndex: any LoadAtIndexEffect
-        let save: any SaveEffect
+        let loadAtIndex: Effect<String, Never, Int>
+        let save: Effect<Void, Never, Int, String>
         
         var child: ChildEffects {
             ChildEffects(save: save)
@@ -26,22 +26,21 @@ final class LiftReducerTests: XCTestCase {
     }
 
     struct ChildEffects {
-        let save: any SaveEffect
+        let save: Effect<Void, Never, Int, String>
     }
     
     func testLift() async {
-        let child = AnonymousReducer<ChildState, ChildAction, ChildEffects> { state, action, effects in
+        let child = AnonymousReducer<ChildState, ChildAction, ChildEffects> { state, action, effects, sideEffects in
             switch action {
             case let .save(value):
                 state.value = value
                 
-                return SideEffects {
-                    effects.save(index: 0, content: value) ~> ChildAction.saved
+                sideEffects.perform(effects.save, with: 0, value) { _ in
+                    ChildAction.saved
                 }
                 
             case .saved:
                 state.value = "done"
-                return SideEffects.none
             }
         }
         
@@ -53,10 +52,16 @@ final class LiftReducerTests: XCTestCase {
         
         // Verify the reducer
         var state = ChildState(value: "idle")
-        let effects = ParentEffects(loadAtIndex: LoadAtIndexEffectHandler(),
-                                    save: SaveEffectHandler())
-        let sideEffects = subject.reduce(&state, action: .child(.save("thing")), effects: effects)
-        
+        let dependencies = DependencySpace()
+        let effects = ParentEffects(loadAtIndex: LoadAtIndexEffect.makeDefault(with: dependencies),
+                                    save: SaveEffect.makeDefault(with: dependencies))
+        let sideEffects = SideEffects<ParentAction>()
+        subject.reduce(
+            &state,
+            action: ParentAction.child(.save("thing")),
+            effects: effects,
+            sideEffects: sideEffects
+        )
         
         XCTAssertEqual(state, ChildState(value: "thing"))
         

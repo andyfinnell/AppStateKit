@@ -14,22 +14,20 @@ fileprivate struct TestReducer: Reducer {
     }
         
     struct Effects {
-        let load: any LoadAtIndexEffect
+        let load: Effect<String, Never, Int>
     }
         
-    func reduce(_ state: inout State, action: Action, effects: Effects) -> SideEffects<Action> {
+    func reduce(_ state: inout State, action: Action, effects: Effects, sideEffects: SideEffects<Action>) {
         switch action {
         case .doWhat:
             state.value = "loading"
             
-            return SideEffects {
-                effects.load(index: 0) ~> Action.finishBigEffect
+            sideEffects.perform(effects.load, with: 0) {
+                .finishBigEffect($0)
             }
             
         case let .finishBigEffect(value):
             state.value = value
-            
-            return .none
         }
     }
 }
@@ -38,8 +36,9 @@ final class StoreTests: XCTestCase {
     
     func testActionApply() async {
         let initialState = TestReducer.State(value: "idle")
-        let effects = TestReducer.Effects(load: LoadAtIndexEffectHandler())
-        let subject = Store(state: initialState, effects: effects, reducer: TestReducer())
+        let dependencies = DependencySpace()
+        let effects = TestReducer.Effects(load: LoadAtIndexEffect.makeDefault(with: dependencies))
+        let subject = Store(state: initialState, effectsFactory: { _ in effects }, reducer: TestReducer())
         var cancellables = Set<AnyCancellable>()
         var history = [TestReducer.State]()
         let finishExpectation = expectation(description: "finish")
@@ -54,7 +53,7 @@ final class StoreTests: XCTestCase {
         
         await subject.apply(.doWhat)
         
-        await waitForExpectations(timeout: 1, handler: nil)
+        await fulfillment(of: [finishExpectation])
         
         let expected = [
             TestReducer.State(value: "idle"),

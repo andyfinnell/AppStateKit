@@ -12,8 +12,8 @@ final class DictionaryReducerTests: XCTestCase {
     }
         
     struct ParentEffects {
-        let loadAtIndex: any LoadAtIndexEffect
-        let save: any SaveEffect
+        let loadAtIndex: Effect<String, Never, Int>
+        let save: Effect<Void, Never, Int, String>
         
         var child: ChildEffects {
             ChildEffects(save: save)
@@ -30,22 +30,20 @@ final class DictionaryReducerTests: XCTestCase {
     }
 
     struct ChildEffects {
-        let save: any SaveEffect
+        let save: Effect<Void, Never, Int, String>
     }
     
     func testInBounds() async {
-        let child = AnonymousReducer<ChildState, ChildAction, ChildEffects> { state, action, effects in
+        let child = AnonymousReducer<ChildState, ChildAction, ChildEffects> { state, action, effects, sideEffects in
             switch action {
             case let .save(value):
                 state.value = value
-                
-                return SideEffects {
-                    effects.save(index: 0, content: value) ~> ChildAction.saved
+                sideEffects.perform(effects.save, with: 0, value) {
+                    .saved
                 }
                 
             case .saved:
                 state.value = "done"
-                return SideEffects.none
             }
         }
         
@@ -63,10 +61,16 @@ final class DictionaryReducerTests: XCTestCase {
             "two": ChildState(value: "idle2"),
             "three": ChildState(value: "idle3")
         ])
-        let effects = ParentEffects(loadAtIndex: LoadAtIndexEffectHandler(),
-                                    save: SaveEffectHandler())
-        let sideEffects = subject.reduce(&state, action: .child(.save("thing"), "two"), effects: effects)
-        
+        let dependencies = DependencySpace()
+        let effects = ParentEffects(loadAtIndex: LoadAtIndexEffect.makeDefault(with: dependencies),
+                                    save: SaveEffect.makeDefault(with: dependencies))
+        let sideEffects = SideEffects<ParentAction>()
+        subject.reduce(
+            &state,
+            action: .child(.save("thing"), "two"),
+            effects: effects,
+            sideEffects: sideEffects
+        )
         
         let expectedState = ParentState(child: [
             "one": ChildState(value: "idle1"),

@@ -1,38 +1,27 @@
 import Foundation
 import AppStateKit
 
-protocol LoadAtIndexEffect {
-    func callAsFunction(index: Int) -> FutureEffect<String>
-}
-
-protocol SaveEffect {
-    func callAsFunction(index: Int, content: String) -> FutureEffect<Void>
-}
-
-protocol UpdateEffect {
-    func callAsFunction(index: Int, content: String) -> FutureEffect<String>
-}
-
-struct LoadAtIndexEffectHandler: LoadAtIndexEffect {
-    func callAsFunction(index: Int) -> FutureEffect<String> {
-        .init {
-            "loaded index \(index)"
+struct LoadAtIndexEffect: Dependable {
+    static func makeDefault(with space: DependencySpace) -> Effect<String, Never, Int> {
+        Effect { index in
+            Result.success("loaded index \(index)")
         }
     }
 }
 
-struct SaveEffectHandler: SaveEffect {
-    func callAsFunction(index: Int, content: String) -> FutureEffect<Void> {
-        .init {
+struct SaveEffect: Dependable {
+    static func makeDefault(with space: DependencySpace) -> Effect<Void, Never, Int, String> {
+        Effect { index, content in
             // nop
+            Result.success(())
         }
     }
 }
 
-struct UpdateEffectHandler: UpdateEffect {
-    func callAsFunction(index: Int, content: String) -> FutureEffect<String> {
-        .init {
-            "update \(content) to \(index)"
+struct UpdateEffect: Dependable {
+    static func makeDefault(with space: DependencySpace) -> Effect<String, Never, Int, String> {
+        Effect { index, content in
+            Result.success("update \(content) to \(index)")
         }
     }
 }

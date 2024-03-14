@@ -1,5 +1,6 @@
 import Foundation
 
+// TODO: use macros
 public protocol Extractable {
     func extract<T>(_ c: (T) -> Self) -> T?
     static func extractor<T>(_ c: @escaping (T) -> Self) -> (Self) -> T?
