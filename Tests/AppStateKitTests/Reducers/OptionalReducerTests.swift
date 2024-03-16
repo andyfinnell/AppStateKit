@@ -7,7 +7,8 @@ final class OptionalReducerTests: XCTestCase {
         var child: ChildState?
     }
     
-    enum ParentAction: Extractable, Hashable {
+    @BindableAction
+    enum ParentAction: Hashable {
         case child(ChildAction)
     }
             
@@ -37,7 +38,7 @@ final class OptionalReducerTests: XCTestCase {
         
         let subject = PropertyReducer<ParentState, ParentAction>(
             state: \ParentState.child,
-            action: ActionBinding(ParentAction.child)) {
+            action: ParentAction.child) {
                 OptionalReducer {
                     child
                 }

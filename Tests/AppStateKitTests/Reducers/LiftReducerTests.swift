@@ -3,7 +3,8 @@ import XCTest
 @testable import AppStateKit
 
 final class LiftReducerTests: XCTestCase {
-    enum ParentAction: Extractable, Hashable {
+    @BindableAction
+    enum ParentAction: Hashable {
         case child(ChildAction)
     }
             
@@ -31,7 +32,7 @@ final class LiftReducerTests: XCTestCase {
             }
         }
         
-        let subject = LiftReducer(action: ActionBinding(ParentAction.child)) {
+        let subject = LiftReducer(action: ParentAction.child) {
             child
         }
         

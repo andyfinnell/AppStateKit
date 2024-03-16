@@ -7,7 +7,8 @@ final class DictionaryReducerTests: XCTestCase {
         var child: [String: ChildState]
     }
     
-    enum ParentAction: Extractable, Hashable {
+    @BindableAction
+    enum ParentAction: Hashable {
         case child(ChildAction, String)
     }
             
@@ -36,7 +37,7 @@ final class DictionaryReducerTests: XCTestCase {
         
         let subject = DictionaryReducer<ParentState, ParentAction>(
             state: \ParentState.child,
-            action: ActionBinding(ParentAction.child)) {
+            action: ParentAction.child) {
                 child
             }
         

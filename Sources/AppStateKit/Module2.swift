@@ -166,7 +166,7 @@ enum TheComposedFeature {
     }
     
     // BEGIN: generated
-    enum Action: Equatable, Extractable {
+    enum Action: Equatable {
         case leaves(TheLeafFeature.Action, at: Int)
     }
     

@@ -7,7 +7,8 @@ final class IdentifiableReducerTests: XCTestCase {
         var child: [ChildState]
     }
     
-    enum ParentAction: Extractable, Hashable {
+    @BindableAction
+    enum ParentAction: Hashable {
         case child(ChildAction, ChildState.ID)
     }
             
@@ -38,7 +39,7 @@ final class IdentifiableReducerTests: XCTestCase {
         
         let subject = IdentifiableReducer<ParentState, ParentAction>(
             state: \ParentState.child,
-            action: ActionBinding(ParentAction.child)) {
+            action: ParentAction.child) {
                 child
             }
         

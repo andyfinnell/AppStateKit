@@ -7,7 +7,8 @@ final class ArrayReducerTests: XCTestCase {
         var child: [ChildState]
     }
     
-    enum ParentAction: Extractable, Hashable {
+    @BindableAction
+    enum ParentAction: Hashable {
         case child(ChildAction, Int)
     }
             
@@ -37,7 +38,7 @@ final class ArrayReducerTests: XCTestCase {
         
         let subject = ArrayReducer<ParentState, ParentAction>(
             state: \ParentState.child,
-            action: ActionBinding(ParentAction.child)) {
+            action: ParentAction.child) {
                 child
             }
         
