@@ -64,12 +64,12 @@ final class DictionaryReducerTests: XCTestCase {
         let dependencies = DependencySpace()
         let effects = ParentEffects(loadAtIndex: LoadAtIndexEffect.makeDefault(with: dependencies),
                                     save: SaveEffect.makeDefault(with: dependencies))
-        let sideEffects = SideEffects<ParentAction>()
+        let sideEffects = SideEffectsContainer<ParentAction>()
         subject.reduce(
             &state,
             action: .child(.save("thing"), "two"),
             effects: effects,
-            sideEffects: sideEffects
+            sideEffects: sideEffects.eraseToAnySideEffects()
         )
         
         let expectedState = ParentState(child: [

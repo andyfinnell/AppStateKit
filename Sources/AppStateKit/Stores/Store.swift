@@ -5,7 +5,7 @@ public final class Store<State, Action, Effects> {
     private let effects: Effects
     private var actions = [Action]()
     private var isProcessing = false
-    private let reduce: (inout State, Action, Effects, SideEffects<Action>) -> Void
+    private let reduce: (inout State, Action, Effects, AnySideEffects<Action>) -> Void
     private let dependencies = DependencySpace()
     
     @PublishedState public private(set) var state: State
@@ -40,8 +40,8 @@ private extension Store {
         }
         isProcessing = true
         actions.removeFirst()
-        let sideEffects = SideEffects<Action>()
-        reduce(&state, nextAction, effects, sideEffects)
+        let sideEffects = SideEffectsContainer<Action>()
+        reduce(&state, nextAction, effects, sideEffects.eraseToAnySideEffects())
         isProcessing = false
         
         await sideEffects.apply(using: apply)

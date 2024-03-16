@@ -1,7 +1,7 @@
 import Foundation
 
 public struct IdentifiableReducer<State, Action, Effects>: Reducer {
-    private let impl: (inout State, Action, Effects, SideEffects<Action>) -> Void
+    private let impl: (inout State, Action, Effects, AnySideEffects<Action>) -> Void
     
     public init<R: Reducer>(state keyPath: WritableKeyPath<State, [R.State]>,
                             action actionBinding: ActionBinding<Action, (R.Action, R.State.ID)>,
@@ -16,23 +16,20 @@ public struct IdentifiableReducer<State, Action, Effects>: Reducer {
                 return
             }
             
-            
             let innerEffects = toEffects(effects)
-            let innerSideEffects = SideEffects<R.Action>()
+            let innerSideEffects = sideEffects.map {
+                actionBinding.fromAction(($0, innerID))
+            }
             builder().reduce(
                 &state[keyPath: keyPath][index],
                 action: innerAction,
                 effects: innerEffects,
                 sideEffects: innerSideEffects
             )
-            sideEffects.appending(
-                innerSideEffects,
-                using: { actionBinding.fromAction(($0, innerID)) }
-            )
         }
     }
     
-    public func reduce(_ state: inout State, action: Action, effects: Effects, sideEffects: SideEffects<Action>) {
+    public func reduce(_ state: inout State, action: Action, effects: Effects, sideEffects: AnySideEffects<Action>) {
         impl(&state, action, effects, sideEffects)
     }
 }

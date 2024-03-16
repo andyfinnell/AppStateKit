@@ -55,12 +55,12 @@ final class LiftReducerTests: XCTestCase {
         let dependencies = DependencySpace()
         let effects = ParentEffects(loadAtIndex: LoadAtIndexEffect.makeDefault(with: dependencies),
                                     save: SaveEffect.makeDefault(with: dependencies))
-        let sideEffects = SideEffects<ParentAction>()
+        let sideEffects = SideEffectsContainer<ParentAction>()
         subject.reduce(
             &state,
             action: ParentAction.child(.save("thing")),
             effects: effects,
-            sideEffects: sideEffects
+            sideEffects: sideEffects.eraseToAnySideEffects()
         )
         
         XCTAssertEqual(state, ChildState(value: "thing"))

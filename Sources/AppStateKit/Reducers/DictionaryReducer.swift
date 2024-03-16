@@ -1,7 +1,7 @@
 import Foundation
 
 public struct DictionaryReducer<State, Action, Effects>: Reducer {
-    private let impl: (inout State, Action, Effects, SideEffects<Action>) -> Void
+    private let impl: (inout State, Action, Effects, AnySideEffects<Action>) -> Void
     
     public init<Key: Hashable, R: Reducer>(state keyPath: WritableKeyPath<State, [Key: R.State]>,
                                            action actionBinding: ActionBinding<Action, (R.Action, Key)>,
@@ -14,23 +14,20 @@ public struct DictionaryReducer<State, Action, Effects>: Reducer {
             }
             
             let innerEffects = toEffects(effects)
-            let innerSideEffects = SideEffects<R.Action>()
+            let innerSideEffects = sideEffects.map {
+                actionBinding.fromAction(($0, innerKey))
+            }
             builder().reduce(
                 &stateCopy,
                 action: innerAction,
                 effects: innerEffects,
                 sideEffects: innerSideEffects
             )
-            sideEffects.appending(
-                innerSideEffects,
-                using: { actionBinding.fromAction(($0, innerKey)) }
-            )
-            
             state[keyPath: keyPath][innerKey] = stateCopy
         }
     }
     
-    public func reduce(_ state: inout State, action: Action, effects: Effects, sideEffects: SideEffects<Action>) {
+    public func reduce(_ state: inout State, action: Action, effects: Effects, sideEffects: AnySideEffects<Action>) {
         impl(&state, action, effects, sideEffects)
     }
 }

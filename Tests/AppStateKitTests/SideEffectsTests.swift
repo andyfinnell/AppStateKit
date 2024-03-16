@@ -27,7 +27,7 @@ final class SideEffectsTests: XCTestCase {
         let dependencies = DependencySpace()
         let effects = Effects(loadAtIndex: LoadAtIndexEffect.makeDefault(with: dependencies),
                               save: SaveEffect.makeDefault(with: dependencies))
-        let subject = SideEffects<Action>()
+        let subject = SideEffectsContainer<Action>()
         
         subject.perform(effects.loadAtIndex, with: 4) {
             .loaded($0)
@@ -53,7 +53,7 @@ final class SideEffectsTests: XCTestCase {
         let dependencies = DependencySpace()
         let effects = Effects(loadAtIndex: LoadAtIndexEffect.makeDefault(with: dependencies),
                               save: SaveEffect.makeDefault(with: dependencies))
-        let subject = SideEffects<Action>()
+        let subject = SideEffectsContainer<Action>()
         
         subject.perform(effects.loadAtIndex, with: 4) {
             .loaded($0)
@@ -64,14 +64,12 @@ final class SideEffectsTests: XCTestCase {
 
         let childEffects = ChildEffects(update: UpdateEffect.makeDefault(with: dependencies))
 
-        let childSubject = SideEffects<ChildAction>()
+        let childSubject = subject.map { Action.child($0) }
         
         childSubject.perform(childEffects.update, with: 2, "frank") {
             .updated($0)
         }
-        
-        subject.appending(childSubject, using: Action.child)
-        
+                
         let actions = AsyncSet<Action>()
         await subject.apply(using: {
             await actions.insert($0)
