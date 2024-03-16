@@ -58,10 +58,10 @@ final class PropertyReducerTests: XCTestCase {
         
         // Verify the reducer
         var state = ParentState(child: ChildState(value: "idle"))
-        let dependencies = DependencySpace()
+        let dependencies = DependencyScope()
         let effects = ParentEffects(loadAtIndex: LoadAtIndexEffect.makeDefault(with: dependencies),
                                     save: SaveEffect.makeDefault(with: dependencies))
-        let sideEffects = SideEffectsContainer<ParentAction>()
+        let sideEffects = SideEffectsContainer<ParentAction>(dependencyScope: dependencies)
         subject.reduce(
             &state,
             action: .child(.save("thing")),

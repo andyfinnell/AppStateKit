@@ -1,8 +1,13 @@
 
-public struct AnySideEffects<Action>: SideEffects {
+public struct AnySideEffects<Action> {
+    private let dependencyScope: DependencyScope
     private let append: (FutureEffect<Action>) -> Void
     
-    init(append: @escaping (FutureEffect<Action>) -> Void) {
+    init(
+        dependencyScope: DependencyScope,
+        append: @escaping (FutureEffect<Action>) -> Void
+    ) {
+        self.dependencyScope = dependencyScope
         self.append = append
     }
     
@@ -36,9 +41,36 @@ public struct AnySideEffects<Action>: SideEffects {
         }
         append(future)
     }
-
+    
+    public func tryPerform<each ParameterType, ReturnType, Failure: Error>(
+        _ effect: KeyPath<DependencyScope, Effect<ReturnType, Failure, repeat each ParameterType>>,
+        with parameters: repeat each ParameterType,
+        transform: @escaping (ReturnType) async -> Action,
+        onFailure: @escaping (Failure) async -> Action
+    ) {
+        tryPerform(
+            dependencyScope[keyPath: effect],
+            with: repeat each parameters,
+            transform: transform,
+            onFailure: onFailure
+        )
+    }
+    
+    public func perform<each ParameterType, ReturnType>(
+        _ effect: KeyPath<DependencyScope, Effect<ReturnType, Never, repeat each ParameterType>>,
+        with parameters: repeat each ParameterType,
+        transform: @escaping (ReturnType) async -> Action
+    ) {
+        perform(
+            dependencyScope[keyPath: effect],
+            with: repeat each parameters,
+            transform: transform
+        )
+    }
+    
     public func map<ToAction>(_ transform: @escaping (ToAction) -> Action) -> AnySideEffects<ToAction> {
-        AnySideEffects<ToAction> { (future: FutureEffect<ToAction>) -> Void in
+        // TODO: maybe a good time to create a child dependencyScope?
+        AnySideEffects<ToAction>(dependencyScope: dependencyScope) { (future: FutureEffect<ToAction>) -> Void in
             let newFuture = future.map(transform)
             append(newFuture)
         }

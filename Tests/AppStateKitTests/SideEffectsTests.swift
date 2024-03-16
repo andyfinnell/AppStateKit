@@ -24,15 +24,16 @@ final class SideEffectsTests: XCTestCase {
     }
     
     func testParallelEffects() async {
-        let dependencies = DependencySpace()
+        let dependencies = DependencyScope()
         let effects = Effects(loadAtIndex: LoadAtIndexEffect.makeDefault(with: dependencies),
                               save: SaveEffect.makeDefault(with: dependencies))
-        let subject = SideEffectsContainer<Action>()
+        let subject = SideEffectsContainer<Action>(dependencyScope: dependencies)
+        let sideEffects = subject.eraseToAnySideEffects()
         
-        subject.perform(effects.loadAtIndex, with: 4) {
+        sideEffects.perform(effects.loadAtIndex, with: 4) {
             .loaded($0)
         }
-        subject.perform(effects.save, with: 3, "my content") {
+        sideEffects.perform(effects.save, with: 3, "my content") {
             .saved
         }
                 
@@ -50,21 +51,22 @@ final class SideEffectsTests: XCTestCase {
     }
     
     func testCombinedEffects() async {
-        let dependencies = DependencySpace()
+        let dependencies = DependencyScope()
         let effects = Effects(loadAtIndex: LoadAtIndexEffect.makeDefault(with: dependencies),
                               save: SaveEffect.makeDefault(with: dependencies))
-        let subject = SideEffectsContainer<Action>()
+        let subject = SideEffectsContainer<Action>(dependencyScope: dependencies)
         
-        subject.perform(effects.loadAtIndex, with: 4) {
+        let sideEffects = subject.eraseToAnySideEffects()
+        sideEffects.perform(effects.loadAtIndex, with: 4) {
             .loaded($0)
         }
-        subject.perform(effects.save, with: 3, "my content") {
+        sideEffects.perform(effects.save, with: 3, "my content") {
             .saved
         }
 
         let childEffects = ChildEffects(update: UpdateEffect.makeDefault(with: dependencies))
 
-        let childSubject = subject.map { Action.child($0) }
+        let childSubject = sideEffects.map { Action.child($0) }
         
         childSubject.perform(childEffects.update, with: 2, "frank") {
             .updated($0)

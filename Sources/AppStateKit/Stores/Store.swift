@@ -6,13 +6,13 @@ public final class Store<State, Action, Effects> {
     private var actions = [Action]()
     private var isProcessing = false
     private let reduce: (inout State, Action, Effects, AnySideEffects<Action>) -> Void
-    private let dependencies = DependencySpace()
+    private let dependencies = DependencyScope()
     
     @PublishedState public private(set) var state: State
     
     public init<R: Reducer>(
         state: State,
-        effectsFactory: @escaping (DependencySpace) -> Effects,
+        effectsFactory: @escaping (DependencyScope) -> Effects,
         reducer: R
     ) where R.State == State, R.Action == Action, R.Effects == Effects {
         self.state = state
@@ -40,7 +40,7 @@ private extension Store {
         }
         isProcessing = true
         actions.removeFirst()
-        let sideEffects = SideEffectsContainer<Action>()
+        let sideEffects = SideEffectsContainer<Action>(dependencyScope: dependencies)
         reduce(&state, nextAction, effects, sideEffects.eraseToAnySideEffects())
         isProcessing = false
         

@@ -36,7 +36,7 @@ final class StoreTests: XCTestCase {
     
     func testActionApply() async {
         let initialState = TestReducer.State(value: "idle")
-        let dependencies = DependencySpace()
+        let dependencies = DependencyScope()
         let effects = TestReducer.Effects(load: LoadAtIndexEffect.makeDefault(with: dependencies))
         let subject = Store(state: initialState, effectsFactory: { _ in effects }, reducer: TestReducer())
         var cancellables = Set<AnyCancellable>()

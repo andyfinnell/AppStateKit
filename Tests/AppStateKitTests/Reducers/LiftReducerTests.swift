@@ -52,10 +52,10 @@ final class LiftReducerTests: XCTestCase {
         
         // Verify the reducer
         var state = ChildState(value: "idle")
-        let dependencies = DependencySpace()
+        let dependencies = DependencyScope()
         let effects = ParentEffects(loadAtIndex: LoadAtIndexEffect.makeDefault(with: dependencies),
                                     save: SaveEffect.makeDefault(with: dependencies))
-        let sideEffects = SideEffectsContainer<ParentAction>()
+        let sideEffects = SideEffectsContainer<ParentAction>(dependencyScope: dependencies)
         subject.reduce(
             &state,
             action: ParentAction.child(.save("thing")),

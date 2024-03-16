@@ -59,7 +59,7 @@ final class EffectSink<Action> {
 
 // TODO: really just want Effects to be a kind of dependency
 struct UpdateNameEffect: Dependable {
-    static func makeDefault(with space: DependencySpace) -> Effect<Void, Never, String> {
+    static func makeDefault(with space: DependencyScope) -> Effect<Void, Never, String> {
         Effect { (newName: String) -> Result<Void, Never> in
             
             return Result.success(())
@@ -123,7 +123,7 @@ enum TheLeafFeature {
     struct Effects {
         let updateName: Effect<Void, Never, String>
 
-        init(dependencies: DependencySpace) {
+        init(dependencies: DependencyScope) {
             updateName = UpdateNameEffect.makeDefault(with: dependencies)
         }
     }

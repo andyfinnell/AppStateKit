@@ -6,5 +6,5 @@ public protocol Dependable {
     /// Factory method that creates the default value. It is unfailable,
     /// meaning it will always return a valid value. It's passed in the
     /// current dependency space so it can find its own dependencies.
-    static func makeDefault(with space: DependencySpace) -> T
+    static func makeDefault(with space: DependencyScope) -> T
 }

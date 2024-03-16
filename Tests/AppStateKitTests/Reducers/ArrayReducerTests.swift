@@ -62,10 +62,10 @@ final class ArrayReducerTests: XCTestCase {
             ChildState(value: "idle2"),
             ChildState(value: "idle3")
         ])
-        let dependencies = DependencySpace()
+        let dependencies = DependencyScope()
         let effects = ParentEffects(loadAtIndex: LoadAtIndexEffect.makeDefault(with: dependencies),
                                     save: SaveEffect.makeDefault(with: dependencies))
-        let sideEffects = SideEffectsContainer<ParentAction>()
+        let sideEffects = SideEffectsContainer<ParentAction>(dependencyScope: dependencies)
         subject.reduce(
             &state,
             action: .child(.save("thing"), 1),

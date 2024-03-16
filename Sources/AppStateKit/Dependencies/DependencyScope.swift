@@ -4,13 +4,13 @@
 /// A tree structure of dependencies. Can construct `Dependable` instances
 /// when requested, and cache them off. It inherits dependencies from its
 /// parents.
-public final class DependencySpace {
+public final class DependencyScope {
     private var dependencies = [ObjectIdentifier: Any]()
     
     /// Create an empty `DependencySpace`
     public init() {}
     
-    init(_ parentSpaces: DependencySpace) {
+    init(_ parentSpaces: DependencyScope) {
         for (key, value) in parentSpaces.dependencies {
             dependencies[key] = value
         }
@@ -29,8 +29,8 @@ public final class DependencySpace {
     }
     
     /// Ensure that the dependencies specified by the scope are created
-    public func scoped<each D: Dependable>(_ scope: Scope<repeat each D>) -> DependencySpace {
-        let childSpace = DependencySpace(self)
+    public func scoped<each D: Dependable>(_ scope: Scope<repeat each D>) -> DependencyScope {
+        let childSpace = DependencyScope(self)
         scope.initialize(childSpace)
         return childSpace
     }
