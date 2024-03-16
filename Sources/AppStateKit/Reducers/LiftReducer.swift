@@ -1,28 +1,25 @@
 import Foundation
 
-public struct LiftReducer<State, Action, Effects>: Reducer {
-    private let impl: (inout State, Action, Effects, AnySideEffects<Action>) -> Void
+public struct LiftReducer<State, Action>: Reducer {
+    private let impl: (inout State, Action, AnySideEffects<Action>) -> Void
     
     public init<R: Reducer>(action actionBinding: ActionBinding<Action, R.Action>,
-                            effects toEffects: @escaping (Effects) -> R.Effects,
                             @ReducerBuilder builder: @escaping () -> R)
     where R.State == State {
-        impl = { state, action, effects, sideEffects -> Void in
+        impl = { state, action, sideEffects -> Void in
             guard let innerAction = actionBinding.toAction(action) else {
                 return
             }
-            let innerEffects = toEffects(effects)
             let innerSideEffects = sideEffects.map(actionBinding.fromAction)
             builder().reduce(
                 &state,
                 action: innerAction,
-                effects: innerEffects,
                 sideEffects: innerSideEffects
             )
         }
     }
     
-    public func reduce(_ state: inout State, action: Action, effects: Effects, sideEffects: AnySideEffects<Action>) {
-        impl(&state, action, effects, sideEffects)
+    public func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action>) {
+        impl(&state, action, sideEffects)
     }
 }

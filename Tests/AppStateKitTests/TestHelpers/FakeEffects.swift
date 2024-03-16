@@ -9,6 +9,12 @@ struct LoadAtIndexEffect: Dependable {
     }
 }
 
+extension DependencyScope {
+    var loadAtIndex: LoadAtIndexEffect.T {
+        self[LoadAtIndexEffect.self]
+    }
+}
+
 struct SaveEffect: Dependable {
     static func makeDefault(with space: DependencyScope) -> Effect<Void, Never, Int, String> {
         Effect { index, content in
@@ -18,10 +24,22 @@ struct SaveEffect: Dependable {
     }
 }
 
+extension DependencyScope {
+    var save: SaveEffect.T {
+        self[SaveEffect.self]
+    }
+}
+
 struct UpdateEffect: Dependable {
     static func makeDefault(with space: DependencyScope) -> Effect<String, Never, Int, String> {
         Effect { index, content in
             Result.success("update \(content) to \(index)")
         }
+    }
+}
+
+extension DependencyScope {
+    var update: UpdateEffect.T {
+        self[UpdateEffect.self]
     }
 }

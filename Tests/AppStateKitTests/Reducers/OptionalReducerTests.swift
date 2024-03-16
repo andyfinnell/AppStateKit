@@ -10,16 +10,7 @@ final class OptionalReducerTests: XCTestCase {
     enum ParentAction: Extractable, Hashable {
         case child(ChildAction)
     }
-        
-    struct ParentEffects {
-        let loadAtIndex: Effect<String, Never, Int>
-        let save: Effect<Void, Never, Int, String>
-        
-        var child: ChildEffects {
-            ChildEffects(save: save)
-        }
-    }
-    
+            
     struct ChildState: Equatable {
         var value: String
     }
@@ -28,18 +19,14 @@ final class OptionalReducerTests: XCTestCase {
         case save(String)
         case saved
     }
-
-    struct ChildEffects {
-        let save: Effect<Void, Never, Int, String>
-    }
     
     func testOptionalNonNil() async {
-        let child = AnonymousReducer<ChildState, ChildAction, ChildEffects> { state, action, effects, sideEffects in
+        let child = AnonymousReducer<ChildState, ChildAction> { state, action, sideEffects in
             switch action {
             case let .save(value):
                 state.value = value
                 
-                sideEffects.perform(effects.save, with: 0, value) {
+                sideEffects.perform(\.save, with: 0, value) {
                     .saved
                 }
                 
@@ -48,10 +35,9 @@ final class OptionalReducerTests: XCTestCase {
             }
         }
         
-        let subject = PropertyReducer<ParentState, ParentAction, ParentEffects>(
+        let subject = PropertyReducer<ParentState, ParentAction>(
             state: \ParentState.child,
-            action: ActionBinding(ParentAction.child),
-            effects: \ParentEffects.child) {
+            action: ActionBinding(ParentAction.child)) {
                 OptionalReducer {
                     child
                 }
@@ -61,13 +47,10 @@ final class OptionalReducerTests: XCTestCase {
         // Verify the reducer
         var state = ParentState(child: ChildState(value: "idle"))
         let dependencies = DependencyScope()
-        let effects = ParentEffects(loadAtIndex: LoadAtIndexEffect.makeDefault(with: dependencies),
-                                    save: SaveEffect.makeDefault(with: dependencies))
         let sideEffects = SideEffectsContainer<ParentAction>(dependencyScope: dependencies)
         subject.reduce(
             &state,
             action: .child(.save("thing")),
-            effects: effects,
             sideEffects: sideEffects.eraseToAnySideEffects()
         )
         

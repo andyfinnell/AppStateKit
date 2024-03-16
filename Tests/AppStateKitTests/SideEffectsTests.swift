@@ -3,37 +3,26 @@ import XCTest
 @testable import AppStateKit
 
 final class SideEffectsTests: XCTestCase {
-    
-    struct Effects {
-        let loadAtIndex: Effect<String, Never, Int>
-        let save: Effect<Void, Never, Int, String>
-    }
-        
+            
     enum Action: Hashable {
         case loaded(String)
         case saved
         case child(ChildAction)
     }
         
-    struct ChildEffects {
-        let update: Effect<String, Never, Int, String>
-    }
-
     enum ChildAction: Hashable {
         case updated(String)
     }
     
     func testParallelEffects() async {
         let dependencies = DependencyScope()
-        let effects = Effects(loadAtIndex: LoadAtIndexEffect.makeDefault(with: dependencies),
-                              save: SaveEffect.makeDefault(with: dependencies))
         let subject = SideEffectsContainer<Action>(dependencyScope: dependencies)
         let sideEffects = subject.eraseToAnySideEffects()
         
-        sideEffects.perform(effects.loadAtIndex, with: 4) {
+        sideEffects.perform(\.loadAtIndex, with: 4) {
             .loaded($0)
         }
-        sideEffects.perform(effects.save, with: 3, "my content") {
+        sideEffects.perform(\.save, with: 3, "my content") {
             .saved
         }
                 
@@ -52,23 +41,19 @@ final class SideEffectsTests: XCTestCase {
     
     func testCombinedEffects() async {
         let dependencies = DependencyScope()
-        let effects = Effects(loadAtIndex: LoadAtIndexEffect.makeDefault(with: dependencies),
-                              save: SaveEffect.makeDefault(with: dependencies))
         let subject = SideEffectsContainer<Action>(dependencyScope: dependencies)
         
         let sideEffects = subject.eraseToAnySideEffects()
-        sideEffects.perform(effects.loadAtIndex, with: 4) {
+        sideEffects.perform(\.loadAtIndex, with: 4) {
             .loaded($0)
         }
-        sideEffects.perform(effects.save, with: 3, "my content") {
+        sideEffects.perform(\.save, with: 3, "my content") {
             .saved
         }
 
-        let childEffects = ChildEffects(update: UpdateEffect.makeDefault(with: dependencies))
-
         let childSubject = sideEffects.map { Action.child($0) }
         
-        childSubject.perform(childEffects.update, with: 2, "frank") {
+        childSubject.perform(\.update, with: 2, "frank") {
             .updated($0)
         }
                 

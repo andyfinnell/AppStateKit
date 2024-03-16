@@ -1,14 +1,14 @@
 import Foundation
 
 public protocol CompositeReducer: Reducer {
-    associatedtype Body: Reducer<State, Action, Effects>
+    associatedtype Body: Reducer<State, Action>
     
     @ReducerBuilder
     var body: Body { get }
 }
 
 public extension CompositeReducer {
-    func reduce(_ state: inout State, action: Action, effects: Effects, sideEffects: AnySideEffects<Action>)  {
-        body.reduce(&state, action: action, effects: effects, sideEffects: sideEffects)
+    func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action>)  {
+        body.reduce(&state, action: action, sideEffects: sideEffects)
     }
 }

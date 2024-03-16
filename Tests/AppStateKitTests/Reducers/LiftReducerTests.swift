@@ -6,16 +6,7 @@ final class LiftReducerTests: XCTestCase {
     enum ParentAction: Extractable, Hashable {
         case child(ChildAction)
     }
-        
-    struct ParentEffects {
-        let loadAtIndex: Effect<String, Never, Int>
-        let save: Effect<Void, Never, Int, String>
-        
-        var child: ChildEffects {
-            ChildEffects(save: save)
-        }
-    }
-    
+            
     struct ChildState: Equatable {
         var value: String
     }
@@ -24,18 +15,14 @@ final class LiftReducerTests: XCTestCase {
         case save(String)
         case saved
     }
-
-    struct ChildEffects {
-        let save: Effect<Void, Never, Int, String>
-    }
     
     func testLift() async {
-        let child = AnonymousReducer<ChildState, ChildAction, ChildEffects> { state, action, effects, sideEffects in
+        let child = AnonymousReducer<ChildState, ChildAction> { state, action, sideEffects in
             switch action {
             case let .save(value):
                 state.value = value
                 
-                sideEffects.perform(effects.save, with: 0, value) { _ in
+                sideEffects.perform(\.save, with: 0, value) { _ in
                     ChildAction.saved
                 }
                 
@@ -44,8 +31,7 @@ final class LiftReducerTests: XCTestCase {
             }
         }
         
-        let subject = LiftReducer(action: ActionBinding(ParentAction.child),
-                                  effects: \ParentEffects.child) {
+        let subject = LiftReducer(action: ActionBinding(ParentAction.child)) {
             child
         }
         
@@ -53,13 +39,10 @@ final class LiftReducerTests: XCTestCase {
         // Verify the reducer
         var state = ChildState(value: "idle")
         let dependencies = DependencyScope()
-        let effects = ParentEffects(loadAtIndex: LoadAtIndexEffect.makeDefault(with: dependencies),
-                                    save: SaveEffect.makeDefault(with: dependencies))
         let sideEffects = SideEffectsContainer<ParentAction>(dependencyScope: dependencies)
         subject.reduce(
             &state,
             action: ParentAction.child(.save("thing")),
-            effects: effects,
             sideEffects: sideEffects.eraseToAnySideEffects()
         )
         

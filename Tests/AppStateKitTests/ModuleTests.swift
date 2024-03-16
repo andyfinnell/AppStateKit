@@ -12,9 +12,7 @@ struct CounterModule: Module {
         case increment
         case decrement
     }
-    
-    struct Effects {}
-    
+        
     @StateObject var store: ViewStore<State, Action>
         
     var body: some View {
@@ -39,7 +37,7 @@ struct CounterModule: Module {
         }
     }
     
-    func reduce(_ state: inout State, action: Action, effects: Effects, sideEffects: AnySideEffects<Action>) {
+    func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action>) {
         switch action {
         case .decrement:
             state.count -= 1
