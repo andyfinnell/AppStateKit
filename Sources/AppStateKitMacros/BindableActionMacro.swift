@@ -3,6 +3,8 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
 
+// TODO: do we even need this anymore?
+
 public enum BindableActionMacro: MemberMacro {
     public static func expansion(
         of node: AttributeSyntax,

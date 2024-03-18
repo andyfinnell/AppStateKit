@@ -1,0 +1,270 @@
+import SwiftSyntax
+import SwiftSyntaxBuilder
+
+struct ComponentReducerCodegen {
+    static func codegen(from component: Component) -> DeclSyntax? {
+        let cases = component.actions.map {
+            generateReduceAction(from: $0)
+        }.joined(separator: "\n")
+        
+        let reduceDecl = """
+            static func reduce(_ state: inout State, action: Action, sideEffects: SideEffects<Action>) {
+                switch action {
+                \(cases)
+                }
+            }
+            """
+        
+        return DeclSyntax(stringLiteral: reduceDecl)
+    }
+}
+
+private extension ComponentReducerCodegen {
+    static func generateReduceAction(from action: Action) -> String {
+        if let composition = action.composition {
+            return generateReduceComposedAction(from: action, with: composition)
+        } else {
+            return generateReduceLocalAction(from: action)
+        }
+    }
+
+    enum Accessor {
+        case action
+        case index
+        case key
+    }
+    
+    static func actionExtractionParameters(_ composition: Composition) -> [Accessor] {
+        var current: Composition? = composition
+        var accessors = [Accessor]()
+        while let c = current {
+            switch c {
+            case let .array(element):
+                accessors.insert(.index, at: 0)
+                current = element
+            case let .dictionary(key: _, value: value):
+                accessors.insert(.key, at: 0)
+                current = value
+            case let .property(_, value):
+                current = value
+            case let .optional(wrapped):
+                current = wrapped
+            case .named:
+                accessors.insert(.action, at: 0)
+                current = nil // stop here
+            }
+        }
+        return accessors
+    }
+    
+    enum TypeKind {
+        case array
+        case dictionary
+        case optional
+        case property
+    }
+    
+    struct Dereference {
+        let segment: String
+        let join: String
+        let typeKind: TypeKind
+    }
+    
+    static func generateDereference(for composition: Composition) -> [Dereference] {
+        var dereferences = [Dereference]()
+        var current: Composition? = composition
+        while let c = current {
+            switch c {
+            case let .array(element):
+                dereferences.append(Dereference(
+                    segment: "[innerIndex]",
+                    join: "",
+                    typeKind: .array
+                ))
+                current = element // stop as soon as we hit the array
+            case let .dictionary(key: _, value: value):
+                dereferences.append(Dereference(
+                    segment: "[innerKey]",
+                    join: "?",
+                    typeKind: .dictionary
+                ))
+                current = value
+            case let .property(name, value):
+                dereferences.append(Dereference(
+                    segment: "state.\(name)",
+                    join: "",
+                    typeKind: .property
+                ))
+                current = value
+            case let .optional(wrapped):
+                dereferences.append(Dereference(
+                    segment: "",
+                    join: "?",
+                    typeKind: .optional
+                ))
+                current = wrapped
+            case .named:
+                current = nil // stop here
+            }
+        }
+        return dereferences
+    }
+    
+    static func generateBoundsCheck(for dereference: [Dereference]) -> [String] {
+        var hasArray = false
+        var derefText = ""
+        for (i, segment) in dereference.enumerated() {
+            if segment.typeKind == .array {
+                hasArray = true
+                break
+            }
+
+            derefText += segment.segment
+            if i != (dereference.count - 1) {
+                derefText += segment.join
+            }
+        }
+        
+        guard hasArray else {
+            return []
+        }
+        
+        return [
+            "innerIndex >= \(derefText).startIndex",
+            "innerIndex < \(derefText).endIndex",
+        ]
+    }
+    
+    static func generateStateExtraction(for dereference: [Dereference]) -> (String, needsCopy: Bool) {
+        var needsCopy = false
+        var derefText = ""
+        for (i, segment) in dereference.enumerated() {
+            switch segment.typeKind {
+            case .array, .property:
+                break
+            case .dictionary, .optional:
+                needsCopy = true
+            }
+
+            derefText += segment.segment
+            if i != (dereference.count - 1) {
+                derefText += segment.join
+            }
+        }
+        
+        return (derefText, needsCopy: needsCopy)
+    }
+    
+    static func generateActionCompositionClosure(for action: Action, accessors: [Accessor]) -> String {
+        let compositionClosure: String
+        if accessors.count == 1 {
+            compositionClosure = "(Action.\(action.label))"
+        } else {
+            let tupleValues = accessors.map {
+                switch $0 {
+                case .action:
+                    return "$0"
+                case .index:
+                    return "index: innerIndex"
+                case .key:
+                    return "key: innerKey"
+                }
+            }.joined(separator: ", ")
+            compositionClosure = " {\n        Action.\(action.label)(\(tupleValues))\n    }\n"
+        }
+        return compositionClosure
+    }
+
+    static func childModuleName(_ composition: Composition) -> String {
+        switch composition {
+        case let .array(element):
+            return childModuleName(element)
+        case let .dictionary(key: _, value: value):
+            return childModuleName(value)
+        case let .property(_, value):
+            return childModuleName(value)
+        case let .optional(wrapped):
+            return childModuleName(wrapped)
+        case let .named(typeDecl):
+            return typeDecl.description
+        }
+    }
+
+    static func generateCaseClauseParameters(parameters: [Parameter], accessors: [Accessor]) -> String {
+        zip(parameters, accessors).map { parameter, accessor in
+            let valueName: String
+            switch accessor {
+            case .action:
+                valueName = "innerAction"
+            case .index:
+                valueName = "innerIndex"
+            case .key:
+                valueName = "innerKey"
+            }
+            if let label = parameter.label {
+                return "\(label): \(valueName)"
+            } else {
+                return valueName
+            }
+        }.joined(separator: ", ")
+    }
+    
+    static func generateReduceComposedAction(from action: Action, with composition: Composition) -> String {
+        let accessors = actionExtractionParameters(composition)
+        let caseParameters = generateCaseClauseParameters(parameters: action.parameters, accessors: accessors)
+        let dereference = generateDereference(for: composition)
+        let arrayBoundsCheck = generateBoundsCheck(for: dereference)
+        let (innerStateExtract, stateNeedsCopy) = generateStateExtraction(for: dereference)
+        let innerStateLet = stateNeedsCopy ? "let innerState = \(innerStateExtract)" : nil
+        let guardClauses = (
+            arrayBoundsCheck
+            + (innerStateLet.map { [$0] } ?? [])
+        ).joined(separator: ", ")
+        let guardStatement = guardClauses.isEmpty ? "" : "guard \(guardClauses) else {\n        return\n    }"
+        
+        let actionComposition = generateActionCompositionClosure(for: action, accessors: accessors)
+        let innerStateDeref = stateNeedsCopy ? "innerState" : innerStateExtract
+        let copyStateBack = stateNeedsCopy ? "\(innerStateExtract) = innerState\n" : ""
+        let childModule = childModuleName(composition)
+        
+        let definition = """
+            case let .\(action.label)(\(caseParameters)):
+                \(guardStatement)
+                let innerSideEffects = sideEffects.map\(actionComposition)
+                \(childModule).reduce(
+                    &\(innerStateDeref),
+                    action: innerAction,
+                    sideEffects: innerSideEffects
+                )
+                \(copyStateBack)
+            """
+        
+        return definition
+    }
+    
+    static func generateReduceLocalAction(from action: Action) -> String {
+        let parameters = action.parameters.enumerated().map { i, parameter in
+            if let label = parameter.label {
+                return "\(label): \(label)"
+            } else {
+                return "p\(i)"
+            }
+        }.joined(separator: ", ")
+
+        var text: String
+        if action.parameters.isEmpty {
+            text = "case .\(action.label):\n"
+        } else {
+            text = "case let .\(action.label)(\(parameters)):\n"
+        }
+        let arguments: String
+        if action.parameters.isEmpty {
+            arguments = ""
+        } else {
+            arguments = ", \(parameters)"
+        }
+        text += "\(action.label)(&state, sideEffects: sideEffects\(arguments))\n"
+        return text
+    }
+
+}

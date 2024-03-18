@@ -2,6 +2,7 @@ import Foundation
 import Combine
 import SwiftUI
 
+// TODO: how to use @Observable?
 @MainActor
 @dynamicMemberLookup
 public final class ViewStore<State, Action>: ObservableObject {
