@@ -36,7 +36,7 @@ private extension ComponentParser {
                 parameters: parametersFromComposition(innerComposition),
                 composition: composition)
             
-        case .array, .dictionary, .named, .optional:
+        case .array, .dictionary, .named, .optional, .identifiableArray:
             return nil
         }
     }
@@ -51,6 +51,10 @@ private extension ComponentParser {
         case let .array(elementComposition):
             return parametersFromComposition(elementComposition) + [
                 Parameter(label: "index", type: identifierType("Int"))
+            ]
+        case let .identifiableArray(id: id, value: valueComposition):
+            return parametersFromComposition(valueComposition) + [
+                Parameter(label: "id", type: id)
             ]
         case let .dictionary(key: key, value: valueComposition):
             return parametersFromComposition(valueComposition) + [
@@ -105,7 +109,15 @@ private extension ComponentParser {
     }
     
     static func computeComposition(from typeDecl: TypeSyntax) -> Composition? {
-        if let memberType = typeDecl.as(MemberTypeSyntax.self) {
+        if let identifierType = typeDecl.as(IdentifierTypeSyntax.self) {
+            if let elementType = extractParameterType(identifierType, ifTypeEquals: "IdentifiableArray"),
+               let wrapped = computeComposition(from: elementType) {
+                let idType = memberType("ID", of: elementType)
+                return .identifiableArray(id: idType, value: wrapped)
+            } else {
+                return nil
+            }
+        } else if let memberType = typeDecl.as(MemberTypeSyntax.self) {
             if memberType.name.text == "State" {
                 return .named(memberType.baseType)
             } else {
@@ -203,8 +215,27 @@ private extension ComponentParser {
             return false
         }
         
-        guard let identifier = parameter.type.as(IdentifierTypeSyntax.self),
-              identifier.name.text == "AnySideEffects" else {
+        return doesType(
+            parameter.type,
+            haveName: "AnySideEffects",
+            withOneTypeParameter: "Action"
+        )
+    }
+
+    static func extractParameterType(_ identifier: IdentifierTypeSyntax, ifTypeEquals typename: String) -> TypeSyntax? {
+        guard let generics = identifier.genericArgumentClause,
+              let firstArgument = generics.arguments.first,
+              generics.arguments.count == 1,
+              identifier.name.text == typename else {
+            return nil
+        }
+
+        return firstArgument.argument
+    }
+    
+    static func doesType(_ type: TypeSyntax, haveName typename: String, withOneTypeParameter parameterTypename: String) -> Bool {
+        guard let identifier = type.as(IdentifierTypeSyntax.self),
+              identifier.name.text == typename else {
             return false
         }
 
@@ -215,11 +246,10 @@ private extension ComponentParser {
         }
         
         guard let argumentIdentifier = firstArgument.argument.as(IdentifierTypeSyntax.self),
-              argumentIdentifier.name.text == "Action" else {
+              argumentIdentifier.name.text == parameterTypename else {
             return false
         }
         
         return true
     }
-
 }

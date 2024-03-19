@@ -32,6 +32,7 @@ private extension ComponentReducerCodegen {
         case action
         case index
         case key
+        case id
     }
     
     static func actionExtractionParameters(_ composition: Composition) -> [Accessor] {
@@ -44,6 +45,9 @@ private extension ComponentReducerCodegen {
                 current = element
             case let .dictionary(key: _, value: value):
                 accessors.insert(.key, at: 0)
+                current = value
+            case let .identifiableArray(id: _, value: value):
+                accessors.insert(.id, at: 0)
                 current = value
             case let .property(_, value):
                 current = value
@@ -95,6 +99,8 @@ private extension ComponentReducerCodegen {
                     return "index: innerIndex"
                 case .key:
                     return "key: innerKey"
+                case .id:
+                    return "id: innerID"
                 }
             }.joined(separator: ", ")
             compositionClosure = " {\n        Action.\(action.label)(\(tupleValues))\n    }\n"
@@ -107,6 +113,8 @@ private extension ComponentReducerCodegen {
         case let .array(element):
             return childModuleName(element)
         case let .dictionary(key: _, value: value):
+            return childModuleName(value)
+        case let .identifiableArray(id: _, value: value):
             return childModuleName(value)
         case let .property(_, value):
             return childModuleName(value)
@@ -127,6 +135,8 @@ private extension ComponentReducerCodegen {
                 valueName = "innerIndex"
             case .key:
                 valueName = "innerKey"
+            case .id:
+                valueName = "innerID"
             }
             if let label = parameter.label {
                 return "\(label): \(valueName)"
@@ -139,7 +149,12 @@ private extension ComponentReducerCodegen {
     static func generateReduceComposedAction(from action: Action, with composition: Composition) -> String {
         let accessors = actionExtractionParameters(composition)
         let caseParameters = generateCaseClauseParameters(parameters: action.parameters, accessors: accessors)
-        let dereferenceGenerator = DereferenceGenerator(keyName: "innerKey", indexName: "innerIndex", stateName: "state")
+        let dereferenceGenerator = DereferenceGenerator(
+            keyName: "innerKey",
+            indexName: "innerIndex",
+            idName: "innerID",
+            stateName: "state"
+        )
         let dereference = dereferenceGenerator.generate(for: composition)
         let arrayBoundsCheck = generateBoundsCheck(for: dereference)
         let (innerStateExtract, stateNeedsCopy) = dereferenceGenerator.generateStateExtraction(for: dereference)

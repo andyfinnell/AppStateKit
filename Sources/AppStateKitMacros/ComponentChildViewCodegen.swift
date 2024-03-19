@@ -13,6 +13,7 @@ private extension ComponentChildViewCodegen {
     enum Accessor {
         case key(TypeSyntax)
         case index
+        case id(TypeSyntax)
     }
     
     struct Extraction {
@@ -34,6 +35,9 @@ private extension ComponentChildViewCodegen {
                 current = element
             case let .dictionary(key: keyType, value: value):
                 accessors.insert(.key(keyType), at: 0)
+                current = value
+            case let .identifiableArray(id: idType, value: value):
+                accessors.insert(.id(idType), at: 0)
                 current = value
             case let .property(propertyName, value):
                 name = propertyName
@@ -61,6 +65,8 @@ private extension ComponentChildViewCodegen {
                 parameters.append("at index: Int")
             case let .key(keyType):
                 parameters.append("forKey key: \(keyType)")
+            case let .id(idType):
+                parameters.append("byID id: \(idType)")
             }
         }
         guard !parameters.isEmpty else {
@@ -72,7 +78,8 @@ private extension ComponentChildViewCodegen {
     static func generateOptionalIfLet(_ composition: Composition, content: (String?) -> String) -> String {
         let dereferenceGenerator = DereferenceGenerator(
             keyName: "key",
-            indexName: "index",
+            indexName: "index", 
+            idName: "id",
             stateName: "engine.state"
         )
         let dereference = dereferenceGenerator.generate(for: composition)
@@ -100,6 +107,8 @@ private extension ComponentChildViewCodegen {
                     return "index: index"
                 case .key:
                     return "key: key"
+                case .id:
+                    return "id: id"
                 }
             }).joined(separator: ", ")
             compositionClosure = "{ Action.\(extraction.name)(\(tupleValues)) }"
@@ -115,6 +124,7 @@ private extension ComponentChildViewCodegen {
         let dereferenceGenerator = DereferenceGenerator(
             keyName: "key",
             indexName: "index",
+            idName: "id",
             stateName: "$0"
         )
         let dereference = dereferenceGenerator.generate(for: composition)
@@ -144,7 +154,6 @@ private extension ComponentChildViewCodegen {
         let parameterList = generateParameterList(extraction)
         
         // TODO: can we auto-annotate `view()` as @MainActor?
-        // TODO: We need to anchor the ViewEngines somehow so they stay in memory
         
         let body = generateOptionalIfLet(composition) { fallbackState in
             generateCallToChildView(composition: composition, extraction: extraction, fallbackState: fallbackState)

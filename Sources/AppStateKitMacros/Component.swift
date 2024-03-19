@@ -4,6 +4,7 @@ indirect enum Composition {
     case property(String, Composition)
     case optional(Composition)
     case array(Composition)
+    case identifiableArray(id: TypeSyntax, value: Composition)
     case dictionary(key: TypeSyntax, value: Composition)
     case named(TypeSyntax)
 }

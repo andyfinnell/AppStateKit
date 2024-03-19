@@ -4,7 +4,8 @@ import SwiftUI
 
 @Component
 enum CounterComponent {
-    struct State: Equatable {
+    struct State: Equatable, Identifiable {
+        let id: UUID
         var count: Int
         var countText: String
     }
@@ -71,6 +72,21 @@ enum CounterDictionaryComponent {
     static func view(_ engine: ViewEngine<State, Action>) -> some View {
         ForEach(engine.counters.keys.sorted(), id: \.self) { key in
             counters(engine, forKey: key)
+        }
+    }
+}
+
+@Component
+enum CounterIdentifiableComponent {
+    struct State {
+        var name: String
+        var counters: IdentifiableArray<CounterComponent.State>
+    }
+        
+    @MainActor
+    static func view(_ engine: ViewEngine<State, Action>) -> some View {
+        ForEach(engine.counters.map { $0.id }, id: \.self) { id in
+            counters(engine, byID: id)
         }
     }
 }

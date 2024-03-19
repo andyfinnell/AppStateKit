@@ -1,6 +1,7 @@
 
 enum TypeKind {
     case array
+    case identifiableArray
     case dictionary
     case optional
     case property
@@ -15,6 +16,7 @@ struct Dereference {
 struct DereferenceGenerator {
     let keyName: String
     let indexName: String
+    let idName: String
     let stateName: String
     
     func generate(for composition: Composition) -> [Dereference] {
@@ -34,6 +36,13 @@ struct DereferenceGenerator {
                     segment: "[\(keyName)]",
                     join: "?",
                     typeKind: .dictionary
+                ))
+                current = value
+            case let .identifiableArray(id: _, value: value):
+                dereferences.append(Dereference(
+                    segment: "[byID: \(idName)]",
+                    join: "?",
+                    typeKind: .identifiableArray
                 ))
                 current = value
             case let .property(name, value):
@@ -64,7 +73,7 @@ struct DereferenceGenerator {
             switch segment.typeKind {
             case .array, .property:
                 break
-            case .dictionary, .optional:
+            case .dictionary, .optional, .identifiableArray:
                 needsCopy = true
             }
 
@@ -76,5 +85,4 @@ struct DereferenceGenerator {
         
         return (derefText, needsCopy: needsCopy)
     }
-
 }

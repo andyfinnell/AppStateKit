@@ -509,6 +509,118 @@ final class ComponentMacroTests: XCTestCase {
         #endif
     }
 
+    func testChildIdentifiableArrayPropertyComponent() throws {
+        #if canImport(AppStateKitMacros)
+        assertMacroExpansion(
+            """
+            @Component
+            enum MyFeature {
+                struct State {
+                    var name: String
+                    var children: IdentifiableArray<ChildFeature.State>
+                }
+                
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
+                    state.name = newName
+                }
+            
+                static func view(_ engine: ViewEngine<State, Action>) -> some View {
+                    VStack {
+                        Text(engine.name)
+            
+                        ForEach(engine.children.map({ $0.id }), id: \\.self) { id in
+                            children(engine, byID: id)
+                        }
+                    }
+                }
+            }
+            """,
+            expandedSource: """
+            
+            enum MyFeature {
+                struct State {
+                    var name: String
+                    var children: IdentifiableArray<ChildFeature.State>
+                }
+                
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
+                    state.name = newName
+                }
+            
+                static func view(_ engine: ViewEngine<State, Action>) -> some View {
+                    VStack {
+                        Text(engine.name)
+            
+                        ForEach(engine.children.map({ $0.id }), id: \\.self) { id in
+                            children(engine, byID: id)
+                        }
+                    }
+                }
+
+                enum Action: Equatable {
+                    case updateName(newName: String)
+                    case children(ChildFeature.Action, id: ChildFeature.State.ID)
+                }
+            
+                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action>) {
+                    switch action {
+                    case let .updateName(newName: newName):
+                        updateName(&state, sideEffects: sideEffects, newName: newName)
+            
+                    case let .children(innerAction, id: innerID):
+                        guard var innerState = state.children[byID: innerID] else {
+                            return
+                        }
+                        let innerSideEffects = sideEffects.map {
+                            Action.children($0, id: innerID)
+                        }
+            
+                        ChildFeature.reduce(
+                            &innerState,
+                            action: innerAction,
+                            sideEffects: innerSideEffects
+                        )
+                        state.children[byID: innerID] = innerState
+            
+                    }
+                }
+            
+                struct EngineView: View {
+                    @SwiftUI.State var engine: ViewEngine<State, Action>
+            
+                    var body: some View {
+                        view(engine)
+                    }
+                }
+
+                @MainActor
+                @ViewBuilder
+                private static func children(_ engine: ViewEngine<State, Action>, byID id: ChildFeature.State.ID) -> some View {
+                    if let innerState = engine.state.children[byID: id] {
+                        ChildFeature.EngineView(
+                            engine: engine.map(
+                                state: {
+                                    $0.children[byID: id] ?? innerState
+                                },
+                                action: {
+                                    Action.children($0, id: id)
+                                }
+                            ).view()
+                        )
+                    }
+                }
+            }
+            
+            extension MyFeature: Component {
+            }
+            """,
+            macros: testMacros
+        )
+        #else
+        throw XCTSkip("macros are only supported when running tests for the host platform")
+        #endif
+    }
+
     func testChildOptionalPropertyComponent() throws {
         #if canImport(AppStateKitMacros)
         assertMacroExpansion(
