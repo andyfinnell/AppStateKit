@@ -50,3 +50,26 @@ extension ComponentMacro: ExtensionMacro {
         ].compactMap { $0 }
     }
 }
+
+extension ComponentMacro: MemberAttributeMacro {
+    public static func expansion(
+        of node: AttributeSyntax,
+        attachedTo declaration: some DeclGroupSyntax,
+        providingAttributesFor member: some DeclSyntaxProtocol,
+        in context: some MacroExpansionContext
+    ) throws -> [AttributeSyntax] {
+        guard ComponentParser.isViewMethod(member) else {
+            return []
+        }
+        
+        let attr: AttributeSyntax = """
+            @MainActor
+            """
+        
+        return [
+            attr
+        ]
+    }
+    
+    
+}

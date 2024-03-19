@@ -55,6 +55,7 @@ final class ComponentMacroTests: XCTestCase {
                 private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
                     state.name = newName
                 }
+                @MainActor
             
                 static func view(_ engine: ViewEngine<State, Action>) -> some View {
                     HStack {
@@ -146,6 +147,7 @@ final class ComponentMacroTests: XCTestCase {
                     state.count += 1
                     state.countText = "\\(state.count)"
                 }
+                @MainActor
             
                 static func view(_ engine: ViewEngine<State, Action>) -> some View {
                     HStack {
@@ -225,6 +227,7 @@ final class ComponentMacroTests: XCTestCase {
                 private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
                     state.name = newName
                 }
+                @MainActor
             
                 static func view(_ engine: ViewEngine<State, Action>) -> some View {
                     VStack {
@@ -325,7 +328,8 @@ final class ComponentMacroTests: XCTestCase {
                 private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
                     state.name = newName
                 }
-
+                @MainActor
+            
                 static func view(_ engine: ViewEngine<State, Action>) -> some View {
                     VStack {
                         Text(engine.name)
@@ -434,7 +438,8 @@ final class ComponentMacroTests: XCTestCase {
                 private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
                     state.name = newName
                 }
-
+                @MainActor
+            
                 static func view(_ engine: ViewEngine<State, Action>) -> some View {
                     VStack {
                         Text(engine.name)
@@ -546,6 +551,7 @@ final class ComponentMacroTests: XCTestCase {
                 private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
                     state.name = newName
                 }
+                @MainActor
             
                 static func view(_ engine: ViewEngine<State, Action>) -> some View {
                     VStack {
@@ -656,7 +662,8 @@ final class ComponentMacroTests: XCTestCase {
                 private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
                     state.name = newName
                 }
-
+                @MainActor
+            
                 static func view(_ engine: ViewEngine<State, Action>) -> some View {
                     VStack {
                         Text(engine.name)

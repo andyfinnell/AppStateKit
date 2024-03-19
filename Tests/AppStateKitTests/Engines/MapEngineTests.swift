@@ -30,7 +30,6 @@ final class MapEngineTests: XCTestCase {
             
         }
 
-        @MainActor
         static func view(_ engine: ViewEngine<State, Action>) -> some View {
             VStack {
                 Text(engine.value)
@@ -50,11 +49,9 @@ final class MapEngineTests: XCTestCase {
             
         }
 
-        @MainActor
         static func view(_ engine: ViewEngine<State, Action>) -> some View {
             Text(engine.isOn ? "On" : "Off")
         }
-
     }
     
     private var parentEngine: FakeEngine<ParentComponent.State, ParentComponent.Action>!

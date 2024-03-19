@@ -20,7 +20,6 @@ enum CounterComponent {
         state.countText = "\(state.count)"
     }
 
-    @MainActor
     static func view(_ engine: ViewEngine<State, Action>) -> some View {
         VStack {
             HStack {
@@ -52,7 +51,6 @@ enum CounterListComponent {
         var counters: [CounterComponent.State]
     }
         
-    @MainActor
     static func view(_ engine: ViewEngine<State, Action>) -> some View {
         ForEach(0..<engine.counters.count) { i in
             counters(engine, at: i)
@@ -68,7 +66,6 @@ enum CounterDictionaryComponent {
         var counters: [String: CounterComponent.State]
     }
         
-    @MainActor
     static func view(_ engine: ViewEngine<State, Action>) -> some View {
         ForEach(engine.counters.keys.sorted(), id: \.self) { key in
             counters(engine, forKey: key)
@@ -83,7 +80,6 @@ enum CounterIdentifiableComponent {
         var counters: IdentifiableArray<CounterComponent.State>
     }
         
-    @MainActor
     static func view(_ engine: ViewEngine<State, Action>) -> some View {
         ForEach(engine.counters.map { $0.id }, id: \.self) { id in
             counters(engine, byID: id)

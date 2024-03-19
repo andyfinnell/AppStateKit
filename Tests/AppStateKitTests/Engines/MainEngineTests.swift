@@ -21,7 +21,6 @@ fileprivate enum TestComponent {
         state.value = value
     }
     
-    @MainActor
     static func view(_ engine: ViewEngine<State, Action>) -> some View {
         Text(engine.value)
     }

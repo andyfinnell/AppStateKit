@@ -18,7 +18,6 @@ final class ViewEngineTests: XCTestCase {
             // nop
         }
         
-        @MainActor
         static func view(_ engine: ViewEngine<State, Action>) -> some View {
             Text(engine.value)
         }

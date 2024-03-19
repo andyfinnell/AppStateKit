@@ -23,6 +23,38 @@ struct ComponentParser {
             actions: actions + compositionActions
         )
     }
+    
+    static func isViewMethod(_ member: some DeclSyntaxProtocol) -> Bool {
+        guard let functionDecl = member.as(FunctionDeclSyntax.self),
+              functionDecl.name.text == "view" else {
+            return false
+        }
+        // needs to be static
+        // needs to take ViewEngine<State, Action> as  parameter
+        // needs to have View return
+        
+        let isStatic = functionDecl.modifiers.contains { declModifier in
+            declModifier.name.text == "static"
+        }
+        guard let parameter = functionDecl.signature.parameterClause.parameters.first,
+              functionDecl.signature.returnClause != nil,
+              functionDecl.signature.parameterClause.parameters.count == 1
+                && functionDecl.signature.effectSpecifiers?.asyncSpecifier == nil
+                && functionDecl.signature.effectSpecifiers?.throwsSpecifier == nil
+                && isStatic else {
+            return false
+        }
+        
+        guard doesType(
+            parameter.type,
+            haveName: "ViewEngine",
+            withOneTypeParameters: "State", "Action"
+        ) else {
+            return false
+        }
+        
+        return true
+    }
 }
 
 private extension ComponentParser {
@@ -218,7 +250,7 @@ private extension ComponentParser {
         return doesType(
             parameter.type,
             haveName: "AnySideEffects",
-            withOneTypeParameter: "Action"
+            withOneTypeParameters: "Action"
         )
     }
 
@@ -232,24 +264,26 @@ private extension ComponentParser {
 
         return firstArgument.argument
     }
-    
-    static func doesType(_ type: TypeSyntax, haveName typename: String, withOneTypeParameter parameterTypename: String) -> Bool {
+        
+    static func doesType(_ type: TypeSyntax, haveName typename: String, withOneTypeParameters parameterTypenames: String...) -> Bool {
         guard let identifier = type.as(IdentifierTypeSyntax.self),
               identifier.name.text == typename else {
             return false
         }
 
         guard let generics = identifier.genericArgumentClause,
-              let firstArgument = generics.arguments.first,
-              generics.arguments.count == 1 else {
+              generics.arguments.count == parameterTypenames.count else {
             return false
         }
         
-        guard let argumentIdentifier = firstArgument.argument.as(IdentifierTypeSyntax.self),
-              argumentIdentifier.name.text == parameterTypename else {
-            return false
+        for (argument, parameterTypename) in zip(generics.arguments, parameterTypenames) {
+            guard let argumentIdentifier = argument.argument.as(IdentifierTypeSyntax.self),
+                  argumentIdentifier.name.text == parameterTypename else {
+                return false
+            }
         }
         
         return true
     }
+
 }
