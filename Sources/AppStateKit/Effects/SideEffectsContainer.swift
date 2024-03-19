@@ -14,7 +14,7 @@ final class SideEffectsContainer<Action> {
         }
     }
 
-    func apply(using send: @escaping (Action) async -> Void) async {
+    func apply(using send: @MainActor @escaping (Action) async -> Void) async {
         await withTaskGroup(of: Void.self) { taskGroup in
             for future in futures {
                 taskGroup.addTask {

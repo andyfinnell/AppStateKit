@@ -8,7 +8,7 @@ struct ComponentActionCodegen {
         }.joined(separator: "\n")
         
         let actionDecl = """
-            enum Action {
+            enum Action: Equatable {
                 \(caseDecls)
             }
             """

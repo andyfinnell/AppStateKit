@@ -8,7 +8,7 @@ struct ComponentReducerCodegen {
         }.joined(separator: "\n")
         
         let reduceDecl = """
-            static func reduce(_ state: inout State, action: Action, sideEffects: SideEffects<Action>) {
+            static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action>) {
                 switch action {
                 \(cases)
                 }
@@ -56,60 +56,7 @@ private extension ComponentReducerCodegen {
         }
         return accessors
     }
-    
-    enum TypeKind {
-        case array
-        case dictionary
-        case optional
-        case property
-    }
-    
-    struct Dereference {
-        let segment: String
-        let join: String
-        let typeKind: TypeKind
-    }
-    
-    static func generateDereference(for composition: Composition) -> [Dereference] {
-        var dereferences = [Dereference]()
-        var current: Composition? = composition
-        while let c = current {
-            switch c {
-            case let .array(element):
-                dereferences.append(Dereference(
-                    segment: "[innerIndex]",
-                    join: "",
-                    typeKind: .array
-                ))
-                current = element // stop as soon as we hit the array
-            case let .dictionary(key: _, value: value):
-                dereferences.append(Dereference(
-                    segment: "[innerKey]",
-                    join: "?",
-                    typeKind: .dictionary
-                ))
-                current = value
-            case let .property(name, value):
-                dereferences.append(Dereference(
-                    segment: "state.\(name)",
-                    join: "",
-                    typeKind: .property
-                ))
-                current = value
-            case let .optional(wrapped):
-                dereferences.append(Dereference(
-                    segment: "",
-                    join: "?",
-                    typeKind: .optional
-                ))
-                current = wrapped
-            case .named:
-                current = nil // stop here
-            }
-        }
-        return dereferences
-    }
-    
+        
     static func generateBoundsCheck(for dereference: [Dereference]) -> [String] {
         var hasArray = false
         var derefText = ""
@@ -134,27 +81,7 @@ private extension ComponentReducerCodegen {
             "innerIndex < \(derefText).endIndex",
         ]
     }
-    
-    static func generateStateExtraction(for dereference: [Dereference]) -> (String, needsCopy: Bool) {
-        var needsCopy = false
-        var derefText = ""
-        for (i, segment) in dereference.enumerated() {
-            switch segment.typeKind {
-            case .array, .property:
-                break
-            case .dictionary, .optional:
-                needsCopy = true
-            }
-
-            derefText += segment.segment
-            if i != (dereference.count - 1) {
-                derefText += segment.join
-            }
-        }
         
-        return (derefText, needsCopy: needsCopy)
-    }
-    
     static func generateActionCompositionClosure(for action: Action, accessors: [Accessor]) -> String {
         let compositionClosure: String
         if accessors.count == 1 {
@@ -212,10 +139,11 @@ private extension ComponentReducerCodegen {
     static func generateReduceComposedAction(from action: Action, with composition: Composition) -> String {
         let accessors = actionExtractionParameters(composition)
         let caseParameters = generateCaseClauseParameters(parameters: action.parameters, accessors: accessors)
-        let dereference = generateDereference(for: composition)
+        let dereferenceGenerator = DereferenceGenerator(keyName: "innerKey", indexName: "innerIndex", stateName: "state")
+        let dereference = dereferenceGenerator.generate(for: composition)
         let arrayBoundsCheck = generateBoundsCheck(for: dereference)
-        let (innerStateExtract, stateNeedsCopy) = generateStateExtraction(for: dereference)
-        let innerStateLet = stateNeedsCopy ? "let innerState = \(innerStateExtract)" : nil
+        let (innerStateExtract, stateNeedsCopy) = dereferenceGenerator.generateStateExtraction(for: dereference)
+        let innerStateLet = stateNeedsCopy ? "var innerState = \(innerStateExtract)" : nil
         let guardClauses = (
             arrayBoundsCheck
             + (innerStateLet.map { [$0] } ?? [])

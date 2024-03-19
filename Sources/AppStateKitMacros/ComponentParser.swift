@@ -204,7 +204,7 @@ private extension ComponentParser {
         }
         
         guard let identifier = parameter.type.as(IdentifierTypeSyntax.self),
-              identifier.name.text == "SideEffects" else {
+              identifier.name.text == "AnySideEffects" else {
             return false
         }
 

@@ -19,8 +19,34 @@ public enum ComponentMacro: MemberMacro {
         let decls: [DeclSyntax?] = [
             ComponentActionCodegen.codegen(from: component),
             ComponentReducerCodegen.codegen(from: component),
-        ]
+            ComponentViewCodegen.codegen(from: component),
+        ] + ComponentChildViewCodegen.codegen(from: component)
         
         return decls.compactMap { $0 }
+    }
+}
+
+extension ComponentMacro: ExtensionMacro {
+    public static func expansion(
+        of node: AttributeSyntax,
+        attachedTo declaration: some DeclGroupSyntax,
+        providingExtensionsOf type: some TypeSyntaxProtocol,
+        conformingTo protocols: [TypeSyntax],
+        in context: some MacroExpansionContext
+    ) throws -> [ExtensionDeclSyntax] {
+        guard let enumDecl = declaration.as(EnumDeclSyntax.self) else {
+            // TODO: emit error that it must be an enum (as namespace)
+            return []
+        }
+
+        let decl: DeclSyntax = """
+            extension \(raw: enumDecl.name.text): Component {}
+            """
+        
+        // TODO: can we extend things like ViewEngine to make Actions look like methods?
+        
+        return [
+            decl.as(ExtensionDeclSyntax.self)
+        ].compactMap { $0 }
     }
 }

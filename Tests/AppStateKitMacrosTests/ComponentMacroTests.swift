@@ -23,12 +23,20 @@ final class ComponentMacroTests: XCTestCase {
                     var score: Int
                 }
             
-                private static func increase(_ state: inout State, sideEffects: SideEffects<Action>) {
+                private static func increase(_ state: inout State, sideEffects: AnySideEffects<Action>) {
                     state.score += 1
                 }
             
-                private static func updateName(_ state: inout State, sideEffects: SideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
                     state.name = newName
+                }
+            
+                static func view(_ engine: ViewEngine<State, Action>) -> some View {
+                    HStack {
+                        Text(engine.name)
+            
+                        Text("\\(engine.score)")
+                    }
                 }
             }
             """,
@@ -40,20 +48,28 @@ final class ComponentMacroTests: XCTestCase {
                     var score: Int
                 }
             
-                private static func increase(_ state: inout State, sideEffects: SideEffects<Action>) {
+                private static func increase(_ state: inout State, sideEffects: AnySideEffects<Action>) {
                     state.score += 1
                 }
             
-                private static func updateName(_ state: inout State, sideEffects: SideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
                     state.name = newName
                 }
             
-                enum Action {
+                static func view(_ engine: ViewEngine<State, Action>) -> some View {
+                    HStack {
+                        Text(engine.name)
+            
+                        Text("\\(engine.score)")
+                    }
+                }
+
+                enum Action: Equatable {
                     case increase
                     case updateName(newName: String)
                 }
             
-                static func reduce(_ state: inout State, action: Action, sideEffects: SideEffects<Action>) {
+                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action>) {
                     switch action {
                     case .increase:
                         increase(&state, sideEffects: sideEffects)
@@ -63,6 +79,17 @@ final class ComponentMacroTests: XCTestCase {
             
                     }
                 }
+            
+                struct EngineView: View {
+                    @SwiftUI.State var engine: ViewEngine<State, Action>
+            
+                    var body: some View {
+                        view(engine)
+                    }
+                }
+            }
+            
+            extension MyFeature: Component {
             }
             """,
             macros: testMacros
@@ -71,7 +98,98 @@ final class ComponentMacroTests: XCTestCase {
         throw XCTSkip("macros are only supported when running tests for the host platform")
         #endif
     }
-    
+
+    func testBasicComponent() throws {
+        #if canImport(AppStateKitMacros)
+        assertMacroExpansion(
+            """
+            @Component
+            enum CounterComponent {
+                struct State: Equatable {
+                    var count: Int
+                    var countText: String
+                }
+                
+                private static func decrement(_ state: inout State, sideEffects: AnySideEffects<Action>) {
+                    state.count -= 1
+                    state.countText = "\\(state.count)"
+                }
+                
+                private static func increment(_ state: inout State, sideEffects: AnySideEffects<Action>) {
+                    state.count += 1
+                    state.countText = "\\(state.count)"
+                }
+            
+                static func view(_ engine: ViewEngine<State, Action>) -> some View {
+                    HStack {
+                        Text("Count:")
+            
+                        Text(engine.countText)
+                    }
+                }
+            }
+            """,
+            expandedSource: """
+            
+            enum CounterComponent {
+                struct State: Equatable {
+                    var count: Int
+                    var countText: String
+                }
+                
+                private static func decrement(_ state: inout State, sideEffects: AnySideEffects<Action>) {
+                    state.count -= 1
+                    state.countText = "\\(state.count)"
+                }
+                
+                private static func increment(_ state: inout State, sideEffects: AnySideEffects<Action>) {
+                    state.count += 1
+                    state.countText = "\\(state.count)"
+                }
+            
+                static func view(_ engine: ViewEngine<State, Action>) -> some View {
+                    HStack {
+                        Text("Count:")
+            
+                        Text(engine.countText)
+                    }
+                }
+            
+                enum Action: Equatable {
+                    case decrement
+                    case increment
+                }
+            
+                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action>) {
+                    switch action {
+                    case .decrement:
+                        decrement(&state, sideEffects: sideEffects)
+            
+                    case .increment:
+                        increment(&state, sideEffects: sideEffects)
+
+                    }
+                }
+            
+                struct EngineView: View {
+                    @SwiftUI.State var engine: ViewEngine<State, Action>
+            
+                    var body: some View {
+                        view(engine)
+                    }
+                }
+            }
+            
+            extension CounterComponent: Component {
+            }
+            """,
+            macros: testMacros
+        )
+        #else
+        throw XCTSkip("macros are only supported when running tests for the host platform")
+        #endif
+    }
+
     func testChildPropertyComponent() throws {
         #if canImport(AppStateKitMacros)
         assertMacroExpansion(
@@ -83,8 +201,16 @@ final class ComponentMacroTests: XCTestCase {
                     var child: ChildFeature.State
                 }
                 
-                private static func updateName(_ state: inout State, sideEffects: SideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
                     state.name = newName
+                }
+            
+                static func view(_ engine: ViewEngine<State, Action>) -> some View {
+                    VStack {
+                        Text(engine.name)
+            
+                        child(engine)
+                    }
                 }
             }
             """,
@@ -96,16 +222,24 @@ final class ComponentMacroTests: XCTestCase {
                     var child: ChildFeature.State
                 }
                 
-                private static func updateName(_ state: inout State, sideEffects: SideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
                     state.name = newName
                 }
             
-                enum Action {
+                static func view(_ engine: ViewEngine<State, Action>) -> some View {
+                    VStack {
+                        Text(engine.name)
+            
+                        child(engine)
+                    }
+                }
+
+                enum Action: Equatable {
                     case updateName(newName: String)
                     case child(ChildFeature.Action)
                 }
             
-                static func reduce(_ state: inout State, action: Action, sideEffects: SideEffects<Action>) {
+                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action>) {
                     switch action {
                     case let .updateName(newName: newName):
                         updateName(&state, sideEffects: sideEffects, newName: newName)
@@ -121,6 +255,30 @@ final class ComponentMacroTests: XCTestCase {
             
                     }
                 }
+            
+                struct EngineView: View {
+                    @SwiftUI.State var engine: ViewEngine<State, Action>
+            
+                    var body: some View {
+                        view(engine)
+                    }
+                }
+
+                @MainActor
+                @ViewBuilder
+                private static func child(_ engine: ViewEngine<State, Action>) -> some View {
+                    ChildFeature.EngineView(
+                        engine: engine.map(
+                            state: {
+                                $0.child
+                            },
+                            action: Action.child
+                        ).view()
+                    )
+                }
+            }
+            
+            extension MyFeature: Component {
             }
             """,
             macros: testMacros
@@ -141,8 +299,18 @@ final class ComponentMacroTests: XCTestCase {
                     var children: [ChildFeature.State]
                 }
                 
-                private static func updateName(_ state: inout State, sideEffects: SideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
                     state.name = newName
+                }
+            
+                static func view(_ engine: ViewEngine<State, Action>) -> some View {
+                    VStack {
+                        Text(engine.name)
+            
+                        ForEach(engine.children.indices) { i in
+                            children(engine, at: i)
+                        }
+                    }
                 }
             }
             """,
@@ -154,16 +322,26 @@ final class ComponentMacroTests: XCTestCase {
                     var children: [ChildFeature.State]
                 }
                 
-                private static func updateName(_ state: inout State, sideEffects: SideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
                     state.name = newName
                 }
+
+                static func view(_ engine: ViewEngine<State, Action>) -> some View {
+                    VStack {
+                        Text(engine.name)
             
-                enum Action {
+                        ForEach(engine.children.indices) { i in
+                            children(engine, at: i)
+                        }
+                    }
+                }
+
+                enum Action: Equatable {
                     case updateName(newName: String)
                     case children(ChildFeature.Action, index: Int)
                 }
             
-                static func reduce(_ state: inout State, action: Action, sideEffects: SideEffects<Action>) {
+                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action>) {
                     switch action {
                     case let .updateName(newName: newName):
                         updateName(&state, sideEffects: sideEffects, newName: newName)
@@ -184,6 +362,32 @@ final class ComponentMacroTests: XCTestCase {
             
                     }
                 }
+            
+                struct EngineView: View {
+                    @SwiftUI.State var engine: ViewEngine<State, Action>
+            
+                    var body: some View {
+                        view(engine)
+                    }
+                }
+
+                @MainActor
+                @ViewBuilder
+                private static func children(_ engine: ViewEngine<State, Action>, at index: Int) -> some View {
+                    ChildFeature.EngineView(
+                        engine: engine.map(
+                            state: {
+                                $0.children[index]
+                            },
+                            action: {
+                                Action.children($0, index: index)
+                            }
+                        ).view()
+                    )
+                }
+            }
+            
+            extension MyFeature: Component {
             }
             """,
             macros: testMacros
@@ -204,8 +408,18 @@ final class ComponentMacroTests: XCTestCase {
                     var children: [String: ChildFeature.State]
                 }
                 
-                private static func updateName(_ state: inout State, sideEffects: SideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
                     state.name = newName
+                }
+            
+                static func view(_ engine: ViewEngine<State, Action>) -> some View {
+                    VStack {
+                        Text(engine.name)
+            
+                        ForEach(engine.children.keys.sorted(), id: \\.self) { key in
+                            children(engine, forKey: key)
+                        }
+                    }
                 }
             }
             """,
@@ -217,22 +431,32 @@ final class ComponentMacroTests: XCTestCase {
                     var children: [String: ChildFeature.State]
                 }
                 
-                private static func updateName(_ state: inout State, sideEffects: SideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
                     state.name = newName
                 }
+
+                static func view(_ engine: ViewEngine<State, Action>) -> some View {
+                    VStack {
+                        Text(engine.name)
             
-                enum Action {
+                        ForEach(engine.children.keys.sorted(), id: \\.self) { key in
+                            children(engine, forKey: key)
+                        }
+                    }
+                }
+
+                enum Action: Equatable {
                     case updateName(newName: String)
                     case children(ChildFeature.Action, key: String)
                 }
             
-                static func reduce(_ state: inout State, action: Action, sideEffects: SideEffects<Action>) {
+                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action>) {
                     switch action {
                     case let .updateName(newName: newName):
                         updateName(&state, sideEffects: sideEffects, newName: newName)
             
                     case let .children(innerAction, key: innerKey):
-                        guard let innerState = state.children[innerKey] else {
+                        guard var innerState = state.children[innerKey] else {
                             return
                         }
                         let innerSideEffects = sideEffects.map {
@@ -248,6 +472,34 @@ final class ComponentMacroTests: XCTestCase {
             
                     }
                 }
+            
+                struct EngineView: View {
+                    @SwiftUI.State var engine: ViewEngine<State, Action>
+            
+                    var body: some View {
+                        view(engine)
+                    }
+                }
+
+                @MainActor
+                @ViewBuilder
+                private static func children(_ engine: ViewEngine<State, Action>, forKey key: String) -> some View {
+                    if let innerState = engine.state.children[key] {
+                        ChildFeature.EngineView(
+                            engine: engine.map(
+                                state: {
+                                    $0.children[key] ?? innerState
+                                },
+                                action: {
+                                    Action.children($0, key: key)
+                                }
+                            ).view()
+                        )
+                    }
+                }
+            }
+            
+            extension MyFeature: Component {
             }
             """,
             macros: testMacros
@@ -268,8 +520,16 @@ final class ComponentMacroTests: XCTestCase {
                     var child: ChildFeature.State?
                 }
                 
-                private static func updateName(_ state: inout State, sideEffects: SideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
                     state.name = newName
+                }
+            
+                static func view(_ engine: ViewEngine<State, Action>) -> some View {
+                    VStack {
+                        Text(engine.name)
+            
+                        child(engine)
+                    }
                 }
             }
             """,
@@ -281,22 +541,30 @@ final class ComponentMacroTests: XCTestCase {
                     var child: ChildFeature.State?
                 }
                 
-                private static func updateName(_ state: inout State, sideEffects: SideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
                     state.name = newName
                 }
+
+                static func view(_ engine: ViewEngine<State, Action>) -> some View {
+                    VStack {
+                        Text(engine.name)
             
-                enum Action {
+                        child(engine)
+                    }
+                }
+
+                enum Action: Equatable {
                     case updateName(newName: String)
                     case child(ChildFeature.Action)
                 }
             
-                static func reduce(_ state: inout State, action: Action, sideEffects: SideEffects<Action>) {
+                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action>) {
                     switch action {
                     case let .updateName(newName: newName):
                         updateName(&state, sideEffects: sideEffects, newName: newName)
             
                     case let .child(innerAction):
-                        guard let innerState = state.child else {
+                        guard var innerState = state.child else {
                             return
                         }
                         let innerSideEffects = sideEffects.map(Action.child)
@@ -309,6 +577,32 @@ final class ComponentMacroTests: XCTestCase {
             
                     }
                 }
+            
+                struct EngineView: View {
+                    @SwiftUI.State var engine: ViewEngine<State, Action>
+            
+                    var body: some View {
+                        view(engine)
+                    }
+                }
+
+                @MainActor
+                @ViewBuilder
+                private static func child(_ engine: ViewEngine<State, Action>) -> some View {
+                    if let innerState = engine.state.child {
+                        ChildFeature.EngineView(
+                            engine: engine.map(
+                                state: {
+                                    $0.child ?? innerState
+                                },
+                                action: Action.child
+                            ).view()
+                        )
+                    }
+                }
+            }
+            
+            extension MyFeature: Component {
             }
             """,
             macros: testMacros

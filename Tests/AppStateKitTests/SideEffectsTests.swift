@@ -26,16 +26,11 @@ final class SideEffectsTests: XCTestCase {
             .saved
         }
                 
-        let actions = AsyncSet<Action>()
-        await subject.apply(using: {
-            await actions.insert($0)
-        })
-        
+        let actual = await testMaterializeEffects(subject)
         let expected = Set<Action>([
             .loaded("loaded index 4"),
             .saved
         ])
-        let actual = await actions.set
         XCTAssertEqual(actual, expected)
     }
     
@@ -57,17 +52,12 @@ final class SideEffectsTests: XCTestCase {
             .updated($0)
         }
                 
-        let actions = AsyncSet<Action>()
-        await subject.apply(using: {
-            await actions.insert($0)
-        })
-
+        let actual = await testMaterializeEffects(subject)
         let expected = Set<Action>([
             .loaded("loaded index 4"),
             .saved,
             .child(.updated("update frank to 2"))
         ])
-        let actual = await actions.set
         XCTAssertEqual(actual, expected)
     }
 }
