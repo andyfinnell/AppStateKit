@@ -7,5 +7,6 @@ import SwiftSyntaxMacros
 struct AppStateKitMacrosPlugin: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
         ComponentMacro.self,
+        AppComponentMacro.self,
     ]
 }

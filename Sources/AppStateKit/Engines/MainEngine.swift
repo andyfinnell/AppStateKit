@@ -10,7 +10,7 @@ public final class MainEngine<State, Action>: Engine {
     
     public private(set) var state: State
     
-    public init<C: Component>(
+    public init<C: BaseComponent>(
         dependencies: DependencyScope,
         state: State,
         component: C.Type

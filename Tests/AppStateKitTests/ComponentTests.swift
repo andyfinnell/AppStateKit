@@ -87,3 +87,25 @@ enum CounterIdentifiableComponent {
     }
 }
 
+@AppComponent
+enum MyApp {
+    struct State {
+        var counters: CounterListComponent.State
+    }
+    
+    static func initialState() -> State {
+        State(counters: .init(
+            name: "Main",
+            counters: [
+                .init(id: UUID(), count: 1, countText: "1"),
+                .init(id: UUID(), count: 0, countText: "0"),
+            ]
+        ))
+    }
+    
+    static func scene(_ engine: ViewEngine<State, Action>) -> some Scene {
+        WindowGroup {
+            counters(engine)
+        }
+    }
+}

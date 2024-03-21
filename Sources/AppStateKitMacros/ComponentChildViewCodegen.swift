@@ -152,9 +152,7 @@ private extension ComponentChildViewCodegen {
             return nil
         }
         let parameterList = generateParameterList(extraction)
-        
-        // TODO: can we auto-annotate `view()` as @MainActor?
-        
+                
         let body = generateOptionalIfLet(composition) { fallbackState in
             generateCallToChildView(composition: composition, extraction: extraction, fallbackState: fallbackState)
         }

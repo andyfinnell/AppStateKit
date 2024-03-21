@@ -19,6 +19,7 @@ struct ComponentParser {
         }
         
         return Component(
+            name: decl.name.text,
             compositions: compositions,
             actions: actions + compositionActions
         )
@@ -55,6 +56,39 @@ struct ComponentParser {
         
         return true
     }
+    
+    static func isSceneMethod(_ member: some DeclSyntaxProtocol) -> Bool {
+        guard let functionDecl = member.as(FunctionDeclSyntax.self),
+              functionDecl.name.text == "scene" else {
+            return false
+        }
+        // needs to be static
+        // needs to take ViewEngine<State, Action> as  parameter
+        // needs to have View return
+        
+        let isStatic = functionDecl.modifiers.contains { declModifier in
+            declModifier.name.text == "static"
+        }
+        guard let parameter = functionDecl.signature.parameterClause.parameters.first,
+              functionDecl.signature.returnClause != nil,
+              functionDecl.signature.parameterClause.parameters.count == 1
+                && functionDecl.signature.effectSpecifiers?.asyncSpecifier == nil
+                && functionDecl.signature.effectSpecifiers?.throwsSpecifier == nil
+                && isStatic else {
+            return false
+        }
+        
+        guard doesType(
+            parameter.type,
+            haveName: "ViewEngine",
+            withOneTypeParameters: "State", "Action"
+        ) else {
+            return false
+        }
+        
+        return true
+    }
+
 }
 
 private extension ComponentParser {

@@ -16,6 +16,3 @@ struct ComponentViewCodegen {
         return decl
     }
 }
-
-private extension ComponentViewCodegen {
-}

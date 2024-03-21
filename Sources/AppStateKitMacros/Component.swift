@@ -21,6 +21,7 @@ struct Action {
 }
 
 struct Component {
+    let name: String
     let compositions: [Composition]
     let actions: [Action]
 }
