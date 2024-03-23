@@ -8,6 +8,7 @@ final class SideEffectsTests: XCTestCase {
         case loaded(String)
         case saved
         case child(ChildAction)
+        case onTick(TimeInterval)
     }
         
     enum ChildAction: Hashable {
@@ -59,5 +60,55 @@ final class SideEffectsTests: XCTestCase {
             .child(.updated("update frank to 2"))
         ])
         XCTAssertEqual(actual, expected)
+    }
+    
+    func testSubscription() async {
+        let dependencies = DependencyScope()
+        let subject = SideEffectsContainer<Action>(dependencyScope: dependencies)
+        
+        let sideEffects = subject.eraseToAnySideEffects()
+
+        _ = sideEffects.subscribe(\.timer, with: 1.5, 3) { times, yield in
+            for await t in times {
+                try Task.checkCancellation()
+                await yield(.onTick(t))
+            }
+        }
+        
+        let actual = await testMaterializeSubscriptions(subject)
+        let expected = Set<Action>([
+            .onTick(0),
+            .onTick(1.5),
+            .onTick(3.0),
+        ])
+        XCTAssertEqual(actual, expected)
+    }
+    
+    func testImmediateCancel() async {
+        let dependencies = DependencyScope()
+        let subject = SideEffectsContainer<Action>(dependencyScope: dependencies)
+        
+        let sideEffects = subject.eraseToAnySideEffects()
+
+        let subscriptionID = sideEffects.subscribe(\.timer, with: 1.5, 3) { times, yield in
+            for await t in times {
+                try Task.checkCancellation()
+                await yield(.onTick(t))
+            }
+        }
+        sideEffects.cancel(subscriptionID)
+        
+        XCTAssertEqual(subject.subscriptions.count, 0)
+    }
+    
+    func testLaterCancel() async {
+        let dependencies = DependencyScope()
+        let subject = SideEffectsContainer<Action>(dependencyScope: dependencies)
+        
+        let sideEffects = subject.eraseToAnySideEffects()
+        let subscriptionID = SubscriptionID()
+        sideEffects.cancel(subscriptionID)
+
+        XCTAssertEqual(subject.cancellations, Set([subscriptionID]))
     }
 }

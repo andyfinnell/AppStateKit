@@ -43,3 +43,42 @@ extension DependencyScope {
         self[UpdateEffect.self]
     }
 }
+
+struct TimerEffect: Dependable {
+    private actor CancelToken {
+        private(set) var isCancelled = false
+        
+        func cancel() {
+            isCancelled = true
+        }
+    }
+    
+    static func makeDefault(with space: DependencyScope) -> Effect<AsyncStream<TimeInterval>, Never, TimeInterval, Int> {
+        Effect { delay, count in
+            var lastTime: TimeInterval = 0.0
+            var iteration = 0
+            let cancelToken = CancelToken()
+            let stream = AsyncStream { () -> TimeInterval? in
+                guard await !cancelToken.isCancelled, iteration < count else {
+                    return nil
+                }
+                let v = lastTime
+                lastTime += delay
+                iteration += 1
+                return v
+            } onCancel: {
+                Task {
+                    await cancelToken.cancel()
+                }
+            }
+
+            return Result.success(stream)
+        }
+    }
+}
+
+extension DependencyScope {
+    var timer: TimerEffect.T {
+        self[TimerEffect.self]
+    }
+}
