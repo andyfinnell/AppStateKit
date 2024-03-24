@@ -2,7 +2,6 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 
 struct AppComponentAppCodegen {
-    // TODO: should engine be initialized here?
     static func codegen(from component: Component) -> DeclSyntax? {
         let decl: DeclSyntax = """
             struct MainApp: App {

@@ -168,10 +168,18 @@ private extension ExtendSideEffectsMacro {
     static func codegenBody(from effect: Effect) -> String {
         let arguments = (0..<effect.parameters.count).map { "p\($0)" }
             .joined(separator: ", ")
-        if effect.isThrowing {
-            return "tryPerform(\\.\(effect.methodName), with: \(arguments), transform: transform, onFailure: onFailure)"
+        if arguments.isEmpty {
+            if effect.isThrowing {
+                return "tryPerform(\\.\(effect.methodName), transform: transform, onFailure: onFailure)"
+            } else {
+                return "perform(\\.\(effect.methodName), transform: transform)"
+            }
         } else {
-            return "perform(\\.\(effect.methodName), with: \(arguments), transform: transform)"
+            if effect.isThrowing {
+                return "tryPerform(\\.\(effect.methodName), with: \(arguments), transform: transform, onFailure: onFailure)"
+            } else {
+                return "perform(\\.\(effect.methodName), with: \(arguments), transform: transform)"
+            }
         }
     }
     
@@ -205,6 +213,10 @@ private extension ExtendSideEffectsMacro {
     static func codegenSubscribeBody(from effect: Effect) -> String {
         let arguments = (0..<effect.parameters.count).map { "p\($0)" }
             .joined(separator: ", ")
-        return "subscribe(\\.\(effect.methodName), with: \(arguments), transform: transform)"
+        if arguments.isEmpty {
+            return "subscribe(\\.\(effect.methodName), transform: transform)"
+        } else {
+            return "subscribe(\\.\(effect.methodName), with: \(arguments), transform: transform)"
+        }
     }
 }

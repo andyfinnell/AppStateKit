@@ -111,4 +111,20 @@ final class SideEffectsTests: XCTestCase {
 
         XCTAssertEqual(subject.cancellations, Set([subscriptionID]))
     }
+    
+    func testGeneratedMethods() async {
+        let dependencies = DependencyScope()
+        let subject = SideEffectsContainer<Action>(dependencyScope: dependencies)
+        let sideEffects = subject.eraseToAnySideEffects()
+        
+        sideEffects.generate() {
+            .loaded($0)
+        }
+        let actual = await testMaterializeEffects(subject)
+        let expected = Set<Action>([
+            .loaded("number 9"),
+        ])
+        XCTAssertEqual(actual, expected)
+    }
+    
 }

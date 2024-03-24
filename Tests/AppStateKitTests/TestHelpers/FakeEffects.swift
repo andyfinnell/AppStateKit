@@ -77,3 +77,17 @@ extension DependencyScope {}
 
 @ExtendSideEffects(with: TimerEffect, (delay: TimeInterval, count: Int) -> AsyncStream<TimeInterval>)
 extension AnySideEffects {}
+
+@Effect
+enum GenerateEffect {
+    static func perform(dependencies: DependencyScope) -> String {
+        "number 9"
+    }
+}
+
+@ExtendDependencyScope(with: GenerateEffect)
+extension DependencyScope {}
+
+@ExtendSideEffects(with: GenerateEffect, () -> String)
+extension AnySideEffects {}
+
