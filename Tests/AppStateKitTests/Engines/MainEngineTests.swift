@@ -20,7 +20,7 @@ fileprivate enum TestComponent {
     private static func doWhat(_ state: inout State, sideEffects: AnySideEffects<Action>) {
         state.value = "loading"
         
-        sideEffects.perform(\.loadAtIndex, with: 0) {
+        sideEffects.loadAtIndex(index: 0) {
             .finishBigEffect(value: $0)
         }
     }
@@ -34,7 +34,7 @@ fileprivate enum TestComponent {
     }
     
     private static func beginTimer(_ state: inout State, sideEffects: AnySideEffects<Action>, count: Int) {
-        state.timerID = sideEffects.subscribe(\.timer, with: 1.5, count) { timestamps, yield in
+        state.timerID = sideEffects.subscribeToTimer(delay: 1.5, count: count) { timestamps, yield in
             for await timestamp in timestamps {
                 try Task.checkCancellation()
                 await yield(.onTick(timestamp))
@@ -167,6 +167,6 @@ final class MainEngineTests: XCTestCase {
         
         let endOfHistory = history[history.index(after: lastTimerIndex)..<history.endIndex]
         let uniqueLastTicks = Set(endOfHistory.map { $0.lastTick })
-        XCTAssertEqual(uniqueLastTicks.count, 1)
+        XCTAssertEqual(uniqueLastTicks, Set([history.last!.lastTick]))
     }
 }

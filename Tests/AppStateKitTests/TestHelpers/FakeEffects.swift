@@ -1,50 +1,47 @@
 import Foundation
 import AppStateKit
 
-struct LoadAtIndexEffect: Dependable {
-    static func makeDefault(with space: DependencyScope) -> Effect<String, Never, Int> {
-        Effect { index in
-            Result.success("loaded index \(index)")
-        }
+@Effect
+enum LoadAtIndexEffect {
+    static func perform(dependencies: DependencyScope, index: Int) -> String {
+        "loaded index \(index)"
     }
 }
 
-extension DependencyScope {
-    var loadAtIndex: LoadAtIndexEffect.T {
-        self[LoadAtIndexEffect.self]
+@ExtendDependencyScope(with: LoadAtIndexEffect)
+extension DependencyScope {}
+
+@ExtendSideEffects(with: LoadAtIndexEffect, (index: Int) async -> String)
+extension AnySideEffects {}
+
+@Effect
+enum SaveEffect {
+    static func perform(dependencies: DependencyScope, index: Int, content: String) {
+        // nop
     }
 }
 
-struct SaveEffect: Dependable {
-    static func makeDefault(with space: DependencyScope) -> Effect<Void, Never, Int, String> {
-        Effect { index, content in
-            // nop
-            Result.success(())
-        }
+@ExtendDependencyScope(with: SaveEffect)
+extension DependencyScope {}
+
+@ExtendSideEffects(with: SaveEffect, (index: Int, content: String) -> Void)
+extension AnySideEffects {}
+
+@Effect
+enum UpdateEffect {
+    static func perform(dependencies: DependencyScope, index: Int, content: String) -> String {
+        "update \(content) to \(index)"
     }
 }
 
-extension DependencyScope {
-    var save: SaveEffect.T {
-        self[SaveEffect.self]
-    }
-}
+@ExtendDependencyScope(with: UpdateEffect)
+extension DependencyScope {}
 
-struct UpdateEffect: Dependable {
-    static func makeDefault(with space: DependencyScope) -> Effect<String, Never, Int, String> {
-        Effect { index, content in
-            Result.success("update \(content) to \(index)")
-        }
-    }
-}
+@ExtendSideEffects(with: UpdateEffect, (index: Int, content: String) -> String)
+extension AnySideEffects {}
 
-extension DependencyScope {
-    var update: UpdateEffect.T {
-        self[UpdateEffect.self]
-    }
-}
-
-struct TimerEffect: Dependable {
+@Effect
+enum TimerEffect {
     private actor CancelToken {
         private(set) var isCancelled = false
         
@@ -53,32 +50,30 @@ struct TimerEffect: Dependable {
         }
     }
     
-    static func makeDefault(with space: DependencyScope) -> Effect<AsyncStream<TimeInterval>, Never, TimeInterval, Int> {
-        Effect { delay, count in
-            var lastTime: TimeInterval = 0.0
-            var iteration = 0
-            let cancelToken = CancelToken()
-            let stream = AsyncStream { () -> TimeInterval? in
-                guard await !cancelToken.isCancelled, iteration < count else {
-                    return nil
-                }
-                let v = lastTime
-                lastTime += delay
-                iteration += 1
-                return v
-            } onCancel: {
-                Task {
-                    await cancelToken.cancel()
-                }
+    static func perform(dependencies: DependencyScope, delay: TimeInterval, count: Int) -> AsyncStream<TimeInterval> {
+        var lastTime: TimeInterval = 0.0
+        var iteration = 0
+        let cancelToken = CancelToken()
+        let stream = AsyncStream { () -> TimeInterval? in
+            guard await !cancelToken.isCancelled, iteration < count else {
+                return nil
             }
-
-            return Result.success(stream)
+            let v = lastTime
+            lastTime += delay
+            iteration += 1
+            return v
+        } onCancel: {
+            Task {
+                await cancelToken.cancel()
+            }
         }
+
+        return stream
     }
 }
 
-extension DependencyScope {
-    var timer: TimerEffect.T {
-        self[TimerEffect.self]
-    }
-}
+@ExtendDependencyScope(with: TimerEffect)
+extension DependencyScope {}
+
+@ExtendSideEffects(with: TimerEffect, (delay: TimeInterval, count: Int) -> AsyncStream<TimeInterval>)
+extension AnySideEffects {}

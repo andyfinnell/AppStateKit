@@ -8,5 +8,8 @@ struct AppStateKitMacrosPlugin: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
         ComponentMacro.self,
         AppComponentMacro.self,
+        EffectMacro.self,
+        ExtendDependencyScopeMacro.self,
+        ExtendSideEffectsMacro.self,
     ]
 }

@@ -20,10 +20,10 @@ final class SideEffectsTests: XCTestCase {
         let subject = SideEffectsContainer<Action>(dependencyScope: dependencies)
         let sideEffects = subject.eraseToAnySideEffects()
         
-        sideEffects.perform(\.loadAtIndex, with: 4) {
+        sideEffects.loadAtIndex(index: 4) {
             .loaded($0)
         }
-        sideEffects.perform(\.save, with: 3, "my content") {
+        sideEffects.save(index: 3, content: "my content") {
             .saved
         }
                 
@@ -40,16 +40,16 @@ final class SideEffectsTests: XCTestCase {
         let subject = SideEffectsContainer<Action>(dependencyScope: dependencies)
         
         let sideEffects = subject.eraseToAnySideEffects()
-        sideEffects.perform(\.loadAtIndex, with: 4) {
+        sideEffects.loadAtIndex(index: 4) {
             .loaded($0)
         }
-        sideEffects.perform(\.save, with: 3, "my content") {
+        sideEffects.save(index: 3, content: "my content") {
             .saved
         }
 
         let childSubject = sideEffects.map { Action.child($0) }
         
-        childSubject.perform(\.update, with: 2, "frank") {
+        childSubject.update(index: 2, content: "frank") {
             .updated($0)
         }
                 
@@ -68,7 +68,7 @@ final class SideEffectsTests: XCTestCase {
         
         let sideEffects = subject.eraseToAnySideEffects()
 
-        _ = sideEffects.subscribe(\.timer, with: 1.5, 3) { times, yield in
+        _ = sideEffects.subscribeToTimer(delay: 1.5, count: 3) { times, yield in
             for await t in times {
                 try Task.checkCancellation()
                 await yield(.onTick(t))
@@ -90,7 +90,7 @@ final class SideEffectsTests: XCTestCase {
         
         let sideEffects = subject.eraseToAnySideEffects()
 
-        let subscriptionID = sideEffects.subscribe(\.timer, with: 1.5, 3) { times, yield in
+        let subscriptionID = sideEffects.subscribeToTimer(delay: 1.5, count: 3) { times, yield in
             for await t in times {
                 try Task.checkCancellation()
                 await yield(.onTick(t))
