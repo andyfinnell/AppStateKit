@@ -4,6 +4,7 @@ struct ComponentParser {
     static func parse(_ decl: EnumDeclSyntax) -> Component {
         var actions = [Action]()
         var compositions = [Composition]()
+        var detachments = [DetachmentRef]()
         
         for member in decl.memberBlock.members {
             if let funcDecl = member.decl.as(FunctionDeclSyntax.self),
@@ -11,6 +12,10 @@ struct ComponentParser {
                 actions.append(action)
             } else if let structDecl = member.decl.as(StructDeclSyntax.self) {
                 compositions.append(contentsOf: computeCompositionFromStateStruct(structDecl))
+            } else if let enumDecl = member.decl.as(EnumDeclSyntax.self) {
+                if let detachmentRef = parseDetachment(enumDecl) {
+                    detachments.append(detachmentRef)
+                }
             }
         }
         
@@ -21,7 +26,8 @@ struct ComponentParser {
         return Component(
             name: decl.name.text,
             compositions: compositions,
-            actions: actions + compositionActions
+            actions: actions + compositionActions,
+            detachments: detachments
         )
     }
     
@@ -320,4 +326,21 @@ private extension ComponentParser {
         return true
     }
 
+    static func parseDetachment(_ enumDecl: EnumDeclSyntax) -> DetachmentRef? {
+        let isDetachment = enumDecl.attributes.contains { attribute in
+            guard case let .attribute(attr) = attribute,
+                let identifierType = attr.attributeName.as(IdentifierTypeSyntax.self) else {
+                return false
+            }
+            return identifierType.name.text == "Detachment"
+        }
+        guard isDetachment else {
+            return nil
+        }
+        
+        return DetachmentRef(
+            typename: enumDecl.name.text,
+            methodName: enumDecl.name.text.lowercasedFirstWord()
+        )
+    }
 }

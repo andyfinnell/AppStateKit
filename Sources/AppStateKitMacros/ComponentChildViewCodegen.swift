@@ -5,6 +5,8 @@ struct ComponentChildViewCodegen {
     static func codegen(from component: Component) -> [DeclSyntax] {
         component.compositions.compactMap {
             codegen(from: $0)
+        } + component.detachments.compactMap {
+            codegen(from: $0)
         }
     }
 }
@@ -167,4 +169,20 @@ private extension ComponentChildViewCodegen {
         
         return DeclSyntax(stringLiteral: viewDecl)
     }
+    
+    static func codegen(from detachment: DetachmentRef) -> DeclSyntax? {
+        let viewDecl: DeclSyntax = """
+            @MainActor
+            @ViewBuilder
+            private static func \(raw: detachment.methodName)(
+                _ engine: ViewEngine<State, Action>,
+                inject: (DependencyScope) -> Void = { _ in }
+            ) -> some View {
+                \(raw: detachment.typename).view(engine, inject: inject)
+            }
+            """
+        
+        return viewDecl
+    }
+
 }

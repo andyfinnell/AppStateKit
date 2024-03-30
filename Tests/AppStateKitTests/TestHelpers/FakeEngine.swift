@@ -1,10 +1,11 @@
 import Foundation
 import Combine
-import AppStateKit
+@testable import AppStateKit
 import Observation
 
 @Observable
 final class FakeEngine<State, Action>: Engine {
+    var internals = Internals(dependencyScope: DependencyScope())
     var state: State
     var sentActions = [Action]()
     

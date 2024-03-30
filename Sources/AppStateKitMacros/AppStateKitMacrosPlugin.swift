@@ -11,5 +11,6 @@ struct AppStateKitMacrosPlugin: CompilerPlugin {
         EffectMacro.self,
         ExtendDependencyScopeMacro.self,
         ExtendSideEffectsMacro.self,
+        DetachmentMacro.self,
     ]
 }

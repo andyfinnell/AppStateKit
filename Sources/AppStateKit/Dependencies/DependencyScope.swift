@@ -29,9 +29,19 @@ public final class DependencyScope {
     }
     
     /// Ensure that the dependencies specified by the scope are created
-    public func scoped<each D: Dependable>(_ scope: Scope<repeat each D>) -> DependencyScope {
-        let childSpace = DependencyScope(self)
-        scope.initialize(childSpace)
-        return childSpace
+    public func scoped<each D: Dependable, each I: Dependable>(
+        _ scope: Scope<repeat each D>,
+        injecting injections: repeat Injection<each I>
+    ) -> DependencyScope {
+        let childScope = DependencyScope(self)
+        repeat (each injections).initialize(childScope)
+        scope.initialize(childScope)
+        return childScope
+    }
+    
+    public func scoped(inject: (DependencyScope) -> Void) -> DependencyScope {
+        let childScope = DependencyScope(self)
+        inject(childScope)
+        return childScope
     }
 }

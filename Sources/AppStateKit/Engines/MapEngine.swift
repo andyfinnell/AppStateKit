@@ -5,8 +5,11 @@ import Observation
 public final class MapEngine<State, Action>: Engine {
     private let sendThunk: @MainActor (Action) -> Void
     private let stateThunk: () -> State
+    private let internalsThunk: () -> Internals
     
+    // TODO: maybe don't set this but leave as transform?
     public private(set) var state: State
+    public var internals: Internals { internalsThunk() }
     
     public init<E: Engine>(
         engine: E,
@@ -19,6 +22,9 @@ public final class MapEngine<State, Action>: Engine {
         }
         stateThunk = {
             toLocalState(engine.state)
+        }
+        internalsThunk = {
+            engine.internals
         }
         state = stateThunk() // initialize
         

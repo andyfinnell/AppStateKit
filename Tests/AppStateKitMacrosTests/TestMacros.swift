@@ -11,5 +11,6 @@ let testMacros: [String: Macro.Type] = [
     "Effect": EffectMacro.self,
     "ExtendDependencyScope": ExtendDependencyScopeMacro.self,
     "ExtendSideEffects": ExtendSideEffectsMacro.self,
+    "Detachment": DetachmentMacro.self,
 ]
 #endif

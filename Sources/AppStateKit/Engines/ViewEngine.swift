@@ -6,7 +6,11 @@ import SwiftUI
 public final class ViewEngine<State, Action>: Engine {
     private let sendThunk: @MainActor (Action) -> Void
     private let stateThunk: () -> State
+    private let internalsThunk: () -> Internals
+
+    // TODO: maybe make this a transform and not state?
     public private(set) var state: State
+    public var internals: Internals { internalsThunk() }
     
     public init<E: Engine>(engine: E) where E.State == State, E.Action == Action {
         // Intentionally holding parent in memory
@@ -15,6 +19,9 @@ public final class ViewEngine<State, Action>: Engine {
         }
         stateThunk = {
             engine.state
+        }
+        internalsThunk = {
+            engine.internals
         }
         state = stateThunk() // initialize
         

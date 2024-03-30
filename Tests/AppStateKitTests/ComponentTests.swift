@@ -103,6 +103,13 @@ enum MyApp {
         ))
     }
     
+    @Detachment
+    enum Counter {
+        static func initialState(_ state: State) -> CounterComponent.State {
+            CounterComponent.State(id: UUID(), count: 0, countText: "0")
+        }
+    }
+    
     static func scene(_ engine: ViewEngine<State, Action>) -> some Scene {
         WindowGroup {
             counters(engine)

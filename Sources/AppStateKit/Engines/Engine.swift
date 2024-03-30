@@ -5,6 +5,7 @@ public protocol Engine: AnyObject {
     associatedtype Action
     
     var state: State { get }
+    var internals: Internals { get }
     
     @MainActor
     func send(_ action: Action)

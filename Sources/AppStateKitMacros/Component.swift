@@ -20,8 +20,14 @@ struct Action {
     let composition: Composition?
 }
 
+struct DetachmentRef {
+    let typename: String
+    let methodName: String
+}
+
 struct Component {
     let name: String
     let compositions: [Composition]
     let actions: [Action]
+    let detachments: [DetachmentRef]
 }
