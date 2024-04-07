@@ -1,3 +1,4 @@
+import SwiftUI
 
 @attached(member, names: named(Action), named(reduce), named(EngineView), arbitrary)
 @attached(memberAttribute)
@@ -20,3 +21,6 @@ public macro ExtendSideEffects<N, T>(with name: N, _ expr: T) = #externalMacro(m
 
 @attached(member, names: named(actionToUpdateState(from:)), named(actionToPassUp(from:)), named(view))
 public macro Detachment() = #externalMacro(module: "AppStateKitMacros", type: "DetachmentMacro")
+
+@freestanding(expression)
+public macro bind<State, Action, P>(_ engine: ViewEngine<State, Action>, _ keyPath: KeyPath<State, P>) -> Binding<P> = #externalMacro(module: "AppStateKitMacros", type: "BindMacro")

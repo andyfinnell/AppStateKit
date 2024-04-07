@@ -19,7 +19,11 @@ final class ViewEngineTests: XCTestCase {
         }
         
         static func view(_ engine: ViewEngine<State, Action>) -> some View {
-            Text(engine.value)
+            VStack {
+                Text(engine.value)
+                
+                TextField("Label", text: #bind(engine, \.value))
+            }
         }
     }
         
