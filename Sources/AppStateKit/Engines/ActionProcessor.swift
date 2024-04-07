@@ -21,18 +21,20 @@ final class ActionProcessor<State, Action> {
     @MainActor
     func process(
         _ action: Action,
-        on state: inout State,
+        on getState: () -> State,
+        _ setState: (State) -> Void,
         using sendThunk: @MainActor @escaping (Action) -> Void
     ) {
         actions.append(action)
-        processNextActionIfPossible(on: &state, using: sendThunk)
+        processNextActionIfPossible(on: getState, setState, using: sendThunk)
     }
 }
 
 private extension ActionProcessor {
     @MainActor
     func processNextActionIfPossible(
-        on state: inout State,
+        on getState: () -> State,
+        _ setState: (State) -> Void,
         using sendThunk: @MainActor @escaping (Action) -> Void
     ) {
         guard !isProcessing,
@@ -42,7 +44,9 @@ private extension ActionProcessor {
         isProcessing = true
         actions.removeFirst()
         let sideEffects = SideEffectsContainer<Action>(dependencyScope: dependencies)
+        var state = getState()
         reduce(&state, nextAction, sideEffects.eraseToAnySideEffects())
+        setState(state)
         isProcessing = false
         
         // Perform effects
@@ -73,6 +77,6 @@ private extension ActionProcessor {
         }
         
         // recurse
-        processNextActionIfPossible(on: &state, using: sendThunk)
+        processNextActionIfPossible(on: getState, setState, using: sendThunk)
     }
 }

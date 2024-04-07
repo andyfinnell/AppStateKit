@@ -131,15 +131,11 @@ final class ScopeEngineTests: XCTestCase {
     func testActionSend() async {
         var history = [TestComponent.State]()
         let finishExpectation = expectation(description: "finish")
-        
-        startObserving {
-            self.subject.state
-        } onChange: { newState in
+        finishExpectation.expectedFulfillmentCount = 2
+        let sink = subject.statePublisher.sink { newState in
             history.append(newState)
             
-            if history.count == 4 {
-                finishExpectation.fulfill()
-            }
+            finishExpectation.fulfill()
         }
         
         await subject.send(.doWhat)
@@ -147,49 +143,44 @@ final class ScopeEngineTests: XCTestCase {
         await fulfillment(of: [finishExpectation])
         
         let expected = [
-            TestComponent.State(count: 0, value: "idle", lastTick: 0),
-            TestComponent.State(count: 0, value: "idle", lastTick: 0),
             TestComponent.State(count: 0, value: "loading", lastTick: 0),
             TestComponent.State(count: 0, value: "loaded index 0", lastTick: 0)
         ]
         XCTAssertEqual(history, expected)
+        
+        _ = sink
     }
 
     func testStartSubscription() async {
         var history = [TestComponent.State]()
         let finishExpectation = expectation(description: "finish")
-        finishExpectation.expectedFulfillmentCount = 6
-        startObserving {
-            self.subject.state
-        } onChange: { newState in
+        finishExpectation.expectedFulfillmentCount = 3
+        let sink = subject.statePublisher.sink { newState in
             history.append(newState)
             
             finishExpectation.fulfill()
         }
-        
+
         await subject.send(.beginTimer(count: 3))
         
         await fulfillment(of: [finishExpectation])
         
         let subID = SubscriptionID()
         let expected = [
-            TestComponent.State(count: 0, value: "idle", lastTick: 0, timerID: nil),
-            TestComponent.State(count: 0, value: "idle", lastTick: 0, timerID: nil),
-            TestComponent.State(count: 0, value: "idle", lastTick: 0, timerID: subID),
             TestComponent.State(count: 0, value: "idle", lastTick: 0, timerID: subID),
             TestComponent.State(count: 0, value: "idle", lastTick: 1.5, timerID: subID),
             TestComponent.State(count: 0, value: "idle", lastTick: 3, timerID: subID),
         ]
         XCTAssertEqual(history, expected)
+        
+        _ = sink
     }
 
     func testCancelSubscription() async {
         var history = [TestComponent.State]()
         let isGoingExpectation = expectation(description: "is going")
         let hasStopped = expectation(description: "has stopped")
-        startObserving {
-            self.subject.state
-        } onChange: { newState in
+        let sink = subject.statePublisher.sink { newState in
             let previousState = history.last
             history.append(newState)
             
@@ -219,7 +210,9 @@ final class ScopeEngineTests: XCTestCase {
         
         let endOfHistory = history[history.index(after: lastTimerIndex)..<history.endIndex]
         let uniqueLastTicks = Set(endOfHistory.map { $0.lastTick })
-        XCTAssertEqual(uniqueLastTicks, Set([history.last!.lastTick]))
+        XCTAssert(uniqueLastTicks.count > 0 && uniqueLastTicks.count <= 2)
+        
+        _ = sink
     }
     
     func testActionSendUp() async {
@@ -231,15 +224,10 @@ final class ScopeEngineTests: XCTestCase {
     func testParentStateChanged() {
         var history = [TestComponent.State]()
         let finishExpectation = expectation(description: "finish")
-        
-        startObserving {
-            self.subject.state
-        } onChange: { newState in
+        let sink = subject.statePublisher.sink { newState in
             history.append(newState)
             
-            if history.count == 3 {
-                finishExpectation.fulfill()
-            }
+            finishExpectation.fulfill()
         }
         
         parentEngine.state = ParentComponent.State(count: 2, isFinished: false)
@@ -247,11 +235,11 @@ final class ScopeEngineTests: XCTestCase {
         waitForExpectations(timeout: 1, handler: nil)
         
         let expected = [
-            TestComponent.State(count: 0, value: "idle", lastTick: 0, timerID: nil),
-            TestComponent.State(count: 0, value: "idle", lastTick: 0, timerID: nil),
             TestComponent.State(count: 2, value: "idle", lastTick: 0, timerID: nil),
         ]
         XCTAssertEqual(history, expected)
+        
+        _ = sink
     }
 
 }

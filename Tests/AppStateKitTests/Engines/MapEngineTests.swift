@@ -76,15 +76,10 @@ final class MapEngineTests: XCTestCase {
     func testParentStateChanged() {
         var history = [TestComponent.State]()
         let finishExpectation = expectation(description: "finish")
-        
-        startObserving {
-            self.subject.state
-        } onChange: { newState in
+        let sink = subject.statePublisher.sink { newState in
             history.append(newState)
             
-            if history.count == 2 {
-                finishExpectation.fulfill()
-            }
+            finishExpectation.fulfill()
         }
         
         parentEngine.state = ParentComponent.State(value: "finish")
@@ -92,9 +87,10 @@ final class MapEngineTests: XCTestCase {
         waitForExpectations(timeout: 1, handler: nil)
         
         let expected = [
-            TestComponent.State(isOn: false),
             TestComponent.State(isOn: true),
         ]
         XCTAssertEqual(history, expected)
+        
+        _ = sink
     }
 }

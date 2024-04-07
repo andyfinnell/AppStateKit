@@ -30,7 +30,7 @@ final class ViewEngineTests: XCTestCase {
         super.setUp()
         
         parentEngine = FakeEngine(state: TestComponent.State(value: "idle"))
-        subject = ViewEngine(engine: parentEngine)
+        subject = ViewEngine(engine: parentEngine, isEqual: ==)
     }
 
     func testActionApply() async {
@@ -42,15 +42,10 @@ final class ViewEngineTests: XCTestCase {
     func testParentStateChanged() {
         var history = [TestComponent.State]()
         let finishExpectation = expectation(description: "finish")
-        
-        startObserving {
-            self.subject.state
-        } onChange: { newState in
+        let sink = subject.statePublisher.sink { newState in
             history.append(newState)
             
-            if history.count == 2 {
-                finishExpectation.fulfill()
-            }
+            finishExpectation.fulfill()
         }
         
         parentEngine.state = TestComponent.State(value: "finish")
@@ -58,10 +53,11 @@ final class ViewEngineTests: XCTestCase {
         waitForExpectations(timeout: 1, handler: nil)
         
         let expected = [
-            TestComponent.State(value: "idle"),
             TestComponent.State(value: "finish"),
         ]
         XCTAssertEqual(history, expected)
+        
+        _ = sink
     }
     
     @MainActor
@@ -74,9 +70,7 @@ final class ViewEngineTests: XCTestCase {
         let binding = subject.binding(\.value, send: { .valueDidChange($0) })
         
         let stateChanged = expectation(description: "state changed")
-        startObserving {
-            self.subject.state
-        } onChange: { newState in
+        let sink = subject.statePublisher.sink { newState in
             stateChanged.fulfill()
         }
 
@@ -87,16 +81,13 @@ final class ViewEngineTests: XCTestCase {
         XCTAssertEqual(binding.wrappedValue, "changed")
         
         let expectation = expectation(description: "sent action")
-        startObserving {
-            self.parentEngine.sentActions
-        } onChange: { newState in
-            expectation.fulfill()
-        }
-
+        parentEngine.sendExpectation = expectation
         binding.wrappedValue = "changed from UI"
 
         waitForExpectations(timeout: 1, handler: nil)
 
         XCTAssertEqual(parentEngine.sentActions, [.valueDidChange("changed from UI")])
+        
+        _ = sink
     }
 }
