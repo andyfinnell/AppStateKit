@@ -31,9 +31,9 @@ final class EffectMacroTests: XCTestCase {
                 static func makeDefault(with dependencies: DependencyScope) -> Effect<String , Error, String, Int> {
                     Effect { name, index in
                         do {
-                            await Result.success(perform(dependencies: dependencies, name: name, index: index))
+                            return try await Result<String , Error>.success(perform(dependencies: dependencies, name: name, index: index))
                         } catch {
-                            return Result.failure(error)
+                            return Result<String , Error>.failure(error)
                         }
                     }
                 }
@@ -95,9 +95,10 @@ final class EffectMacroTests: XCTestCase {
 
                 func subscribeToLoadAtIndex(
                     index p0: Int,
-                    transform: @escaping (String, (Action) async -> Void) async throws -> Void
+                    transform: @escaping (String, (Action) async -> Void) async throws -> Void,
+                    onFailure: @escaping (Error) async -> Action
                 ) -> SubscriptionID {
-                    subscribe(\\.loadAtIndex, with: p0, transform: transform)
+                    trySubscribe(\\.loadAtIndex, with: p0, transform: transform, onFailure: onFailure)
                 }
 
             }
@@ -110,4 +111,42 @@ final class EffectMacroTests: XCTestCase {
 #endif
     }
 
+    func testExtendSideEffectsPart2() throws {
+#if canImport(AppStateKitMacros)
+        assertMacroExpansion(
+            """
+            @ExtendSideEffects(with: ImportURLEffect, (URL) async throws -> String)
+            extension AnySideEffects {
+            
+            }
+            """,
+            expandedSource: """
+            
+            extension AnySideEffects {
+            
+                func importURL(
+                    _ p0: URL,
+                    transform: @escaping (String) async -> Action,
+                    onFailure: @escaping (Error) async -> Action
+                ) {
+                    tryPerform(\\.importURL, with: p0, transform: transform, onFailure: onFailure)
+                }
+
+                func subscribeToImportURL(
+                    _ p0: URL,
+                    transform: @escaping (String, (Action) async -> Void) async throws -> Void,
+                    onFailure: @escaping (Error) async -> Action
+                ) -> SubscriptionID {
+                    trySubscribe(\\.importURL, with: p0, transform: transform, onFailure: onFailure)
+                }
+
+            }
+            
+            """,
+            macros: testMacros
+        )
+#else
+        throw XCTSkip("macros are only supported when running tests for the host platform")
+#endif
+    }
 }

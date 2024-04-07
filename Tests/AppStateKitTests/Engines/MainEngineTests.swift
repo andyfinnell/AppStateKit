@@ -50,6 +50,18 @@ fileprivate enum TestComponent {
         state.timerID = nil
     }
     
+    private static func importURL(_ state: inout State, sideEffects: AnySideEffects<Action>, _ url: URL) {
+        _ = sideEffects.subscribeToImportURL(url) { content, yield in
+            await yield(.finishBigEffect(value: content))
+        } onFailure: { error in
+            .importFailed("\(error)")
+        }
+    }
+    
+    private static func importFailed(_ state: inout State, sideEffects: AnySideEffects<Action>, _ message: String) {
+        state.value = message
+    }
+    
     static func view(_ engine: ViewEngine<State, Action>) -> some View {
         Text(engine.value)
     }
@@ -76,7 +88,7 @@ final class MainEngineTests: XCTestCase {
         
         await subject.send(.doWhat)
         
-        await fulfillment(of: [finishExpectation])
+        await fulfillment(of: [finishExpectation], timeout: 1.0)
         
         let expected = [
             TestComponent.State(value: "loading", lastTick: 0),
@@ -106,7 +118,7 @@ final class MainEngineTests: XCTestCase {
 
         await subject.send(.beginTimer(count: 3))
         
-        await fulfillment(of: [finishExpectation])
+        await fulfillment(of: [finishExpectation], timeout: 1.0)
         
         let subID = SubscriptionID()
         let expected = [
@@ -164,4 +176,33 @@ final class MainEngineTests: XCTestCase {
         
         _ = sink
     }
+    
+    func testStartFailableSubscription() async {
+        let initialState = TestComponent.State(value: "idle", lastTick: 0)
+        let dependencies = DependencyScope()
+        let subject = MainEngine(
+            dependencies: dependencies,
+            state: initialState,
+            component: TestComponent.self
+        )
+        var history = [TestComponent.State]()
+        let finishExpectation = expectation(description: "finish")
+        let sink = subject.statePublisher.sink { newState in
+            history.append(newState)
+            
+            finishExpectation.fulfill()
+        }
+
+        await subject.send(.importURL(URL(string: "https://www.example.com")!))
+        
+        await fulfillment(of: [finishExpectation], timeout: 1.0)
+        
+        let expected = [
+            TestComponent.State(value: "importFailure", lastTick: 0),
+        ]
+        XCTAssertEqual(history, expected)
+        
+        _ = sink
+    }
+
 }

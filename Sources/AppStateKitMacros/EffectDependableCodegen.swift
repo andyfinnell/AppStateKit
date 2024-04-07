@@ -54,7 +54,7 @@ private extension EffectDependableCodegen {
                 do {
                                 \(generateCallToPerform(from: effect))
                 } catch {
-                                return Result.failure(error)
+                                return Result<\(returnTypename(from: effect)), \(errorTypename(from: effect))>.failure(error)
                 }
                 """
             return template
@@ -77,16 +77,24 @@ private extension EffectDependableCodegen {
     }
 
     static func generateCallToPerform(from effect: Effect) -> String {
-        var callCode = ""
+        var callCode = "return "
         if effect.isThrowing {
-            callCode = "try "
+            callCode += "try "
         }
         if effect.isAsync {
-            callCode = "await "
+            callCode += "await "
         }
-        callCode += "Result.success(perform(dependencies: dependencies"
+        callCode += "Result<\(returnTypename(from: effect)), \(errorTypename(from: effect))>.success(perform(dependencies: dependencies"
         callCode += generateCallArguments(from: effect)
         callCode += "))"
         return callCode
+    }
+    
+    static func returnTypename(from effect: Effect) -> String {
+        effect.returnType.map { String(describing: $0) } ?? "Void"
+    }
+    
+    static func errorTypename(from effect: Effect) -> String {
+        effect.isThrowing ? "Error" : "Never"
     }
 }

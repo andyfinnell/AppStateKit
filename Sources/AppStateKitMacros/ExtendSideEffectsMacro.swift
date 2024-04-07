@@ -207,6 +207,9 @@ private extension ExtendSideEffectsMacro {
         }
         
         parameters.append("transform: @escaping (\(effect.returnType), (Action) async -> Void) async throws -> Void")
+        if effect.isThrowing {
+            parameters.append("onFailure: @escaping (Error) async -> Action")
+        }
         return parameters.joined(separator: ",\n")
     }
 
@@ -214,9 +217,17 @@ private extension ExtendSideEffectsMacro {
         let arguments = (0..<effect.parameters.count).map { "p\($0)" }
             .joined(separator: ", ")
         if arguments.isEmpty {
-            return "subscribe(\\.\(effect.methodName), transform: transform)"
+            if effect.isThrowing {
+                return "trySubscribe(\\.\(effect.methodName), transform: transform, onFailure: onFailure)"
+            } else {
+                return "subscribe(\\.\(effect.methodName), transform: transform)"
+            }
         } else {
-            return "subscribe(\\.\(effect.methodName), with: \(arguments), transform: transform)"
+            if effect.isThrowing {
+                return "trySubscribe(\\.\(effect.methodName), with: \(arguments), transform: transform, onFailure: onFailure)"
+            } else {
+                return "subscribe(\\.\(effect.methodName), with: \(arguments), transform: transform)"
+            }
         }
     }
 }

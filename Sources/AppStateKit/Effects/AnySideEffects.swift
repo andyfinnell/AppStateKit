@@ -76,6 +76,40 @@ public struct AnySideEffects<Action> {
         )
     }
 
+    public func trySubscribe<each ParameterType, ReturnType, Failure: Error>(
+        _ effect: Effect<ReturnType, Failure, repeat each ParameterType>,
+        with parameters: repeat each ParameterType,
+        transform: @escaping (ReturnType, (Action) async -> Void) async throws -> Void,
+        onFailure: @escaping (Failure) async -> Action
+    ) -> SubscriptionID {
+        let id = SubscriptionID()
+        let future = FutureSubscription(id: id) { yield in
+            switch await effect.perform(repeat each parameters) {
+            case let .success(value):
+                try await transform(value, yield)
+            case let .failure(error):
+                let action = await onFailure(error)
+                await yield(action)
+            }
+        }
+        subscribe(future)
+        return id
+    }
+
+    public func trySubscribe<each ParameterType, ReturnType, Failure: Error>(
+        _ effect: KeyPath<DependencyScope, Effect<ReturnType, Failure, repeat each ParameterType>>,
+        with parameters: repeat each ParameterType,
+        transform: @escaping (ReturnType, (Action) async -> Void) async throws -> Void,
+        onFailure: @escaping (Failure) async -> Action
+    ) -> SubscriptionID {
+        trySubscribe(
+            dependencyScope[keyPath: effect],
+            with: repeat each parameters,
+            transform: transform,
+            onFailure: onFailure
+        )
+    }
+
     public func cancel(_ subscriptionID: SubscriptionID) {
         cancelThunk(subscriptionID)
     }

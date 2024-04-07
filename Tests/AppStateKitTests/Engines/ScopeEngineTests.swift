@@ -140,7 +140,7 @@ final class ScopeEngineTests: XCTestCase {
         
         await subject.send(.doWhat)
         
-        await fulfillment(of: [finishExpectation])
+        await fulfillment(of: [finishExpectation], timeout: 1.0)
         
         let expected = [
             TestComponent.State(count: 0, value: "loading", lastTick: 0),
@@ -163,7 +163,7 @@ final class ScopeEngineTests: XCTestCase {
 
         await subject.send(.beginTimer(count: 3))
         
-        await fulfillment(of: [finishExpectation])
+        await fulfillment(of: [finishExpectation], timeout: 1.0)
         
         let subID = SubscriptionID()
         let expected = [

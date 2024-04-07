@@ -1,6 +1,10 @@
 import Foundation
 import AppStateKit
 
+enum TestError: Error {
+    case importFailure
+}
+
 @Effect
 enum LoadAtIndexEffect {
     static func perform(dependencies: DependencyScope, index: Int) -> String {
@@ -91,3 +95,15 @@ extension DependencyScope {}
 @ExtendSideEffects(with: GenerateEffect, () -> String)
 extension AnySideEffects {}
 
+@Effect
+enum ImportURLEffect {
+    static func perform(dependencies: DependencyScope, _ url: URL) async throws -> String {
+        throw TestError.importFailure
+    }
+}
+
+@ExtendDependencyScope(with: ImportURLEffect)
+extension DependencyScope {}
+
+@ExtendSideEffects(with: ImportURLEffect, (URL) async throws -> String)
+extension AnySideEffects {}
