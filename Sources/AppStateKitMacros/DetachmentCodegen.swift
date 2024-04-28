@@ -15,6 +15,8 @@ struct DetachmentCodegen {
             }
             """
 
+        let translateMethodName = detachment.translateMethodName ?? "translate"
+        
         let viewMethod: DeclSyntax = """
             @MainActor
             static func view<E: Engine>(
@@ -26,7 +28,7 @@ struct DetachmentCodegen {
                          component: \(raw: detachment.componentName).self,
                          initialState: initialState,
                          actionToUpdateState: actionToUpdateState,
-                         translate: translate,
+                         translate: self.\(raw: translateMethodName),
                          inject: inject
                      ).view()
                  )
@@ -35,7 +37,7 @@ struct DetachmentCodegen {
 
         let decls = [
             detachment.hasActionToUpdateState ? nil : defaultActionToUpdateState,
-            detachment.hasTranslate ? nil : defaultTranslate,
+            detachment.translateMethodName == nil ? defaultTranslate : nil,
             viewMethod
         ]
         return decls.compactMap { $0 }

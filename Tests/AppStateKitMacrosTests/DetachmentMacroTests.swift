@@ -73,7 +73,7 @@ final class DetachmentMacroTests: XCTestCase {
                                  component: Subfeature.self,
                                  initialState: initialState,
                                  actionToUpdateState: actionToUpdateState,
-                                 translate: translate,
+                                 translate: self.translate,
                                  inject: inject
                              ).view()
                          )
@@ -213,7 +213,7 @@ final class DetachmentMacroTests: XCTestCase {
                                  component: Subfeature.self,
                                  initialState: initialState,
                                  actionToUpdateState: actionToUpdateState,
-                                 translate: translate,
+                                 translate: self.translate,
                                  inject: inject
                              ).view()
                          )
@@ -301,7 +301,7 @@ final class DetachmentMacroTests: XCTestCase {
                         Subfeature.State(score: state.score)
                     }
             
-                    static func translate(from output: Subfeature.Output) -> Action? {
+                    static func translateFromSubfeature(from output: Subfeature.Output) -> Action? {
                         .increase
                     }
                 }
@@ -335,7 +335,7 @@ final class DetachmentMacroTests: XCTestCase {
                         Subfeature.State(score: state.score)
                     }
 
-                    static func translate(from output: Subfeature.Output) -> Action? {
+                    static func translateFromSubfeature(from output: Subfeature.Output) -> Action? {
                         .increase
                     }
 
@@ -353,7 +353,7 @@ final class DetachmentMacroTests: XCTestCase {
                                  component: Subfeature.self,
                                  initialState: initialState,
                                  actionToUpdateState: actionToUpdateState,
-                                 translate: translate,
+                                 translate: self.translateFromSubfeature,
                                  inject: inject
                              ).view()
                          )

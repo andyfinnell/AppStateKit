@@ -4,7 +4,7 @@ struct DetachmentParser {
     static func parse(_ decl: EnumDeclSyntax) -> Detachment? {
         var componentName: String?
         var hasActionToUpdateStateMethod = false
-        var hasTranslateMethod = false
+        var translateMethodName: String?
         
         for member in decl.memberBlock.members {
             guard let functionDecl = member.decl.as(FunctionDeclSyntax.self) else {
@@ -16,8 +16,8 @@ struct DetachmentParser {
             }
             if isActionToUpdateStateMethod(functionDecl) {
                 hasActionToUpdateStateMethod = true
-            } else if isTranslateMethod(functionDecl) {
-                hasTranslateMethod = true
+            } else if let translateMethod = parseTranslateMethod(functionDecl) {
+                translateMethodName = translateMethod
             }
         }
         
@@ -28,7 +28,7 @@ struct DetachmentParser {
         return Detachment(
             componentName: componentName,
             hasActionToUpdateState: hasActionToUpdateStateMethod,
-            hasTranslate: hasTranslateMethod
+            translateMethodName: translateMethodName
         )
     }
 }
@@ -94,13 +94,10 @@ private extension DetachmentParser {
         return isAction
     }
     
-    static func isTranslateMethod(_ functionDecl: FunctionDeclSyntax) -> Bool {
-        guard functionDecl.name.text == "translate" else {
-            return false
-        }
+    static func parseTranslateMethod(_ functionDecl: FunctionDeclSyntax) -> String? {
         // needs to be static
-        // needs to take Component.Action as parameter
-        // needs to have Action return
+        // needs to take Component.Output as parameter
+        // needs to have Action? return
         
         let isStatic = functionDecl.modifiers.contains { declModifier in
             declModifier.name.text == "static"
@@ -111,16 +108,19 @@ private extension DetachmentParser {
                 && functionDecl.signature.effectSpecifiers?.asyncSpecifier == nil
                 && functionDecl.signature.effectSpecifiers?.throwsSpecifier == nil
                 && isStatic else {
-            return false
+            return nil
         }
         
         guard isOptionalType(returnClause.type, named: "Action") else {
-            return false
+            return nil
         }
         
         let (_, isAction) = isTypeScoped(parameter.type, named: "Output")
+        guard isAction else {
+            return nil
+        }
         
-        return isAction
+        return functionDecl.name.text
     }
 
     static func isType(_ typeSyntax: TypeSyntax, named name: String) -> Bool {

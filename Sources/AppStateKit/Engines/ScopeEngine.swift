@@ -1,8 +1,6 @@
 import Foundation
 
 // TODO: should be able to signal from SideEffects
-// TODO: ScopeEngine should work the same as MapEngine when it comes to translate
-// i.e. move translate out of detachment
 
 public final class ScopeEngine<State, Action, Output>: Engine {
     private let isEqual: (State, State) -> Bool
