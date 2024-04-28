@@ -10,6 +10,10 @@ final class ViewEngineTests: XCTestCase {
             var value: String
         }
         
+        enum Output: Equatable {
+            case letParentKnow
+        }
+        
         private static func doWhat(_ state: inout State, sideEffects: AnySideEffects<Action>) {
             // nop
         }
@@ -18,7 +22,7 @@ final class ViewEngineTests: XCTestCase {
             // nop
         }
         
-        static func view(_ engine: ViewEngine<State, Action>) -> some View {
+        static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
             VStack {
                 Text(engine.value)
                 
@@ -27,8 +31,8 @@ final class ViewEngineTests: XCTestCase {
         }
     }
         
-    private var parentEngine: FakeEngine<TestComponent.State, TestComponent.Action>!
-    private var subject: ViewEngine<TestComponent.State, TestComponent.Action>!
+    private var parentEngine: FakeEngine<TestComponent.State, TestComponent.Action, TestComponent.Output>!
+    private var subject: ViewEngine<TestComponent.State, TestComponent.Action, TestComponent.Output>!
     
     override func setUp() {
         super.setUp()
@@ -37,11 +41,18 @@ final class ViewEngineTests: XCTestCase {
         subject = ViewEngine(engine: parentEngine, isEqual: ==)
     }
 
-    func testActionApply() async {
+    func testActionSend() async {
         await subject.send(.doWhat)
         
         XCTAssertEqual(parentEngine.sentActions, [.doWhat])
     }
+    
+    func testOutputSignal() async {
+        await subject.signal(.letParentKnow)
+        
+        XCTAssertEqual(parentEngine.signaledOutput, [.letParentKnow])
+    }
+
 
     func testParentStateChanged() {
         var history = [TestComponent.State]()

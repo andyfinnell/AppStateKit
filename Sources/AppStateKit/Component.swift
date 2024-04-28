@@ -6,5 +6,5 @@ public protocol Component: BaseComponent {
         
     @MainActor
     @ViewBuilder
-    static func view(_ engine: ViewEngine<State, Action>) -> ComponentView
+    static func view(_ engine: ViewEngine<State, Action, Output>) -> ComponentView
 }

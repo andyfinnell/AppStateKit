@@ -19,8 +19,8 @@ public macro ExtendDependencyScope<T>(with t: T) = #externalMacro(module: "AppSt
 @attached(member, names: arbitrary)
 public macro ExtendSideEffects<N, T>(with name: N, _ expr: T) = #externalMacro(module: "AppStateKitMacros", type: "ExtendSideEffectsMacro")
 
-@attached(member, names: named(actionToUpdateState(from:)), named(actionToPassUp(from:)), named(view))
+@attached(member, names: named(actionToUpdateState(from:)), named(translate(from:)), named(view))
 public macro Detachment() = #externalMacro(module: "AppStateKitMacros", type: "DetachmentMacro")
 
 @freestanding(expression)
-public macro bind<State, Action, P>(_ engine: ViewEngine<State, Action>, _ keyPath: KeyPath<State, P>) -> Binding<P> = #externalMacro(module: "AppStateKitMacros", type: "BindMacro")
+public macro bind<State, Action, Output, P>(_ engine: ViewEngine<State, Action, Output>, _ keyPath: KeyPath<State, P>) -> Binding<P> = #externalMacro(module: "AppStateKitMacros", type: "BindMacro")

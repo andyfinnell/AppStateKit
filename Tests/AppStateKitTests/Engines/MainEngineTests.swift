@@ -62,7 +62,7 @@ fileprivate enum TestComponent {
         state.value = message
     }
     
-    static func view(_ engine: ViewEngine<State, Action>) -> some View {
+    static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
         Text(engine.value)
     }
 }

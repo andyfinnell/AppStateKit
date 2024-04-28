@@ -9,8 +9,8 @@ struct DetachmentCodegen {
             }
             """
         
-        let defaultActionToPassUp: DeclSyntax = """
-            static func actionToPassUp(from action: \(raw: detachment.componentName).Action) -> Action? {
+        let defaultTranslate: DeclSyntax = """
+            static func translate(from output: \(raw: detachment.componentName).Output) -> Action? {
                 nil
             }
             """
@@ -26,7 +26,7 @@ struct DetachmentCodegen {
                          component: \(raw: detachment.componentName).self,
                          initialState: initialState,
                          actionToUpdateState: actionToUpdateState,
-                         actionToPassUp: actionToPassUp,
+                         translate: translate,
                          inject: inject
                      ).view()
                  )
@@ -35,7 +35,7 @@ struct DetachmentCodegen {
 
         let decls = [
             detachment.hasActionToUpdateState ? nil : defaultActionToUpdateState,
-            detachment.hasActionToPassUp ? nil : defaultActionToPassUp,
+            detachment.hasTranslate ? nil : defaultTranslate,
             viewMethod
         ]
         return decls.compactMap { $0 }

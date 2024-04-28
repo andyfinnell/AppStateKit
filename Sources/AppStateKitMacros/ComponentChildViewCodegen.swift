@@ -4,7 +4,7 @@ import SwiftSyntaxBuilder
 struct ComponentChildViewCodegen {
     static func codegen(from component: Component) -> [DeclSyntax] {
         component.compositions.compactMap {
-            codegen(from: $0)
+            codegen(from: $0, translateCompositionMethodNames: component.translateCompositionMethodNames)
         } + component.detachments.compactMap {
             codegen(from: $0)
         }
@@ -121,7 +121,8 @@ private extension ComponentChildViewCodegen {
     static func generateCallToChildView(
         composition: Composition,
         extraction: Extraction,
-        fallbackState: String?
+        fallbackState: String?,
+        translateCompositionMethodNames: [String: String]
     ) -> String {
         let dereferenceGenerator = DereferenceGenerator(
             keyName: "key",
@@ -138,7 +139,20 @@ private extension ComponentChildViewCodegen {
         let actionClosure = generateActionCompositionClosure(
             extraction: extraction
         )
-        let template = """
+        let componentName = componentName(from: composition)
+        let template: String
+        if let translateMethodName = translateCompositionMethodNames[componentName] {
+            template = """
+                \(extraction.componentType).EngineView(
+                    engine: engine.map(
+                        state: { \(innerStateExtract) },
+                        action: \(actionClosure),
+                        translate: \(translateMethodName)
+                    ).view()
+                )
+            """
+        } else {
+            template = """
                 \(extraction.componentType).EngineView(
                     engine: engine.map(
                         state: { \(innerStateExtract) },
@@ -146,23 +160,29 @@ private extension ComponentChildViewCodegen {
                     ).view()
                 )
             """
+        }
         return template
     }
     
-    static func codegen(from composition: Composition) -> DeclSyntax? {
+    static func codegen(from composition: Composition, translateCompositionMethodNames: [String: String]) -> DeclSyntax? {
         guard let extraction = extract(composition) else {
             return nil
         }
         let parameterList = generateParameterList(extraction)
                 
         let body = generateOptionalIfLet(composition) { fallbackState in
-            generateCallToChildView(composition: composition, extraction: extraction, fallbackState: fallbackState)
+            generateCallToChildView(
+                composition: composition,
+                extraction: extraction,
+                fallbackState: fallbackState, 
+                translateCompositionMethodNames: translateCompositionMethodNames
+            )
         }
         
         let viewDecl = """
             @MainActor
             @ViewBuilder
-            private static func \(extraction.name)(_ engine: ViewEngine<State, Action>\(parameterList)) -> some View {
+            private static func \(extraction.name)(_ engine: ViewEngine<State, Action, Output>\(parameterList)) -> some View {
             \(body)
             }
             """
@@ -175,7 +195,7 @@ private extension ComponentChildViewCodegen {
             @MainActor
             @ViewBuilder
             private static func \(raw: detachment.methodName)(
-                _ engine: ViewEngine<State, Action>,
+                _ engine: ViewEngine<State, Action, Output>,
                 inject: (DependencyScope) -> Void = { _ in }
             ) -> some View {
                 \(raw: detachment.typename).view(engine, inject: inject)
@@ -185,4 +205,20 @@ private extension ComponentChildViewCodegen {
         return viewDecl
     }
 
+    static func componentName(from composition: Composition) -> String {
+        switch composition {
+        case let .property(_, value):
+            return componentName(from: value)
+        case let .optional(value):
+            return componentName(from: value)
+        case let .array(value):
+            return componentName(from: value)
+        case let .identifiableArray(id: _, value: value):
+            return componentName(from: value)
+        case let .dictionary(key: _, value: value):
+            return componentName(from: value)
+        case let .named(namedType):
+            return namedType.description
+        }
+    }
 }

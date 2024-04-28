@@ -127,4 +127,17 @@ final class SideEffectsTests: XCTestCase {
         XCTAssertEqual(actual, expected)
     }
     
+    func testScheduleAction() async {
+        let dependencies = DependencyScope()
+        let subject = SideEffectsContainer<Action>(dependencyScope: dependencies)
+        let sideEffects = subject.eraseToAnySideEffects()
+        
+        sideEffects.schedule(.saved)
+                
+        let actual = await testMaterializeEffects(subject)
+        let expected = Set<Action>([
+            .saved
+        ])
+        XCTAssertEqual(actual, expected)
+    }
 }

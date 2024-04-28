@@ -5,17 +5,26 @@ struct ComponentParser {
         var actions = [Action]()
         var compositions = [Composition]()
         var detachments = [DetachmentRef]()
+        var translateCompositionMethodNames = [String: String]()
+        var hasDefinedOutput = false
         
         for member in decl.memberBlock.members {
-            if let funcDecl = member.decl.as(FunctionDeclSyntax.self),
-               let action = computeActionFromFunction(funcDecl) {
-                actions.append(action)
+            if let funcDecl = member.decl.as(FunctionDeclSyntax.self) {
+                if let action = computeActionFromFunction(funcDecl) {
+                    actions.append(action)
+                } else if let outputTranslation = computeOutputTranslationFromFunction(funcDecl) {
+                    translateCompositionMethodNames[outputTranslation.componentName] = outputTranslation.translateMethod
+                }
             } else if let structDecl = member.decl.as(StructDeclSyntax.self) {
                 compositions.append(contentsOf: computeCompositionFromStateStruct(structDecl))
             } else if let enumDecl = member.decl.as(EnumDeclSyntax.self) {
                 if let detachmentRef = parseDetachment(enumDecl) {
                     detachments.append(detachmentRef)
                 }
+            }
+            
+            if !hasDefinedOutput {
+                hasDefinedOutput = isOutputDefinition(member.decl)
             }
         }
         
@@ -27,7 +36,9 @@ struct ComponentParser {
             name: decl.name.text,
             compositions: compositions,
             actions: actions + compositionActions,
-            detachments: detachments
+            detachments: detachments, 
+            hasDefinedOutput: hasDefinedOutput, 
+            translateCompositionMethodNames: translateCompositionMethodNames
         )
     }
     
@@ -37,7 +48,7 @@ struct ComponentParser {
             return false
         }
         // needs to be static
-        // needs to take ViewEngine<State, Action> as  parameter
+        // needs to take ViewEngine<State, Action, Output> as  parameter
         // needs to have View return
         
         let isStatic = functionDecl.modifiers.contains { declModifier in
@@ -55,7 +66,7 @@ struct ComponentParser {
         guard doesType(
             parameter.type,
             haveName: "ViewEngine",
-            withOneTypeParameters: "State", "Action"
+            withOneTypeParameters: "State", "Action", "Output"
         ) else {
             return false
         }
@@ -69,7 +80,7 @@ struct ComponentParser {
             return false
         }
         // needs to be static
-        // needs to take ViewEngine<State, Action> as  parameter
+        // needs to take ViewEngine<State, Action, Output> as  parameter
         // needs to have View return
         
         let isStatic = functionDecl.modifiers.contains { declModifier in
@@ -87,7 +98,7 @@ struct ComponentParser {
         guard doesType(
             parameter.type,
             haveName: "ViewEngine",
-            withOneTypeParameters: "State", "Action"
+            withOneTypeParameters: "State", "Action", "Output"
         ) else {
             return false
         }
@@ -98,6 +109,64 @@ struct ComponentParser {
 }
 
 private extension ComponentParser {
+    struct OutputTranslation {
+        let componentName: String
+        let translateMethod: String
+    }
+    
+    static func computeOutputTranslationFromFunction(_ functionDecl: FunctionDeclSyntax) -> OutputTranslation? {
+        // needs to be static
+        // needs to take from output: Foo.Output as inout as first parameter
+        // needs to have Action return
+        
+        let isStatic = functionDecl.modifiers.contains { declModifier in
+            declModifier.name.text == "static"
+        }
+        guard let returnClause = functionDecl.signature.returnClause,
+              let parameter = functionDecl.signature.parameterClause.parameters.first,
+              let componentName = extractComponentNameFromOutput(parameter.type),
+              functionDecl.signature.parameterClause.parameters.count == 1
+                && functionDecl.signature.effectSpecifiers?.asyncSpecifier == nil
+                && functionDecl.signature.effectSpecifiers?.throwsSpecifier == nil
+                && isStatic
+                && optionalTypeName(returnClause.type) == "Action" else {
+            // TODO: should this be a warning if everything else matches?
+            return nil
+        }
+        
+        return OutputTranslation(
+            componentName: componentName,
+            translateMethod: functionDecl.name.text
+        )
+    }
+    
+    static func optionalTypeName(_ typeSyntax: TypeSyntax) -> String? {
+        guard let optionalType = typeSyntax.as(OptionalTypeSyntax.self),
+              let identifier = optionalType.wrappedType.as(IdentifierTypeSyntax.self) else {
+            return nil
+        }
+        return identifier.name.text
+    }
+    
+    static func extractComponentNameFromOutput(_ typeSyntax: TypeSyntax) -> String? {
+        guard let memberSyntax = typeSyntax.as(MemberTypeSyntax.self),
+              memberSyntax.name.text == "Output" else {
+            return nil
+        }
+        return memberSyntax.baseType.description
+    }
+    
+    static func isOutputDefinition(_ decl: DeclSyntax) -> Bool {
+        if let structDecl = decl.as(StructDeclSyntax.self) {
+            return structDecl.name.text == "Output"
+        } else if let enumDecl = decl.as(EnumDeclSyntax.self) {
+            return enumDecl.name.text == "Output"
+        } else if let typealiasDecl = decl.as(TypeAliasDeclSyntax.self) {
+            return typealiasDecl.name.text == "Output"
+        } else {
+            return false
+        }
+    }
     
     static func actionFromComposition(_ composition: Composition) -> Action? {
         // Should only have a property at this level

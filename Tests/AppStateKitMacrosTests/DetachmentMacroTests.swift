@@ -34,7 +34,7 @@ final class DetachmentMacroTests: XCTestCase {
                     state.name = newName
                 }
             
-                static func view(_ engine: ViewEngine<State, Action>) -> some View {
+                static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
                     HStack {
                         Text(engine.name)
             
@@ -59,7 +59,7 @@ final class DetachmentMacroTests: XCTestCase {
                         nil
                     }
 
-                    static func actionToPassUp(from action: Subfeature.Action) -> Action? {
+                    static func translate(from output: Subfeature.Output) -> Action? {
                         nil
                     }
 
@@ -73,7 +73,7 @@ final class DetachmentMacroTests: XCTestCase {
                                  component: Subfeature.self,
                                  initialState: initialState,
                                  actionToUpdateState: actionToUpdateState,
-                                 actionToPassUp: actionToPassUp,
+                                 translate: translate,
                                  inject: inject
                              ).view()
                          )
@@ -89,7 +89,7 @@ final class DetachmentMacroTests: XCTestCase {
                 }
                 @MainActor
             
-                static func view(_ engine: ViewEngine<State, Action>) -> some View {
+                static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
                     HStack {
                         Text(engine.name)
             
@@ -102,6 +102,8 @@ final class DetachmentMacroTests: XCTestCase {
                     case updateName(newName: String)
                 }
             
+                typealias Output = Never
+
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action>) {
                     switch action {
                     case .increase:
@@ -114,7 +116,7 @@ final class DetachmentMacroTests: XCTestCase {
                 }
             
                 struct EngineView: View {
-                    @SwiftUI.State var engine: ViewEngine<State, Action>
+                    @SwiftUI.State var engine: ViewEngine<State, Action, Output>
             
                     var body: some View {
                         view(engine)
@@ -124,7 +126,7 @@ final class DetachmentMacroTests: XCTestCase {
                 @MainActor
                 @ViewBuilder
                 private static func subfeature(
-                    _ engine: ViewEngine<State, Action>,
+                    _ engine: ViewEngine<State, Action, Output>,
                     inject: (DependencyScope) -> Void = { _ in
                     }
                 ) -> some View {
@@ -172,7 +174,7 @@ final class DetachmentMacroTests: XCTestCase {
                     state.name = newName
                 }
             
-                static func view(_ engine: ViewEngine<State, Action>) -> some View {
+                static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
                     HStack {
                         Text(engine.name)
             
@@ -197,7 +199,7 @@ final class DetachmentMacroTests: XCTestCase {
                         .updateScore(state.score)
                     }
 
-                    static func actionToPassUp(from action: Subfeature.Action) -> Action? {
+                    static func translate(from output: Subfeature.Output) -> Action? {
                         nil
                     }
 
@@ -211,7 +213,7 @@ final class DetachmentMacroTests: XCTestCase {
                                  component: Subfeature.self,
                                  initialState: initialState,
                                  actionToUpdateState: actionToUpdateState,
-                                 actionToPassUp: actionToPassUp,
+                                 translate: translate,
                                  inject: inject
                              ).view()
                          )
@@ -227,7 +229,7 @@ final class DetachmentMacroTests: XCTestCase {
                 }
                 @MainActor
             
-                static func view(_ engine: ViewEngine<State, Action>) -> some View {
+                static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
                     HStack {
                         Text(engine.name)
             
@@ -240,6 +242,8 @@ final class DetachmentMacroTests: XCTestCase {
                     case updateName(newName: String)
                 }
             
+                typealias Output = Never
+
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action>) {
                     switch action {
                     case .increase:
@@ -252,7 +256,7 @@ final class DetachmentMacroTests: XCTestCase {
                 }
             
                 struct EngineView: View {
-                    @SwiftUI.State var engine: ViewEngine<State, Action>
+                    @SwiftUI.State var engine: ViewEngine<State, Action, Output>
             
                     var body: some View {
                         view(engine)
@@ -262,7 +266,7 @@ final class DetachmentMacroTests: XCTestCase {
                 @MainActor
                 @ViewBuilder
                 private static func subfeature(
-                    _ engine: ViewEngine<State, Action>,
+                    _ engine: ViewEngine<State, Action, Output>,
                     inject: (DependencyScope) -> Void = { _ in
                     }
                 ) -> some View {
@@ -297,7 +301,7 @@ final class DetachmentMacroTests: XCTestCase {
                         Subfeature.State(score: state.score)
                     }
             
-                    static func actionToPassUp(from action: Subfeature.Action) -> Action? {
+                    static func translate(from output: Subfeature.Output) -> Action? {
                         .increase
                     }
                 }
@@ -310,7 +314,7 @@ final class DetachmentMacroTests: XCTestCase {
                     state.name = newName
                 }
             
-                static func view(_ engine: ViewEngine<State, Action>) -> some View {
+                static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
                     HStack {
                         Text(engine.name)
             
@@ -331,7 +335,7 @@ final class DetachmentMacroTests: XCTestCase {
                         Subfeature.State(score: state.score)
                     }
 
-                    static func actionToPassUp(from action: Subfeature.Action) -> Action? {
+                    static func translate(from output: Subfeature.Output) -> Action? {
                         .increase
                     }
 
@@ -349,7 +353,7 @@ final class DetachmentMacroTests: XCTestCase {
                                  component: Subfeature.self,
                                  initialState: initialState,
                                  actionToUpdateState: actionToUpdateState,
-                                 actionToPassUp: actionToPassUp,
+                                 translate: translate,
                                  inject: inject
                              ).view()
                          )
@@ -365,7 +369,7 @@ final class DetachmentMacroTests: XCTestCase {
                 }
                 @MainActor
             
-                static func view(_ engine: ViewEngine<State, Action>) -> some View {
+                static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
                     HStack {
                         Text(engine.name)
             
@@ -378,6 +382,8 @@ final class DetachmentMacroTests: XCTestCase {
                     case updateName(newName: String)
                 }
             
+                typealias Output = Never
+
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action>) {
                     switch action {
                     case .increase:
@@ -390,7 +396,7 @@ final class DetachmentMacroTests: XCTestCase {
                 }
             
                 struct EngineView: View {
-                    @SwiftUI.State var engine: ViewEngine<State, Action>
+                    @SwiftUI.State var engine: ViewEngine<State, Action, Output>
             
                     var body: some View {
                         view(engine)
@@ -400,7 +406,7 @@ final class DetachmentMacroTests: XCTestCase {
                 @MainActor
                 @ViewBuilder
                 private static func subfeature(
-                    _ engine: ViewEngine<State, Action>,
+                    _ engine: ViewEngine<State, Action, Output>,
                     inject: (DependencyScope) -> Void = { _ in
                     }
                 ) -> some View {

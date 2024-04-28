@@ -20,7 +20,7 @@ enum CounterComponent {
         state.countText = "\(state.count)"
     }
 
-    static func view(_ engine: ViewEngine<State, Action>) -> some View {
+    static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
         VStack {
             HStack {
                 Text("Count")
@@ -51,7 +51,7 @@ enum CounterListComponent {
         var counters: [CounterComponent.State]
     }
         
-    static func view(_ engine: ViewEngine<State, Action>) -> some View {
+    static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
         ForEach(0..<engine.counters.count) { i in
             counters(engine, at: i)
         }
@@ -66,7 +66,7 @@ enum CounterDictionaryComponent {
         var counters: [String: CounterComponent.State]
     }
         
-    static func view(_ engine: ViewEngine<State, Action>) -> some View {
+    static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
         ForEach(engine.counters.keys.sorted(), id: \.self) { key in
             counters(engine, forKey: key)
         }
@@ -80,7 +80,7 @@ enum CounterIdentifiableComponent {
         var counters: IdentifiableArray<CounterComponent.State>
     }
         
-    static func view(_ engine: ViewEngine<State, Action>) -> some View {
+    static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
         ForEach(engine.counters.map { $0.id }, id: \.self) { id in
             counters(engine, byID: id)
         }
@@ -110,7 +110,7 @@ enum MyApp {
         }
     }
     
-    static func scene(_ engine: ViewEngine<State, Action>) -> some Scene {
+    static func scene(_ engine: ViewEngine<State, Action, Output>) -> some Scene {
         WindowGroup {
             counters(engine)
         }

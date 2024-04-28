@@ -30,7 +30,11 @@ final class MapEngineTests: XCTestCase {
             
         }
 
-        static func view(_ engine: ViewEngine<State, Action>) -> some View {
+        private static func translateTest(from output: TestComponent.Output) -> Action? {
+            .finishBigEffect
+        }
+        
+        static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
             VStack {
                 Text(engine.value)
                 
@@ -45,17 +49,21 @@ final class MapEngineTests: XCTestCase {
             var isOn: Bool
         }
         
+        enum Output: Equatable {
+            case letParentKnow
+        }
+        
         private static func doWhat(_ state: inout State, sideEffects: AnySideEffects<Action>) {
             
         }
 
-        static func view(_ engine: ViewEngine<State, Action>) -> some View {
+        static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
             Text(engine.isOn ? "On" : "Off")
         }
     }
     
-    private var parentEngine: FakeEngine<ParentComponent.State, ParentComponent.Action>!
-    private var subject: MapEngine<TestComponent.State, TestComponent.Action>!
+    private var parentEngine: FakeEngine<ParentComponent.State, ParentComponent.Action, ParentComponent.Output>!
+    private var subject: MapEngine<TestComponent.State, TestComponent.Action, TestComponent.Output>!
     
     override func setUp() {
         super.setUp()
@@ -63,7 +71,8 @@ final class MapEngineTests: XCTestCase {
         parentEngine = FakeEngine(state: ParentComponent.State(value: "idle"))
         subject = parentEngine.map(
             state: { $0.test },
-            action: ParentComponent.Action.test
+            action: ParentComponent.Action.test,
+            translate: { _ in .finishBigEffect }
         )
     }
 
@@ -71,6 +80,12 @@ final class MapEngineTests: XCTestCase {
         await subject.send(.doWhat)
         
         XCTAssertEqual(parentEngine.sentActions, [ParentComponent.Action.test(.doWhat)])
+    }
+
+    func testOutputSignal() async {
+        await subject.signal(.letParentKnow)
+        
+        XCTAssertEqual(parentEngine.sentActions, [ParentComponent.Action.finishBigEffect])
     }
 
     func testParentStateChanged() {

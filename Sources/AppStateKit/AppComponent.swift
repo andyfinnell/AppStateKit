@@ -9,7 +9,7 @@ public protocol AppComponent: BaseComponent {
     
     @MainActor
     @SceneBuilder
-    static func scene(_ engine: ViewEngine<State, Action>) -> ComponentScene
+    static func scene(_ engine: ViewEngine<State, Action, Output>) -> ComponentScene
 }
 
 public extension AppComponent {

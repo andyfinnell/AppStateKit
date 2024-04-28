@@ -1,11 +1,15 @@
 import Foundation
 
-public final class ScopeEngine<State, Action>: Engine {
+// TODO: should be able to signal from SideEffects
+// TODO: ScopeEngine should work the same as MapEngine when it comes to translate
+// i.e. move translate out of detachment
+
+public final class ScopeEngine<State, Action, Output>: Engine {
     private let isEqual: (State, State) -> Bool
     private let processor: ActionProcessor<State, Action>
     private let _statePublisher = MainPublisher<State>()
     private var stateSink: AnySink? = nil
-    private let sendToParentThunk: @MainActor (Action) -> Void
+    private let signalThunk: @MainActor (Output) -> Void
     
     public private(set) var state: State
     public var statePublisher: any Publisher<State> { _statePublisher }
@@ -15,18 +19,18 @@ public final class ScopeEngine<State, Action>: Engine {
         engine: E,
         initialState: (E.State) -> State,
         state toLocalState: @escaping (E.State) -> Action?,
-        action fromLocalAction: @escaping (Action) -> E.Action?,
+        translate: @escaping (C.Output) -> E.Action?,
         dependencies toLocalDependencies: (DependencyScope) -> DependencyScope,
         isEqual: @escaping (State, State) -> Bool,
         component: C.Type
-    ) where C.State == State, C.Action == Action {
+    ) where C.State == State, C.Action == Action, C.Output == Output {
         processor = ActionProcessor(
             dependencies: toLocalDependencies(engine.internals.dependencyScope),
             reduce: { C.reduce(&$0, action: $1, sideEffects: $2) }
         )
         // Intentionally holding parent in memory
-        sendToParentThunk = { @MainActor action in
-            guard let parentAction = fromLocalAction(action) else {
+        signalThunk = { @MainActor output in
+            guard let parentAction = translate(output) else {
                 return
             }
             engine.send(parentAction)
@@ -47,13 +51,17 @@ public final class ScopeEngine<State, Action>: Engine {
     
     @MainActor
     public func send(_ action: Action) {
-        sendToParentThunk(action)
         processor.process(
             action,
             on: getState, setState,
             using: { @MainActor [weak self] action in
             self?.send(action)
         })
+    }
+    
+    @MainActor
+    public func signal(_ output: Output) {
+        signalThunk(output)
     }
 }
 
@@ -76,15 +84,15 @@ extension Engine {
         component: C.Type,
         initialState: (State) -> C.State,
         actionToUpdateState: @escaping (State) -> C.Action?,
-        actionToPassUp: @escaping (C.Action) -> Action?,
+        translate: @escaping (C.Output) -> Action?,
         inject: (DependencyScope) -> Void
-    ) -> ScopeEngine<C.State, C.Action> {
-        ScopeEngine<C.State, C.Action>(
+    ) -> ScopeEngine<C.State, C.Action, C.Output> {
+        ScopeEngine<C.State, C.Action, C.Output>(
             engine: self,
             initialState: initialState,
             state: actionToUpdateState,
-            action: actionToPassUp,
-            dependencies: { $0.scoped(inject: inject) }, 
+            translate: translate,
+            dependencies: { $0.scoped(inject: inject) },
             isEqual: { _, _ in false },
             component: component
         )
@@ -94,18 +102,52 @@ extension Engine {
         component: C.Type,
         initialState: (State) -> C.State,
         actionToUpdateState: @escaping (State) -> C.Action?,
-        actionToPassUp: @escaping (C.Action) -> Action?,
+        translate: @escaping (C.Output) -> Action?,
         inject: (DependencyScope) -> Void
-    ) -> ScopeEngine<C.State, C.Action> where C.State: Equatable {
-        ScopeEngine<C.State, C.Action>(
+    ) -> ScopeEngine<C.State, C.Action, C.Output> where C.State: Equatable {
+        ScopeEngine<C.State, C.Action, C.Output>(
             engine: self,
             initialState: initialState,
             state: actionToUpdateState,
-            action: actionToPassUp,
-            dependencies: { $0.scoped(inject: inject) }, 
+            translate: translate,
+            dependencies: { $0.scoped(inject: inject) },
             isEqual: { $0 == $1 },
             component: component
         )
     }
 
+    public func scope<C: Component>(
+        component: C.Type,
+        initialState: (State) -> C.State,
+        actionToUpdateState: @escaping (State) -> C.Action?,
+        inject: (DependencyScope) -> Void
+    ) -> ScopeEngine<C.State, C.Action, Never> where C.Output == Never {
+        ScopeEngine<C.State, C.Action, Never>(
+            engine: self,
+            initialState: initialState,
+            state: actionToUpdateState,
+            translate: { _ in nil },
+            dependencies: { $0.scoped(inject: inject) },
+            isEqual: { _, _ in false },
+            component: component
+        )
+    }
+    
+    public func scope<C: Component>(
+        component: C.Type,
+        initialState: (State) -> C.State,
+        actionToUpdateState: @escaping (State) -> C.Action?,
+        inject: (DependencyScope) -> Void
+    ) -> ScopeEngine<C.State, C.Action, Never> where C.State: Equatable, C.Output == Never  {
+        ScopeEngine<C.State, C.Action, Never>(
+            engine: self,
+            initialState: initialState,
+            state: actionToUpdateState,
+            translate: { _ in nil },
+            dependencies: { $0.scoped(inject: inject) },
+            isEqual: { $0 == $1 },
+            component: component
+        )
+    }
 }
+

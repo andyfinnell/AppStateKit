@@ -18,6 +18,7 @@ public enum AppComponentMacro: MemberMacro {
         let component = ComponentParser.parse(enumDecl)
         let decls: [DeclSyntax?] = [
             ComponentActionCodegen.codegen(from: component),
+            ComponentOutputCodegen.codegen(from: component),
             ComponentReducerCodegen.codegen(from: component),
             AppComponentAppCodegen.codegen(from: component),
             AppComponentMainCodegen.codegen(from: component),

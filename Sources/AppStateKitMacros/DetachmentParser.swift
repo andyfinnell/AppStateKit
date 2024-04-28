@@ -4,7 +4,7 @@ struct DetachmentParser {
     static func parse(_ decl: EnumDeclSyntax) -> Detachment? {
         var componentName: String?
         var hasActionToUpdateStateMethod = false
-        var hasActionToPassUpMethod = false
+        var hasTranslateMethod = false
         
         for member in decl.memberBlock.members {
             guard let functionDecl = member.decl.as(FunctionDeclSyntax.self) else {
@@ -16,8 +16,8 @@ struct DetachmentParser {
             }
             if isActionToUpdateStateMethod(functionDecl) {
                 hasActionToUpdateStateMethod = true
-            } else if isActionToPassUpMethod(functionDecl) {
-                hasActionToPassUpMethod = true
+            } else if isTranslateMethod(functionDecl) {
+                hasTranslateMethod = true
             }
         }
         
@@ -28,7 +28,7 @@ struct DetachmentParser {
         return Detachment(
             componentName: componentName,
             hasActionToUpdateState: hasActionToUpdateStateMethod,
-            hasActionToPassUp: hasActionToPassUpMethod
+            hasTranslate: hasTranslateMethod
         )
     }
 }
@@ -94,8 +94,8 @@ private extension DetachmentParser {
         return isAction
     }
     
-    static func isActionToPassUpMethod(_ functionDecl: FunctionDeclSyntax) -> Bool {
-        guard functionDecl.name.text == "actionToPassUp" else {
+    static func isTranslateMethod(_ functionDecl: FunctionDeclSyntax) -> Bool {
+        guard functionDecl.name.text == "translate" else {
             return false
         }
         // needs to be static
@@ -118,7 +118,7 @@ private extension DetachmentParser {
             return false
         }
         
-        let (_, isAction) = isTypeScoped(parameter.type, named: "Action")
+        let (_, isAction) = isTypeScoped(parameter.type, named: "Output")
         
         return isAction
     }

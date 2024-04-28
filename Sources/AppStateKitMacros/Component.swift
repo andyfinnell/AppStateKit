@@ -30,4 +30,6 @@ struct Component {
     let compositions: [Composition]
     let actions: [Action]
     let detachments: [DetachmentRef]
+    let hasDefinedOutput: Bool
+    let translateCompositionMethodNames: [String: String]
 }

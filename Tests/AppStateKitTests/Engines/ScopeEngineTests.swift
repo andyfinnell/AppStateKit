@@ -29,21 +29,15 @@ final class ScopeEngineTests: XCTestCase {
                 .updateCount(state.count)
             }
             
-            static func actionToPassUp(from action: TestComponent.Action) -> Action? {
-                switch action {
-                case .updateCount, .doWhat, .onTick, .beginTimer, .stopTimer:
-                    return nil
-                case let .finishBigEffect(value: value):
-                    if value == "finished" {
-                        return .markFinished
-                    } else {
-                        return nil
-                    }
+            static func translate(from output: TestComponent.Output) -> Action? {
+                switch output {
+                case .markFinished:
+                    return .markFinished
                 }
             }
         }
         
-        static func view(_ engine: ViewEngine<State, Action>) -> some View {
+        static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
             VStack {
                 Text("Count: \(engine.count)")
                 
@@ -68,6 +62,10 @@ final class ScopeEngineTests: XCTestCase {
             }
         }
         
+        enum Output: Hashable {
+            case markFinished
+        }
+        
         private static func updateCount(_ state: inout State, sideEffects: AnySideEffects<Action>, _ count: Int) {
             state.count = count
         }
@@ -82,6 +80,10 @@ final class ScopeEngineTests: XCTestCase {
         
         private static func finishBigEffect(_ state: inout State, sideEffects: AnySideEffects<Action>, value: String) {
             state.value = value
+            if state.value == "finished" {
+                // TODO: implement this
+//                sideEffects.signal(.markFinished)
+            }
         }
         
         private static func onTick(_ state: inout State, sideEffects: AnySideEffects<Action>, _ timestamp: TimeInterval) {
@@ -105,13 +107,13 @@ final class ScopeEngineTests: XCTestCase {
             state.timerID = nil
         }
         
-        static func view(_ engine: ViewEngine<State, Action>) -> some View {
+        static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
             Text(engine.value)
         }
     }
 
-    private var parentEngine: FakeEngine<ParentComponent.State, ParentComponent.Action>!
-    private var subject: ScopeEngine<TestComponent.State, TestComponent.Action>!
+    private var parentEngine: FakeEngine<ParentComponent.State, ParentComponent.Action, ParentComponent.Output>!
+    private var subject: ScopeEngine<TestComponent.State, TestComponent.Action, TestComponent.Output>!
     private var injectWasCalled = false
     
     override func setUp() {
@@ -123,7 +125,7 @@ final class ScopeEngineTests: XCTestCase {
             component: TestComponent.self,
             initialState: ParentComponent.Test.initialState,
             actionToUpdateState: ParentComponent.Test.actionToUpdateState,
-            actionToPassUp: ParentComponent.Test.actionToPassUp,
+            translate: ParentComponent.Test.translate,
             inject: { _ in injectWasCalled = true }
         )
     }
@@ -215,8 +217,8 @@ final class ScopeEngineTests: XCTestCase {
         _ = sink
     }
     
-    func testActionSendUp() async {
-        await subject.send(.finishBigEffect(value: "finished"))
+    func testTranslateOutput() async {
+        await subject.signal(.markFinished)
         
         XCTAssertEqual(parentEngine.sentActions, [ParentComponent.Action.markFinished])
     }

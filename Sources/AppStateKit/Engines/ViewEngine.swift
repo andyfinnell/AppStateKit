@@ -3,9 +3,10 @@ import SwiftUI
 
 @Observable
 @dynamicMemberLookup
-public final class ViewEngine<State, Action>: Engine {
+public final class ViewEngine<State, Action, Output>: Engine {
     private let isEqual: (State, State) -> Bool
     private let sendThunk: @MainActor (Action) -> Void
+    private let signalThunk: @MainActor (Output) -> Void
     private let internalsThunk: () -> Internals
     private let _statePublisher = MainPublisher<State>()
     private var sink: AnySink?
@@ -14,10 +15,16 @@ public final class ViewEngine<State, Action>: Engine {
     public var statePublisher: any Publisher<State> { _statePublisher }
     public var internals: Internals { internalsThunk() }
     
-    public init<E: Engine>(engine: E, isEqual: @escaping (State, State) -> Bool) where E.State == State, E.Action == Action {
+    public init<E: Engine>(
+        engine: E,
+        isEqual: @escaping (State, State) -> Bool
+    ) where E.State == State, E.Action == Action, E.Output == Output {
         // Intentionally holding parent in memory
         sendThunk = { @MainActor action in
             engine.send(action)
+        }
+        signalThunk = { @MainActor output in
+            engine.signal(output)
         }
         internalsThunk = {
             engine.internals
@@ -35,6 +42,11 @@ public final class ViewEngine<State, Action>: Engine {
         sendThunk(action)
     }
     
+    @MainActor
+    public func signal(_ output: Output) {
+        signalThunk(output)
+    }
+
     @MainActor
     public subscript<T>(dynamicMember keyPath: KeyPath<State, T>) -> T {
         state[keyPath: keyPath]
@@ -92,11 +104,17 @@ private extension ViewEngine {
 }
 
 public extension Engine {
-    func view() -> ViewEngine<State, Action> where State: Equatable {
-        ViewEngine(engine: self, isEqual: ==)
+    func view() -> ViewEngine<State, Action, Output> where State: Equatable {
+        ViewEngine(
+            engine: self,
+            isEqual: ==
+        )
     }
 
-    func view() -> ViewEngine<State, Action> {
-        ViewEngine(engine: self, isEqual: { _, _ in false })
+    func view() -> ViewEngine<State, Action, Output> {
+        ViewEngine(
+            engine: self,
+            isEqual: { _, _ in false }
+        )
     }
 }

@@ -8,6 +8,8 @@ public final class MainEngine<State, Action>: Engine {
     public var statePublisher: any Publisher<State> { _statePublisher }
     public var internals: Internals { processor.internals }
     
+    public typealias Output = Never
+    
     public init<C: BaseComponent>(
         dependencies: DependencyScope,
         state: State,
@@ -42,6 +44,11 @@ public final class MainEngine<State, Action>: Engine {
             using: { @MainActor [weak self] action in
             self?.send(action)
         })
+    }
+    
+    @MainActor
+    public func signal(_ output: Output) {
+        // nop, always top level
     }
 }
 

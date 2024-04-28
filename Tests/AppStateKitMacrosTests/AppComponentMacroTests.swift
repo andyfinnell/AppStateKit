@@ -28,7 +28,7 @@ final class AppComponentMacroTests: XCTestCase {
                     ))
                 }
                 
-                static func scene(_ engine: ViewEngine<State, Action>) -> some Scene {
+                static func scene(_ engine: ViewEngine<State, Action, Output>) -> some Scene {
                     WindowGroup {
                         counters(engine)
                     }
@@ -53,7 +53,7 @@ final class AppComponentMacroTests: XCTestCase {
                 }
                 @MainActor
                 
-                static func scene(_ engine: ViewEngine<State, Action>) -> some Scene {
+                static func scene(_ engine: ViewEngine<State, Action, Output>) -> some Scene {
                     WindowGroup {
                         counters(engine)
                     }
@@ -63,6 +63,8 @@ final class AppComponentMacroTests: XCTestCase {
                     case counters(CounterListComponent.Action)
                 }
             
+                typealias Output = Never
+
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action>) {
                     switch action {
                     case let .counters(innerAction):
@@ -95,7 +97,7 @@ final class AppComponentMacroTests: XCTestCase {
 
                 @MainActor
                 @ViewBuilder
-                private static func counters(_ engine: ViewEngine<State, Action>) -> some View {
+                private static func counters(_ engine: ViewEngine<State, Action, Output>) -> some View {
                     CounterListComponent.EngineView(
                         engine: engine.map(
                             state: {

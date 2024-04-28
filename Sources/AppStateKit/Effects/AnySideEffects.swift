@@ -155,4 +155,11 @@ public struct AnySideEffects<Action> {
             cancel: cancelThunk
         )
     }
+    
+    public func schedule(_ action: Action) {
+        append(FutureEffect {
+            action
+        })
+    }
+    
 }

@@ -3,7 +3,7 @@ import XCTest
 @testable import AppStateKit
 
 @Observable
-final class FakeEngine<State, Action>: Engine {
+final class FakeEngine<State, Action, Output>: Engine {
     var internals = Internals(dependencyScope: DependencyScope())
     var state: State {
         didSet {
@@ -23,5 +23,12 @@ final class FakeEngine<State, Action>: Engine {
     func send(_ action: Action) {
         sentActions.append(action)
         sendExpectation?.fulfill()
+    }
+    
+    var signaledOutput = [Output]()
+    var signalExpectation: XCTestExpectation?
+    func signal(_ output: Output) {
+        signaledOutput.append(output)
+        signalExpectation?.fulfill()
     }
 }
