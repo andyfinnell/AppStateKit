@@ -351,7 +351,7 @@ private extension ComponentParser {
     }
     
     static func isSideEffects(_ parameter: FunctionParameterSyntax) -> Bool {
-        // Expect: sideEffects: SideEffects<Action>
+        // Expect: sideEffects: AnySideEffects<Action, Output> OR SideEffects
         guard parameter.firstName.text == "sideEffects" else {
             return false
         }
@@ -360,7 +360,7 @@ private extension ComponentParser {
             parameter.type,
             haveName: "AnySideEffects",
             withOneTypeParameters: "Action", "Output"
-        )
+        ) || doesType(parameter.type, haveName: "SideEffects")
     }
 
     static func extractParameterType(_ identifier: IdentifierTypeSyntax, ifTypeEquals typename: String) -> TypeSyntax? {
@@ -393,6 +393,15 @@ private extension ComponentParser {
         }
         
         return true
+    }
+
+    static func doesType(_ type: TypeSyntax, haveName typename: String) -> Bool {
+        guard let identifier = type.as(IdentifierTypeSyntax.self),
+              identifier.name.text == typename else {
+            return false
+        }
+
+        return identifier.genericArgumentClause == nil
     }
 
     static func parseDetachment(_ enumDecl: EnumDeclSyntax) -> DetachmentRef? {

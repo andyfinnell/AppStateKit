@@ -65,6 +65,8 @@ final class AppComponentMacroTests: XCTestCase {
             
                 typealias Output = Never
 
+                typealias SideEffects = AnySideEffects<Action, Output>
+
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case let .counters(innerAction):

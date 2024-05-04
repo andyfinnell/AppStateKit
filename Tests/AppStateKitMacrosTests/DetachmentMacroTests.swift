@@ -104,6 +104,8 @@ final class DetachmentMacroTests: XCTestCase {
             
                 typealias Output = Never
 
+                typealias SideEffects = AnySideEffects<Action, Output>
+
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case .increase:
@@ -244,6 +246,8 @@ final class DetachmentMacroTests: XCTestCase {
             
                 typealias Output = Never
 
+                typealias SideEffects = AnySideEffects<Action, Output>
+
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case .increase:
@@ -383,6 +387,8 @@ final class DetachmentMacroTests: XCTestCase {
                 }
             
                 typealias Output = Never
+
+                typealias SideEffects = AnySideEffects<Action, Output>
 
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {

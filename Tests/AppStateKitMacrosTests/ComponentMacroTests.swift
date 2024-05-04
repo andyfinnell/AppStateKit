@@ -19,7 +19,7 @@ final class ComponentMacroTests: XCTestCase {
                     var score: Int
                 }
             
-                private static func increase(_ state: inout State, sideEffects: AnySideEffects<Action, Output>) {
+                private static func increase(_ state: inout State, sideEffects: SideEffects) {
                     state.score += 1
                 }
             
@@ -44,7 +44,7 @@ final class ComponentMacroTests: XCTestCase {
                     var score: Int
                 }
             
-                private static func increase(_ state: inout State, sideEffects: AnySideEffects<Action, Output>) {
+                private static func increase(_ state: inout State, sideEffects: SideEffects) {
                     state.score += 1
                 }
             
@@ -67,6 +67,8 @@ final class ComponentMacroTests: XCTestCase {
                 }
             
                 typealias Output = Never
+
+                typealias SideEffects = AnySideEffects<Action, Output>
 
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
@@ -162,6 +164,8 @@ final class ComponentMacroTests: XCTestCase {
             
                 typealias Output = Never
 
+                typealias SideEffects = AnySideEffects<Action, Output>
+
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case .decrement:
@@ -243,6 +247,8 @@ final class ComponentMacroTests: XCTestCase {
                 }
             
                 typealias Output = Never
+
+                typealias SideEffects = AnySideEffects<Action, Output>
 
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
@@ -350,6 +356,8 @@ final class ComponentMacroTests: XCTestCase {
                 }
             
                 typealias Output = Never
+
+                typealias SideEffects = AnySideEffects<Action, Output>
 
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
@@ -464,6 +472,8 @@ final class ComponentMacroTests: XCTestCase {
                 }
             
                 typealias Output = Never
+
+                typealias SideEffects = AnySideEffects<Action, Output>
 
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
@@ -582,6 +592,8 @@ final class ComponentMacroTests: XCTestCase {
             
                 typealias Output = Never
 
+                typealias SideEffects = AnySideEffects<Action, Output>
+
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case let .updateName(newName: newName):
@@ -694,6 +706,8 @@ final class ComponentMacroTests: XCTestCase {
                 }
             
                 typealias Output = Never
+
+                typealias SideEffects = AnySideEffects<Action, Output>
 
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
@@ -811,6 +825,8 @@ final class ComponentMacroTests: XCTestCase {
             
                 typealias Output = Never
             
+                typealias SideEffects = AnySideEffects<Action, Output>
+
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case let .updateName(newName: newName):
@@ -919,6 +935,8 @@ final class ComponentMacroTests: XCTestCase {
                     case child(ChildFeature.Action)
                 }
             
+                typealias SideEffects = AnySideEffects<Action, Output>
+
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case let .updateName(newName: newName):
