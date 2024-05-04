@@ -100,6 +100,94 @@ final class ComponentMacroTests: XCTestCase {
         #endif
     }
 
+    func testBasicUpdatableLeafComponent() throws {
+        #if canImport(AppStateKitMacros)
+        assertMacroExpansion(
+            """
+            @Component
+            enum MyFeature {
+                struct State {
+                    @Updatable var name: String
+                    var score: Int
+                }
+            
+                private static func increase(_ state: inout State, sideEffects: SideEffects) {
+                    state.score += 1
+                }
+                        
+                static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
+                    HStack {
+                        Text(engine.name)
+            
+                        Text("\\(engine.score)")
+                    }
+                }
+            }
+            """,
+            expandedSource: """
+            
+            enum MyFeature {
+                struct State {
+                    var name: String
+                    var score: Int
+                }
+            
+                private static func increase(_ state: inout State, sideEffects: SideEffects) {
+                    state.score += 1
+                }
+                @MainActor
+                        
+                static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
+                    HStack {
+                        Text(engine.name)
+            
+                        Text("\\(engine.score)")
+                    }
+                }
+
+                enum Action: Equatable {
+                    case updateName(String)
+                    case increase
+                }
+            
+                private static func updateName(_ state: inout State, sideEffects: SideEffects, _ p0: String) {
+                    state.name = p0
+                }
+
+                typealias Output = Never
+
+                typealias SideEffects = AnySideEffects<Action, Output>
+
+                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
+                    switch action {
+                    case let .updateName(p0):
+                        updateName(&state, sideEffects: sideEffects, p0)
+
+                    case .increase:
+                        increase(&state, sideEffects: sideEffects)
+
+                    }
+                }
+            
+                struct EngineView: View {
+                    @SwiftUI.State var engine: ViewEngine<State, Action, Output>
+            
+                    var body: some View {
+                        view(engine)
+                    }
+                }
+            }
+            
+            extension MyFeature: Component {
+            }
+            """,
+            macros: testMacros
+        )
+        #else
+        throw XCTSkip("macros are only supported when running tests for the host platform")
+        #endif
+    }
+
     func testBasicComponent() throws {
         #if canImport(AppStateKitMacros)
         assertMacroExpansion(

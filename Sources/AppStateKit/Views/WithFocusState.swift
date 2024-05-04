@@ -1,6 +1,9 @@
 import Foundation
 import SwiftUI
 
+// TODO: would it make sense to replace this with a #bindFocusState() macro?
+// Not sure it's possible though; would need a View to attach to
+
 /// Introduce some FocusState that can be sync'd to Component.State using
 /// a binding.
 ///
