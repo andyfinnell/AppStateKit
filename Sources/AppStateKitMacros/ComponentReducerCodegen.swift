@@ -4,11 +4,14 @@ import SwiftSyntaxBuilder
 struct ComponentReducerCodegen {
     static func codegen(from component: Component) -> DeclSyntax? {
         let cases = component.actions.map {
-            generateReduceAction(from: $0)
+            generateReduceAction(
+                from: $0,
+                translateCompositionMethodNames: component.translateCompositionMethodNames
+            )
         }.joined(separator: "\n")
         
         let reduceDecl = """
-            static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action>) {
+            static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                 switch action {
                 \(cases)
                 }
@@ -20,9 +23,13 @@ struct ComponentReducerCodegen {
 }
 
 private extension ComponentReducerCodegen {
-    static func generateReduceAction(from action: Action) -> String {
+    static func generateReduceAction(from action: Action, translateCompositionMethodNames: [String: String]) -> String {
         if let composition = action.composition {
-            return generateReduceComposedAction(from: action, with: composition)
+            return generateReduceComposedAction(
+                from: action,
+                with: composition,
+                translateCompositionMethodNames: translateCompositionMethodNames
+            )
         } else {
             return generateReduceLocalAction(from: action)
         }
@@ -89,7 +96,7 @@ private extension ComponentReducerCodegen {
     static func generateActionCompositionClosure(for action: Action, accessors: [Accessor]) -> String {
         let compositionClosure: String
         if accessors.count == 1 {
-            compositionClosure = "(Action.\(action.label))"
+            compositionClosure = "Action.\(action.label)"
         } else {
             let tupleValues = accessors.map {
                 switch $0 {
@@ -103,7 +110,7 @@ private extension ComponentReducerCodegen {
                     return "id: innerID"
                 }
             }.joined(separator: ", ")
-            compositionClosure = " {\n        Action.\(action.label)(\(tupleValues))\n    }\n"
+            compositionClosure = "{\n        Action.\(action.label)(\(tupleValues))\n    }\n"
         }
         return compositionClosure
     }
@@ -146,7 +153,11 @@ private extension ComponentReducerCodegen {
         }.joined(separator: ", ")
     }
     
-    static func generateReduceComposedAction(from action: Action, with composition: Composition) -> String {
+    static func generateReduceComposedAction(
+        from action: Action,
+        with composition: Composition,
+        translateCompositionMethodNames: [String: String]
+    ) -> String {
         let accessors = actionExtractionParameters(composition)
         let caseParameters = generateCaseClauseParameters(parameters: action.parameters, accessors: accessors)
         let dereferenceGenerator = DereferenceGenerator(
@@ -169,11 +180,18 @@ private extension ComponentReducerCodegen {
         let innerStateDeref = stateNeedsCopy ? "innerState" : innerStateExtract
         let copyStateBack = stateNeedsCopy ? "\(innerStateExtract) = innerState\n" : ""
         let childModule = childModuleName(composition)
+        let translateMethod: String
+        
+        if let methodName = translateCompositionMethodNames[childModule] {
+            translateMethod = methodName
+        } else {
+            translateMethod = "{ (_: \(childModule).Output) in nil }"
+        }
         
         let definition = """
             case let .\(action.label)(\(caseParameters)):
                 \(guardStatement)
-                let innerSideEffects = sideEffects.map\(actionComposition)
+                let innerSideEffects = sideEffects.map(\(actionComposition), translate: \(translateMethod))
                 \(childModule).reduce(
                     &\(innerStateDeref),
                     action: innerAction,

@@ -11,11 +11,11 @@ final class ScopeEngineTests: XCTestCase {
             var isFinished: Bool
         }
         
-        private static func increment(_ state: inout State, sideEffects: AnySideEffects<Action>) {
+        private static func increment(_ state: inout State, sideEffects: AnySideEffects<Action, Output>) {
             state.count += 1
         }
         
-        private static func markFinished(_ state: inout State, sideEffects: AnySideEffects<Action>) {
+        private static func markFinished(_ state: inout State, sideEffects: AnySideEffects<Action, Output>) {
             state.isFinished = true
         }
         
@@ -66,11 +66,11 @@ final class ScopeEngineTests: XCTestCase {
             case markFinished
         }
         
-        private static func updateCount(_ state: inout State, sideEffects: AnySideEffects<Action>, _ count: Int) {
+        private static func updateCount(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, _ count: Int) {
             state.count = count
         }
         
-        private static func doWhat(_ state: inout State, sideEffects: AnySideEffects<Action>) {
+        private static func doWhat(_ state: inout State, sideEffects: AnySideEffects<Action, Output>) {
             state.value = "loading"
             
             sideEffects.loadAtIndex(index: 0) {
@@ -78,19 +78,18 @@ final class ScopeEngineTests: XCTestCase {
             }
         }
         
-        private static func finishBigEffect(_ state: inout State, sideEffects: AnySideEffects<Action>, value: String) {
+        private static func finishBigEffect(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, value: String) {
             state.value = value
             if state.value == "finished" {
-                // TODO: implement this
-//                sideEffects.signal(.markFinished)
+                sideEffects.signal(.markFinished)
             }
         }
         
-        private static func onTick(_ state: inout State, sideEffects: AnySideEffects<Action>, _ timestamp: TimeInterval) {
+        private static func onTick(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, _ timestamp: TimeInterval) {
             state.lastTick = timestamp
         }
         
-        private static func beginTimer(_ state: inout State, sideEffects: AnySideEffects<Action>, count: Int) {
+        private static func beginTimer(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, count: Int) {
             state.timerID = sideEffects.subscribeToTimer(delay: 1.5, count: count) { timestamps, yield in
                 for await timestamp in timestamps {
                     try Task.checkCancellation()
@@ -99,7 +98,7 @@ final class ScopeEngineTests: XCTestCase {
             }
         }
         
-        private static func stopTimer(_ state: inout State, sideEffects: AnySideEffects<Action>) {
+        private static func stopTimer(_ state: inout State, sideEffects: AnySideEffects<Action, Output>) {
             guard let timerID = state.timerID else {
                 return
             }
@@ -219,6 +218,12 @@ final class ScopeEngineTests: XCTestCase {
     
     func testTranslateOutput() async {
         await subject.signal(.markFinished)
+        
+        XCTAssertEqual(parentEngine.sentActions, [ParentComponent.Action.markFinished])
+    }
+
+    func testTranslateOutputThroughSideEffects() async {
+        await subject.send(.finishBigEffect(value: "finished"))
         
         XCTAssertEqual(parentEngine.sentActions, [ParentComponent.Action.markFinished])
     }

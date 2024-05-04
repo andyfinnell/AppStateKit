@@ -1,18 +1,21 @@
 
-public struct AnySideEffects<Action> {
+public struct AnySideEffects<Action, Output> {
     private let dependencyScope: DependencyScope
     private let append: (FutureEffect<Action>) -> Void
+    private let signalThunk: (Output) -> Void
     private let subscribe: (FutureSubscription<Action>) -> Void
     private let cancelThunk: (SubscriptionID) -> Void
     
     init(
         dependencyScope: DependencyScope,
         append: @escaping (FutureEffect<Action>) -> Void,
+        signal: @escaping (Output) -> Void,
         subscribe: @escaping (FutureSubscription<Action>) -> Void,
         cancel: @escaping (SubscriptionID) -> Void
     ) {
         self.dependencyScope = dependencyScope
         self.append = append
+        self.signalThunk = signal
         self.subscribe = subscribe
         self.cancelThunk = cancel
     }
@@ -140,13 +143,24 @@ public struct AnySideEffects<Action> {
         )
     }
     
-    public func map<ToAction>(_ transform: @escaping (ToAction) -> Action) -> AnySideEffects<ToAction> {
+    public func map<ToAction, ToOutput>(
+        _ transform: @escaping (ToAction) -> Action,
+        translate: @escaping (ToOutput) -> Action?
+    ) -> AnySideEffects<ToAction, ToOutput> {
         // TODO: maybe a good time to create a child dependencyScope?
-        AnySideEffects<ToAction>(
+        AnySideEffects<ToAction, ToOutput>(
             dependencyScope: dependencyScope,
             append: { (future: FutureEffect<ToAction>) -> Void in
                 let newFuture = future.map(transform)
                 append(newFuture)
+            }, 
+            signal: { output in
+                guard let action = translate(output) else {
+                    return
+                }
+                append(FutureEffect {
+                    action
+                })
             },
             subscribe: { subscription in
                 let newSubscription = subscription.map(transform)
@@ -162,4 +176,7 @@ public struct AnySideEffects<Action> {
         })
     }
     
+    public func signal(_ output: Output) {
+        signalThunk(output)
+    }
 }

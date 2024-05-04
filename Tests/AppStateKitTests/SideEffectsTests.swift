@@ -9,17 +9,24 @@ final class SideEffectsTests: XCTestCase {
         case saved
         case child(ChildAction)
         case onTick(TimeInterval)
+        case updated
     }
         
     enum ChildAction: Hashable {
         case updated(String)
     }
     
+    enum ChildOutput: Hashable {
+        case updateParent
+    }
+    
     func testParallelEffects() async {
         let dependencies = DependencyScope()
         let subject = SideEffectsContainer<Action>(dependencyScope: dependencies)
-        let sideEffects = subject.eraseToAnySideEffects()
-        
+        let signal = { (output: Never) -> Void in
+        }
+        let sideEffects = subject.eraseToAnySideEffects(signal: signal)
+
         sideEffects.loadAtIndex(index: 4) {
             .loaded($0)
         }
@@ -38,8 +45,9 @@ final class SideEffectsTests: XCTestCase {
     func testCombinedEffects() async {
         let dependencies = DependencyScope()
         let subject = SideEffectsContainer<Action>(dependencyScope: dependencies)
-        
-        let sideEffects = subject.eraseToAnySideEffects()
+        let signal = { (output: Never) -> Void in
+        }
+        let sideEffects = subject.eraseToAnySideEffects(signal: signal)
         sideEffects.loadAtIndex(index: 4) {
             .loaded($0)
         }
@@ -47,17 +55,21 @@ final class SideEffectsTests: XCTestCase {
             .saved
         }
 
-        let childSubject = sideEffects.map { Action.child($0) }
+        let childSubject = sideEffects.map({ Action.child($0) },
+                                           translate: { (_: ChildOutput) in .updated })
         
         childSubject.update(index: 2, content: "frank") {
             .updated($0)
         }
                 
+        childSubject.signal(.updateParent)
+        
         let actual = await testMaterializeEffects(subject)
         let expected = Set<Action>([
             .loaded("loaded index 4"),
             .saved,
-            .child(.updated("update frank to 2"))
+            .child(.updated("update frank to 2")),
+            .updated
         ])
         XCTAssertEqual(actual, expected)
     }
@@ -65,8 +77,9 @@ final class SideEffectsTests: XCTestCase {
     func testSubscription() async {
         let dependencies = DependencyScope()
         let subject = SideEffectsContainer<Action>(dependencyScope: dependencies)
-        
-        let sideEffects = subject.eraseToAnySideEffects()
+        let signal = { (output: Never) -> Void in
+        }
+        let sideEffects = subject.eraseToAnySideEffects(signal: signal)
 
         _ = sideEffects.subscribeToTimer(delay: 1.5, count: 3) { times, yield in
             for await t in times {
@@ -87,8 +100,9 @@ final class SideEffectsTests: XCTestCase {
     func testImmediateCancel() async {
         let dependencies = DependencyScope()
         let subject = SideEffectsContainer<Action>(dependencyScope: dependencies)
-        
-        let sideEffects = subject.eraseToAnySideEffects()
+        let signal = { (output: Never) -> Void in
+        }
+        let sideEffects = subject.eraseToAnySideEffects(signal: signal)
 
         let subscriptionID = sideEffects.subscribeToTimer(delay: 1.5, count: 3) { times, yield in
             for await t in times {
@@ -104,8 +118,9 @@ final class SideEffectsTests: XCTestCase {
     func testLaterCancel() async {
         let dependencies = DependencyScope()
         let subject = SideEffectsContainer<Action>(dependencyScope: dependencies)
-        
-        let sideEffects = subject.eraseToAnySideEffects()
+        let signal = { (output: Never) -> Void in
+        }
+        let sideEffects = subject.eraseToAnySideEffects(signal: signal)
         let subscriptionID = SubscriptionID()
         sideEffects.cancel(subscriptionID)
 
@@ -115,8 +130,10 @@ final class SideEffectsTests: XCTestCase {
     func testGeneratedMethods() async {
         let dependencies = DependencyScope()
         let subject = SideEffectsContainer<Action>(dependencyScope: dependencies)
-        let sideEffects = subject.eraseToAnySideEffects()
-        
+        let signal = { (output: Never) -> Void in
+        }
+        let sideEffects = subject.eraseToAnySideEffects(signal: signal)
+
         sideEffects.generate() {
             .loaded($0)
         }
@@ -130,8 +147,10 @@ final class SideEffectsTests: XCTestCase {
     func testScheduleAction() async {
         let dependencies = DependencyScope()
         let subject = SideEffectsContainer<Action>(dependencyScope: dependencies)
-        let sideEffects = subject.eraseToAnySideEffects()
-        
+        let signal = { (output: Never) -> Void in
+        }
+        let sideEffects = subject.eraseToAnySideEffects(signal: signal)
+
         sideEffects.schedule(.saved)
                 
         let actual = await testMaterializeEffects(subject)
@@ -139,5 +158,22 @@ final class SideEffectsTests: XCTestCase {
             .saved
         ])
         XCTAssertEqual(actual, expected)
+    }
+    
+    func testSignal() async {
+        let dependencies = DependencyScope()
+        let subject = SideEffectsContainer<Action>(dependencyScope: dependencies)
+        var gotOutput: ChildOutput?
+        let signal = { (output: ChildOutput) -> Void in
+            gotOutput = output
+        }
+        let sideEffects = subject.eraseToAnySideEffects(signal: signal)
+
+        sideEffects.signal(.updateParent)
+                
+        let actual = await testMaterializeEffects(subject)
+        let expected = Set<Action>([])
+        XCTAssertEqual(actual, expected)
+        XCTAssertEqual(gotOutput, ChildOutput.updateParent)
     }
 }

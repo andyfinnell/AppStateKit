@@ -1,14 +1,14 @@
 
-final class ActionProcessor<State, Action> {
+final class ActionProcessor<State, Action, Output> {
     private var actions = [Action]()
     private var subscriptions = [SubscriptionID: Task<Void, Never>]()
     private var isProcessing = false
-    private let reduce: (inout State, Action, AnySideEffects<Action>) -> Void
+    private let reduce: (inout State, Action, AnySideEffects<Action, Output>) -> Void
     private let dependencies: DependencyScope
 
     init(
         dependencies: DependencyScope,
-        reduce: @escaping (inout State, Action, AnySideEffects<Action>) -> Void)
+        reduce: @escaping (inout State, Action, AnySideEffects<Action, Output>) -> Void)
     {
         self.dependencies = dependencies
         self.reduce = reduce
@@ -23,10 +23,16 @@ final class ActionProcessor<State, Action> {
         _ action: Action,
         on getState: () -> State,
         _ setState: (State) -> Void,
-        using sendThunk: @MainActor @escaping (Action) -> Void
+        using sendThunk: @MainActor @escaping (Action) -> Void,
+        _ signalThunk: @MainActor @escaping (Output) -> Void
     ) {
         actions.append(action)
-        processNextActionIfPossible(on: getState, setState, using: sendThunk)
+        processNextActionIfPossible(
+            on: getState,
+            setState,
+            using: sendThunk,
+            signalThunk
+        )
     }
 }
 
@@ -35,7 +41,8 @@ private extension ActionProcessor {
     func processNextActionIfPossible(
         on getState: () -> State,
         _ setState: (State) -> Void,
-        using sendThunk: @MainActor @escaping (Action) -> Void
+        using sendThunk: @MainActor @escaping (Action) -> Void,
+        _ signalThunk: @MainActor @escaping (Output) -> Void
     ) {
         guard !isProcessing,
               let nextAction = actions.first else {
@@ -45,7 +52,7 @@ private extension ActionProcessor {
         actions.removeFirst()
         let sideEffects = SideEffectsContainer<Action>(dependencyScope: dependencies)
         var state = getState()
-        reduce(&state, nextAction, sideEffects.eraseToAnySideEffects())
+        reduce(&state, nextAction, sideEffects.eraseToAnySideEffects(signal: signalThunk))
         setState(state)
         isProcessing = false
         
@@ -77,6 +84,6 @@ private extension ActionProcessor {
         }
         
         // recurse
-        processNextActionIfPossible(on: getState, setState, using: sendThunk)
+        processNextActionIfPossible(on: getState, setState, using: sendThunk, signalThunk)
     }
 }

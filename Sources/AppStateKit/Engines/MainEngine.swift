@@ -1,7 +1,7 @@
 import Foundation
 
 public final class MainEngine<State, Action>: Engine {
-    private let processor: ActionProcessor<State, Action>
+    private let processor: ActionProcessor<State, Action, Output>
     private let isEqual: (State, State) -> Bool
     private let _statePublisher = MainPublisher<State>()
     public private(set) var state: State
@@ -14,7 +14,7 @@ public final class MainEngine<State, Action>: Engine {
         dependencies: DependencyScope,
         state: State,
         component: C.Type
-    ) where C.State == State, C.Action == Action {
+    ) where C.State == State, C.Action == Action, C.Output == Output {
         self.state = state
         processor = ActionProcessor(
             dependencies: dependencies,
@@ -27,7 +27,7 @@ public final class MainEngine<State, Action>: Engine {
         dependencies: DependencyScope,
         state: State,
         component: C.Type
-    ) where C.State == State, C.Action == Action, State: Equatable {
+    ) where C.State == State, C.Action == Action, State: Equatable, C.Output == Output {
         self.state = state
         processor = ActionProcessor(
             dependencies: dependencies,
@@ -43,7 +43,8 @@ public final class MainEngine<State, Action>: Engine {
             on: getState, setState,
             using: { @MainActor [weak self] action in
             self?.send(action)
-        })
+            },
+            { _ in  })
     }
     
     @MainActor

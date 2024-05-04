@@ -1,10 +1,8 @@
 import Foundation
 
-// TODO: should be able to signal from SideEffects
-
 public final class ScopeEngine<State, Action, Output>: Engine {
     private let isEqual: (State, State) -> Bool
-    private let processor: ActionProcessor<State, Action>
+    private let processor: ActionProcessor<State, Action, Output>
     private let _statePublisher = MainPublisher<State>()
     private var stateSink: AnySink? = nil
     private let signalThunk: @MainActor (Output) -> Void
@@ -35,7 +33,6 @@ public final class ScopeEngine<State, Action, Output>: Engine {
         }
         state = initialState(engine.state) // initialize
         self.isEqual = isEqual
-        
         stateSink = engine.statePublisher.sink { parentState in
             guard let action = toLocalState(parentState) else {
                 return
@@ -54,7 +51,9 @@ public final class ScopeEngine<State, Action, Output>: Engine {
             on: getState, setState,
             using: { @MainActor [weak self] action in
             self?.send(action)
-        })
+            }, 
+            signalThunk
+        )
     }
     
     @MainActor

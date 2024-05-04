@@ -359,7 +359,7 @@ private extension ComponentParser {
         return doesType(
             parameter.type,
             haveName: "AnySideEffects",
-            withOneTypeParameters: "Action"
+            withOneTypeParameters: "Action", "Output"
         )
     }
 

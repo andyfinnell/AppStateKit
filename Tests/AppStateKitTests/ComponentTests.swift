@@ -10,12 +10,12 @@ enum CounterComponent {
         var countText: String
     }
     
-    private static func decrement(_ state: inout State, sideEffects: AnySideEffects<Action>) {
+    private static func decrement(_ state: inout State, sideEffects: AnySideEffects<Action, Output>) {
         state.count -= 1
         state.countText = "\(state.count)"
     }
     
-    private static func increment(_ state: inout State, sideEffects: AnySideEffects<Action>) {
+    private static func increment(_ state: inout State, sideEffects: AnySideEffects<Action, Output>) {
         state.count += 1
         state.countText = "\(state.count)"
     }

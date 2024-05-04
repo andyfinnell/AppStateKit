@@ -26,11 +26,11 @@ final class DetachmentMacroTests: XCTestCase {
                     }
                 }
             
-                private static func increase(_ state: inout State, sideEffects: AnySideEffects<Action>) {
+                private static func increase(_ state: inout State, sideEffects: AnySideEffects<Action, Output>) {
                     state.score += 1
                 }
             
-                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
                 }
             
@@ -80,11 +80,11 @@ final class DetachmentMacroTests: XCTestCase {
                     }
                 }
             
-                private static func increase(_ state: inout State, sideEffects: AnySideEffects<Action>) {
+                private static func increase(_ state: inout State, sideEffects: AnySideEffects<Action, Output>) {
                     state.score += 1
                 }
             
-                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
                 }
                 @MainActor
@@ -104,7 +104,7 @@ final class DetachmentMacroTests: XCTestCase {
             
                 typealias Output = Never
 
-                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action>) {
+                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case .increase:
                         increase(&state, sideEffects: sideEffects)
@@ -166,11 +166,11 @@ final class DetachmentMacroTests: XCTestCase {
                     }
                 }
             
-                private static func increase(_ state: inout State, sideEffects: AnySideEffects<Action>) {
+                private static func increase(_ state: inout State, sideEffects: AnySideEffects<Action, Output>) {
                     state.score += 1
                 }
             
-                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
                 }
             
@@ -220,11 +220,11 @@ final class DetachmentMacroTests: XCTestCase {
                     }
                 }
             
-                private static func increase(_ state: inout State, sideEffects: AnySideEffects<Action>) {
+                private static func increase(_ state: inout State, sideEffects: AnySideEffects<Action, Output>) {
                     state.score += 1
                 }
             
-                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
                 }
                 @MainActor
@@ -244,7 +244,7 @@ final class DetachmentMacroTests: XCTestCase {
             
                 typealias Output = Never
 
-                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action>) {
+                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case .increase:
                         increase(&state, sideEffects: sideEffects)
@@ -306,11 +306,11 @@ final class DetachmentMacroTests: XCTestCase {
                     }
                 }
             
-                private static func increase(_ state: inout State, sideEffects: AnySideEffects<Action>) {
+                private static func increase(_ state: inout State, sideEffects: AnySideEffects<Action, Output>) {
                     state.score += 1
                 }
             
-                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
                 }
             
@@ -360,11 +360,11 @@ final class DetachmentMacroTests: XCTestCase {
                     }
                 }
             
-                private static func increase(_ state: inout State, sideEffects: AnySideEffects<Action>) {
+                private static func increase(_ state: inout State, sideEffects: AnySideEffects<Action, Output>) {
                     state.score += 1
                 }
             
-                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
                 }
                 @MainActor
@@ -384,7 +384,7 @@ final class DetachmentMacroTests: XCTestCase {
             
                 typealias Output = Never
 
-                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action>) {
+                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case .increase:
                         increase(&state, sideEffects: sideEffects)

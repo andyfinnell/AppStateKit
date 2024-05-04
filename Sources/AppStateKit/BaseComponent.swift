@@ -5,5 +5,5 @@ public protocol BaseComponent {
     associatedtype Action
     associatedtype Output
     
-    static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action>)
+    static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>)
 }

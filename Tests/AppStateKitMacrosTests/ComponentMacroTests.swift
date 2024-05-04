@@ -19,11 +19,11 @@ final class ComponentMacroTests: XCTestCase {
                     var score: Int
                 }
             
-                private static func increase(_ state: inout State, sideEffects: AnySideEffects<Action>) {
+                private static func increase(_ state: inout State, sideEffects: AnySideEffects<Action, Output>) {
                     state.score += 1
                 }
             
-                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
                 }
             
@@ -44,11 +44,11 @@ final class ComponentMacroTests: XCTestCase {
                     var score: Int
                 }
             
-                private static func increase(_ state: inout State, sideEffects: AnySideEffects<Action>) {
+                private static func increase(_ state: inout State, sideEffects: AnySideEffects<Action, Output>) {
                     state.score += 1
                 }
             
-                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
                 }
                 @MainActor
@@ -68,7 +68,7 @@ final class ComponentMacroTests: XCTestCase {
             
                 typealias Output = Never
 
-                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action>) {
+                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case .increase:
                         increase(&state, sideEffects: sideEffects)
@@ -109,12 +109,12 @@ final class ComponentMacroTests: XCTestCase {
                     var countText: String
                 }
                 
-                private static func decrement(_ state: inout State, sideEffects: AnySideEffects<Action>) {
+                private static func decrement(_ state: inout State, sideEffects: AnySideEffects<Action, Output>) {
                     state.count -= 1
                     state.countText = "\\(state.count)"
                 }
                 
-                private static func increment(_ state: inout State, sideEffects: AnySideEffects<Action>) {
+                private static func increment(_ state: inout State, sideEffects: AnySideEffects<Action, Output>) {
                     state.count += 1
                     state.countText = "\\(state.count)"
                 }
@@ -136,12 +136,12 @@ final class ComponentMacroTests: XCTestCase {
                     var countText: String
                 }
                 
-                private static func decrement(_ state: inout State, sideEffects: AnySideEffects<Action>) {
+                private static func decrement(_ state: inout State, sideEffects: AnySideEffects<Action, Output>) {
                     state.count -= 1
                     state.countText = "\\(state.count)"
                 }
                 
-                private static func increment(_ state: inout State, sideEffects: AnySideEffects<Action>) {
+                private static func increment(_ state: inout State, sideEffects: AnySideEffects<Action, Output>) {
                     state.count += 1
                     state.countText = "\\(state.count)"
                 }
@@ -162,7 +162,7 @@ final class ComponentMacroTests: XCTestCase {
             
                 typealias Output = Never
 
-                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action>) {
+                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case .decrement:
                         decrement(&state, sideEffects: sideEffects)
@@ -203,7 +203,7 @@ final class ComponentMacroTests: XCTestCase {
                     var child: ChildFeature.State
                 }
                 
-                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
                 }
             
@@ -224,7 +224,7 @@ final class ComponentMacroTests: XCTestCase {
                     var child: ChildFeature.State
                 }
                 
-                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
                 }
                 @MainActor
@@ -244,14 +244,16 @@ final class ComponentMacroTests: XCTestCase {
             
                 typealias Output = Never
 
-                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action>) {
+                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case let .updateName(newName: newName):
                         updateName(&state, sideEffects: sideEffects, newName: newName)
             
                     case let .child(innerAction):
             
-                        let innerSideEffects = sideEffects.map(Action.child)
+                        let innerSideEffects = sideEffects.map(Action.child, translate: { (_: ChildFeature.Output) in
+                            nil
+                        })
                         ChildFeature.reduce(
                             &state.child,
                             action: innerAction,
@@ -304,7 +306,7 @@ final class ComponentMacroTests: XCTestCase {
                     var children: [ChildFeature.State]
                 }
                 
-                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
                 }
             
@@ -327,7 +329,7 @@ final class ComponentMacroTests: XCTestCase {
                     var children: [ChildFeature.State]
                 }
                 
-                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
                 }
                 @MainActor
@@ -349,7 +351,7 @@ final class ComponentMacroTests: XCTestCase {
             
                 typealias Output = Never
 
-                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action>) {
+                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case let .updateName(newName: newName):
                         updateName(&state, sideEffects: sideEffects, newName: newName)
@@ -358,10 +360,12 @@ final class ComponentMacroTests: XCTestCase {
                         guard innerIndex >= state.children.startIndex, innerIndex < state.children.endIndex else {
                             return
                         }
-                        let innerSideEffects = sideEffects.map {
+                        let innerSideEffects = sideEffects.map({
                             Action.children($0, index: innerIndex)
                         }
-            
+                        , translate: { (_: ChildFeature.Output) in
+                            nil
+                        })
                         ChildFeature.reduce(
                             &state.children[innerIndex],
                             action: innerAction,
@@ -416,7 +420,7 @@ final class ComponentMacroTests: XCTestCase {
                     var children: [String: ChildFeature.State]
                 }
                 
-                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
                 }
             
@@ -439,7 +443,7 @@ final class ComponentMacroTests: XCTestCase {
                     var children: [String: ChildFeature.State]
                 }
                 
-                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
                 }
                 @MainActor
@@ -461,7 +465,7 @@ final class ComponentMacroTests: XCTestCase {
             
                 typealias Output = Never
 
-                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action>) {
+                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case let .updateName(newName: newName):
                         updateName(&state, sideEffects: sideEffects, newName: newName)
@@ -470,10 +474,12 @@ final class ComponentMacroTests: XCTestCase {
                         guard var innerState = state.children[innerKey] else {
                             return
                         }
-                        let innerSideEffects = sideEffects.map {
+                        let innerSideEffects = sideEffects.map({
                             Action.children($0, key: innerKey)
                         }
-            
+                        , translate: { (_: ChildFeature.Output) in
+                            nil
+                        })
                         ChildFeature.reduce(
                             &innerState,
                             action: innerAction,
@@ -531,7 +537,7 @@ final class ComponentMacroTests: XCTestCase {
                     var children: IdentifiableArray<ChildFeature.State>
                 }
                 
-                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
                 }
             
@@ -554,7 +560,7 @@ final class ComponentMacroTests: XCTestCase {
                     var children: IdentifiableArray<ChildFeature.State>
                 }
                 
-                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
                 }
                 @MainActor
@@ -576,7 +582,7 @@ final class ComponentMacroTests: XCTestCase {
             
                 typealias Output = Never
 
-                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action>) {
+                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case let .updateName(newName: newName):
                         updateName(&state, sideEffects: sideEffects, newName: newName)
@@ -585,10 +591,12 @@ final class ComponentMacroTests: XCTestCase {
                         guard var innerState = state.children[byID: innerID] else {
                             return
                         }
-                        let innerSideEffects = sideEffects.map {
+                        let innerSideEffects = sideEffects.map({
                             Action.children($0, id: innerID)
                         }
-            
+                        , translate: { (_: ChildFeature.Output) in
+                            nil
+                        })
                         ChildFeature.reduce(
                             &innerState,
                             action: innerAction,
@@ -646,7 +654,7 @@ final class ComponentMacroTests: XCTestCase {
                     var child: ChildFeature.State?
                 }
                 
-                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
                 }
             
@@ -667,7 +675,7 @@ final class ComponentMacroTests: XCTestCase {
                     var child: ChildFeature.State?
                 }
                 
-                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
                 }
                 @MainActor
@@ -687,7 +695,7 @@ final class ComponentMacroTests: XCTestCase {
             
                 typealias Output = Never
 
-                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action>) {
+                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case let .updateName(newName: newName):
                         updateName(&state, sideEffects: sideEffects, newName: newName)
@@ -696,7 +704,9 @@ final class ComponentMacroTests: XCTestCase {
                         guard var innerState = state.child else {
                             return
                         }
-                        let innerSideEffects = sideEffects.map(Action.child)
+                        let innerSideEffects = sideEffects.map(Action.child, translate: { (_: ChildFeature.Output) in
+                            nil
+                        })
                         ChildFeature.reduce(
                             &innerState,
                             action: innerAction,
@@ -756,7 +766,7 @@ final class ComponentMacroTests: XCTestCase {
                     .updateName(newName: "bob")
                 }
             
-                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
                 }
             
@@ -781,7 +791,7 @@ final class ComponentMacroTests: XCTestCase {
                     .updateName(newName: "bob")
                 }
             
-                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
                 }
                 @MainActor
@@ -801,14 +811,14 @@ final class ComponentMacroTests: XCTestCase {
             
                 typealias Output = Never
             
-                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action>) {
+                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case let .updateName(newName: newName):
                         updateName(&state, sideEffects: sideEffects, newName: newName)
             
                     case let .child(innerAction):
             
-                        let innerSideEffects = sideEffects.map(Action.child)
+                        let innerSideEffects = sideEffects.map(Action.child, translate: translateChild)
                         ChildFeature.reduce(
                             &state.child,
                             action: innerAction,
@@ -866,7 +876,7 @@ final class ComponentMacroTests: XCTestCase {
                     case letParentKnow
                 }
             
-                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
                 }
             
@@ -891,7 +901,7 @@ final class ComponentMacroTests: XCTestCase {
                     case letParentKnow
                 }
 
-                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action>, newName: String) {
+                private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
                 }
                 @MainActor
@@ -909,14 +919,16 @@ final class ComponentMacroTests: XCTestCase {
                     case child(ChildFeature.Action)
                 }
             
-                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action>) {
+                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case let .updateName(newName: newName):
                         updateName(&state, sideEffects: sideEffects, newName: newName)
             
                     case let .child(innerAction):
             
-                        let innerSideEffects = sideEffects.map(Action.child)
+                        let innerSideEffects = sideEffects.map(Action.child, translate: { (_: ChildFeature.Output) in
+                            nil
+                        })
                         ChildFeature.reduce(
                             &state.child,
                             action: innerAction,

@@ -14,11 +14,11 @@ final class ViewEngineTests: XCTestCase {
             case letParentKnow
         }
         
-        private static func doWhat(_ state: inout State, sideEffects: AnySideEffects<Action>) {
+        private static func doWhat(_ state: inout State, sideEffects: AnySideEffects<Action, Output>) {
             // nop
         }
         
-        private static func valueDidChange(_ state: inout State, sideEffects: AnySideEffects<Action>, _ value: String) {
+        private static func valueDidChange(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, _ value: String) {
             // nop
         }
         

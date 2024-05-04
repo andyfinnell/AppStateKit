@@ -15,12 +15,15 @@ final class SideEffectsContainer<Action> {
         self.cancellations = cancellations
     }
         
-    func eraseToAnySideEffects() -> AnySideEffects<Action> {
-        AnySideEffects<Action>(
+    func eraseToAnySideEffects<ToOutput>(
+        signal: @escaping (ToOutput) -> Void
+    ) -> AnySideEffects<Action, ToOutput> {
+        AnySideEffects<Action, ToOutput>(
             dependencyScope: dependencyScope,
             append: { (future: FutureEffect<Action>) -> Void in
                 self.futures.append(future)
             },
+            signal: signal,
             subscribe: { subscription in
                 self.subscriptions.append(subscription)
             },

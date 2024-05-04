@@ -22,11 +22,11 @@ final class MapEngineTests: XCTestCase {
             }
         }
         
-        private static func doWhat(_ state: inout State, sideEffects: AnySideEffects<Action>) {
+        private static func doWhat(_ state: inout State, sideEffects: AnySideEffects<Action, Output>) {
             
         }
 
-        private static func finishBigEffect(_ state: inout State, sideEffects: AnySideEffects<Action>) {
+        private static func finishBigEffect(_ state: inout State, sideEffects: AnySideEffects<Action, Output>) {
             
         }
 
@@ -53,7 +53,7 @@ final class MapEngineTests: XCTestCase {
             case letParentKnow
         }
         
-        private static func doWhat(_ state: inout State, sideEffects: AnySideEffects<Action>) {
+        private static func doWhat(_ state: inout State, sideEffects: AnySideEffects<Action, Output>) {
             
         }
 
