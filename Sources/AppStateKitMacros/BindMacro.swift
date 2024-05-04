@@ -27,7 +27,7 @@ public enum BindMacro: ExpressionMacro {
 
 private extension BindMacro {
     static func actionNameFromKeyPath(_ expr: ExprSyntax) throws -> String {
-        // Grab the last segment, append "DidChange"
+        // Grab the last segment, prepend "update"
         guard let keyPathExpr = expr.as(KeyPathExprSyntax.self) else {
             throw BindError.unexpectedKeyPathExpression
         }
@@ -39,6 +39,6 @@ private extension BindMacro {
             throw BindError.unexpectedKeyPathExpression
         }
         
-        return "\(lastPathComponent.declName.baseName)DidChange"
+        return "update\(lastPathComponent.declName.baseName.text.capitalized)"
     }
 }

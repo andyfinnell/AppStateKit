@@ -18,7 +18,7 @@ final class ViewEngineTests: XCTestCase {
             // nop
         }
         
-        private static func valueDidChange(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, _ value: String) {
+        private static func updateValue(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, _ value: String) {
             // nop
         }
         
@@ -82,7 +82,7 @@ final class ViewEngineTests: XCTestCase {
     
     @MainActor
     func testBinding() {
-        let binding = subject.binding(\.value, send: { .valueDidChange($0) })
+        let binding = subject.binding(\.value, send: { .updateValue($0) })
         
         let stateChanged = expectation(description: "state changed")
         let sink = subject.statePublisher.sink { newState in
@@ -101,7 +101,7 @@ final class ViewEngineTests: XCTestCase {
 
         waitForExpectations(timeout: 1, handler: nil)
 
-        XCTAssertEqual(parentEngine.sentActions, [.valueDidChange("changed from UI")])
+        XCTAssertEqual(parentEngine.sentActions, [.updateValue("changed from UI")])
         
         _ = sink
     }

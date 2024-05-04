@@ -16,7 +16,7 @@ final class BindMacroTests: XCTestCase {
             """,
             expandedSource: """
             engine.binding(\\.value, send: {
-                    .valueDidChange($0)
+                    .updateValue($0)
                 })
             """,
             macros: testMacros
@@ -34,7 +34,7 @@ final class BindMacroTests: XCTestCase {
             """,
             expandedSource: """
             engine.binding(\\State.value, send: {
-                    .valueDidChange($0)
+                    .updateValue($0)
                 })
             """,
             macros: testMacros
