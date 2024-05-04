@@ -39,6 +39,6 @@ private extension BindMacro {
             throw BindError.unexpectedKeyPathExpression
         }
         
-        return "update\(lastPathComponent.declName.baseName.text.capitalized)"
+        return "update\(lastPathComponent.declName.baseName.text.uppercaseFirstLetter())"
     }
 }

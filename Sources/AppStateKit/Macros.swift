@@ -25,5 +25,5 @@ public macro Detachment() = #externalMacro(module: "AppStateKitMacros", type: "D
 @freestanding(expression)
 public macro bind<State, Action, Output, P>(_ engine: ViewEngine<State, Action, Output>, _ keyPath: KeyPath<State, P>) -> Binding<P> = #externalMacro(module: "AppStateKitMacros", type: "BindMacro")
 
-@attached(member)
+@attached(peer)
 public macro Updatable() = #externalMacro(module: "AppStateKitMacros", type: "UpdatableMacro")

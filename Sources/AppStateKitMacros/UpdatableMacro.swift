@@ -3,13 +3,13 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
 
-public enum UpdatableMacro: MemberMacro {
+public enum UpdatableMacro: PeerMacro {
     public static func expansion(
         of node: AttributeSyntax,
-        providingMembersOf declaration: some DeclGroupSyntax,
+        providingPeersOf declaration: some DeclSyntaxProtocol,
         in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
-        // This is a no-op and just serves as a marker for other macros
+        // This is just a marker
         []
     }
 }
