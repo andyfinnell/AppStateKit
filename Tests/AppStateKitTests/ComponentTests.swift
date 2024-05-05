@@ -58,6 +58,21 @@ enum CounterListComponent {
     }
 }
 
+@Component
+enum CounterOptionalComponent {
+    struct State {
+        var name: String
+        @Updatable var counter: CounterComponent.State?
+    }
+        
+    static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
+        VStack {
+            Text("Hello")
+        }.sheet(isPresented: #bindIfPresent(engine, \.counter), content: {
+            Text("Hellow again")
+        })
+    }
+}
 
 @Component
 enum CounterDictionaryComponent {

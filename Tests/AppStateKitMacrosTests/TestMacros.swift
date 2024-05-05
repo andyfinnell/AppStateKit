@@ -13,6 +13,7 @@ let testMacros: [String: Macro.Type] = [
     "ExtendSideEffects": ExtendSideEffectsMacro.self,
     "Detachment": DetachmentMacro.self,
     "bind": BindMacro.self,
+    "bindIfPresent": BindIfPresentMacro.self,
     "Updatable": UpdatableMacro.self,
 ]
 #endif

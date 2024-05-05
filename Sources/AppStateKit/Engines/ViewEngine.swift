@@ -53,21 +53,25 @@ public final class ViewEngine<State, Action, Output>: Engine {
     }
     
     @MainActor
-    public func binding<T>(_ keyPath: KeyPath<State, T>, send: @escaping (T) -> Action) -> Binding<T> {
+    public func binding<T>(_ keyPath: KeyPath<State, T>, send: @escaping (T) -> Action?) -> Binding<T> {
         Binding<T>(get: {
             self.state[keyPath: keyPath]
         }, set: { [weak self] newValue, transaction in
-            let action = send(newValue)
+            guard let action = send(newValue) else {
+                return
+            }
             self?.send(action, transaction: transaction)
         })
     }
     
     @MainActor
-    public func binding<T>(get: @escaping (State) -> T, send: @escaping (T) -> Action) -> Binding<T> {
+    public func binding<T>(get: @escaping (State) -> T, send: @escaping (T) -> Action?) -> Binding<T> {
         Binding<T>(get: {
             get(self.state)
         }, set: { [weak self] newValue, transaction in
-            let action = send(newValue)
+            guard let action = send(newValue) else {
+                return
+            }
             self?.send(action, transaction: transaction)
         })
     }

@@ -13,6 +13,7 @@ struct AppStateKitMacrosPlugin: CompilerPlugin {
         ExtendSideEffectsMacro.self,
         DetachmentMacro.self,
         BindMacro.self,
+        BindIfPresentMacro.self,
         UpdatableMacro.self,
     ]
 }
