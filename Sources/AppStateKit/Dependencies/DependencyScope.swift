@@ -18,13 +18,19 @@ public final class DependencyScope {
     
     /// Find or create a specific dependency
     public subscript<D: Dependable>(key: D.Type) -> D.T {
-        let id = ObjectIdentifier(D.self)
-        if let cached = dependencies[id] as? D.T {
-            return cached
-        } else {
-            let dependency = D.makeDefault(with: self)
-            dependencies[id] = dependency
-            return dependency
+        get {
+            let id = ObjectIdentifier(D.self)
+            if let cached = dependencies[id] as? D.T {
+                return cached
+            } else {
+                let dependency = D.makeDefault(with: self)
+                dependencies[id] = dependency
+                return dependency
+            }
+        }
+        set {
+            let id = ObjectIdentifier(D.self)
+            dependencies[id] = newValue
         }
     }
     
