@@ -365,6 +365,7 @@ final class ComponentMacroTests: XCTestCase {
                     }
                 }
 
+                @MainActor
                 @ViewBuilder
                 private static func child(_ engine: ViewEngine<State, Action, Output>) -> some View {
                     ChildFeature.EngineView(
@@ -478,6 +479,7 @@ final class ComponentMacroTests: XCTestCase {
                     }
                 }
 
+                @MainActor
                 @ViewBuilder
                 private static func children(_ engine: ViewEngine<State, Action, Output>, at index: Int) -> some View {
                     ChildFeature.EngineView(
@@ -594,6 +596,7 @@ final class ComponentMacroTests: XCTestCase {
                     }
                 }
 
+                @MainActor
                 @ViewBuilder
                 private static func children(_ engine: ViewEngine<State, Action, Output>, forKey key: String) -> some View {
                     if let innerState = engine.state.children[key] {
@@ -712,6 +715,7 @@ final class ComponentMacroTests: XCTestCase {
                     }
                 }
 
+                @MainActor
                 @ViewBuilder
                 private static func children(_ engine: ViewEngine<State, Action, Output>, byID id: ChildFeature.State.ID) -> some View {
                     if let innerState = engine.state.children[byID: id] {
@@ -823,6 +827,7 @@ final class ComponentMacroTests: XCTestCase {
                     }
                 }
 
+                @MainActor
                 @ViewBuilder
                 private static func child(_ engine: ViewEngine<State, Action, Output>) -> some View {
                     if let innerState = engine.state.child {
@@ -935,6 +940,7 @@ final class ComponentMacroTests: XCTestCase {
                     }
                 }
             
+                @MainActor
                 @ViewBuilder
                 private static func child(_ engine: ViewEngine<State, Action, Output>) -> some View {
                     ChildFeature.EngineView(
@@ -1046,6 +1052,7 @@ final class ComponentMacroTests: XCTestCase {
                     }
                 }
             
+                @MainActor
                 @ViewBuilder
                 private static func child(_ engine: ViewEngine<State, Action, Output>) -> some View {
                     ChildFeature.EngineView(

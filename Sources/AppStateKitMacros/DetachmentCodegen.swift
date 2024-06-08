@@ -18,7 +18,7 @@ struct DetachmentCodegen {
         let translateMethodName = detachment.translateMethodName ?? "translate"
         
         let viewMethod: DeclSyntax = """
-            
+            @MainActor
             static func view<E: Engine>(
                 _ engine: E,
                 inject: (DependencyScope) -> Void

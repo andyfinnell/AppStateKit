@@ -99,6 +99,7 @@ final class AppComponentMacroTests: XCTestCase {
                     MainApp.main()
                 }
 
+                @MainActor
                 @ViewBuilder
                 private static func counters(_ engine: ViewEngine<State, Action, Output>) -> some View {
                     CounterListComponent.EngineView(

@@ -180,6 +180,7 @@ private extension ComponentChildViewCodegen {
         }
         
         let viewDecl = """
+            @MainActor
             @ViewBuilder
             private static func \(extraction.name)(_ engine: ViewEngine<State, Action, Output>\(parameterList)) -> some View {
             \(body)
@@ -191,6 +192,7 @@ private extension ComponentChildViewCodegen {
     
     static func codegen(from detachment: DetachmentRef) -> DeclSyntax? {
         let viewDecl: DeclSyntax = """
+            @MainActor
             @ViewBuilder
             private static func \(raw: detachment.methodName)(
                 _ engine: ViewEngine<State, Action, Output>,

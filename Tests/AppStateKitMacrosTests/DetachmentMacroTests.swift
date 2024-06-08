@@ -63,6 +63,7 @@ final class DetachmentMacroTests: XCTestCase {
                         nil
                     }
 
+                    @MainActor
                     static func view<E: Engine>(
                         _ engine: E,
                         inject: (DependencyScope) -> Void
@@ -124,6 +125,7 @@ final class DetachmentMacroTests: XCTestCase {
                     }
                 }
             
+                @MainActor
                 @ViewBuilder
                 private static func subfeature(
                     _ engine: ViewEngine<State, Action, Output>,
@@ -203,6 +205,7 @@ final class DetachmentMacroTests: XCTestCase {
                         nil
                     }
 
+                    @MainActor
                     static func view<E: Engine>(
                         _ engine: E,
                         inject: (DependencyScope) -> Void
@@ -264,6 +267,7 @@ final class DetachmentMacroTests: XCTestCase {
                     }
                 }
             
+                @MainActor
                 @ViewBuilder
                 private static func subfeature(
                     _ engine: ViewEngine<State, Action, Output>,
@@ -343,6 +347,7 @@ final class DetachmentMacroTests: XCTestCase {
                         nil
                     }
 
+                    @MainActor
                     static func view<E: Engine>(
                         _ engine: E,
                         inject: (DependencyScope) -> Void
@@ -404,6 +409,7 @@ final class DetachmentMacroTests: XCTestCase {
                     }
                 }
             
+                @MainActor
                 @ViewBuilder
                 private static func subfeature(
                     _ engine: ViewEngine<State, Action, Output>,
