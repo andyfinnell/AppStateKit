@@ -1,6 +1,7 @@
 import Foundation
 
-public final class MainEngine<State, Action>: Engine {
+@MainActor
+public final class MainEngine<State, Action: Sendable>: Engine {
     private let processor: ActionProcessor<State, Action, Output>
     private let isEqual: (State, State) -> Bool
     private let _statePublisher = MainPublisher<State>()
@@ -36,7 +37,6 @@ public final class MainEngine<State, Action>: Engine {
         isEqual = { $0 == $1 }
     }
 
-    @MainActor
     public func send(_ action: Action) {
         processor.process(
             action,
@@ -47,7 +47,6 @@ public final class MainEngine<State, Action>: Engine {
             { _ in  })
     }
     
-    @MainActor
     public func signal(_ output: Output) {
         // nop, always top level
     }

@@ -1,5 +1,5 @@
-
-public struct AnySideEffects<Action, Output> {
+@MainActor
+public struct AnySideEffects<Action: Sendable, Output> {
     private let dependencyScope: DependencyScope
     private let append: (FutureEffect<Action>) -> Void
     private let signalThunk: (Output) -> Void
@@ -20,11 +20,11 @@ public struct AnySideEffects<Action, Output> {
         self.cancelThunk = cancel
     }
     
-    public func tryPerform<each ParameterType, ReturnType, Failure: Error>(
+    public func tryPerform<each ParameterType: Sendable, ReturnType, Failure: Error>(
         _ effect: Effect<ReturnType, Failure, repeat each ParameterType>,
         with parameters: repeat each ParameterType,
-        transform: @escaping (ReturnType) async -> Action,
-        onFailure: @escaping (Failure) async -> Action
+        transform: @Sendable @escaping (ReturnType) async -> Action,
+        onFailure: @Sendable @escaping (Failure) async -> Action
     ) {
         let future = FutureEffect {
             switch await effect.perform(repeat each parameters) {
@@ -37,10 +37,10 @@ public struct AnySideEffects<Action, Output> {
         append(future)
     }
     
-    public func perform<each ParameterType, ReturnType>(
+    public func perform<each ParameterType: Sendable, ReturnType>(
         _ effect: Effect<ReturnType, Never, repeat each ParameterType>,
         with parameters: repeat each ParameterType,
-        transform: @escaping (ReturnType) async -> Action
+        transform: @Sendable @escaping (ReturnType) async -> Action
     ) {
         let future = FutureEffect {
             switch await effect.perform(repeat each parameters) {
@@ -51,10 +51,10 @@ public struct AnySideEffects<Action, Output> {
         append(future)
     }
 
-    public func subscribe<each ParameterType, ReturnType>(
+    public func subscribe<each ParameterType: Sendable, ReturnType>(
         _ effect: Effect<ReturnType, Never, repeat each ParameterType>,
         with parameters: repeat each ParameterType,
-        transform: @escaping (ReturnType, (Action) async -> Void) async throws -> Void
+        transform: @Sendable @escaping (ReturnType, (Action) async -> Void) async throws -> Void
     ) -> SubscriptionID {
         let id = SubscriptionID()
         let future = FutureSubscription(id: id) { yield in
@@ -67,10 +67,10 @@ public struct AnySideEffects<Action, Output> {
         return id
     }
 
-    public func subscribe<each ParameterType, ReturnType>(
+    public func subscribe<each ParameterType: Sendable, ReturnType>(
         _ effect: KeyPath<DependencyScope, Effect<ReturnType, Never, repeat each ParameterType>>,
         with parameters: repeat each ParameterType,
-        transform: @escaping (ReturnType, (Action) async -> Void) async throws -> Void
+        transform: @Sendable @escaping (ReturnType, (Action) async -> Void) async throws -> Void
     ) -> SubscriptionID {
         subscribe(
             dependencyScope[keyPath: effect],
@@ -79,11 +79,11 @@ public struct AnySideEffects<Action, Output> {
         )
     }
 
-    public func trySubscribe<each ParameterType, ReturnType, Failure: Error>(
+    public func trySubscribe<each ParameterType: Sendable, ReturnType, Failure: Error>(
         _ effect: Effect<ReturnType, Failure, repeat each ParameterType>,
         with parameters: repeat each ParameterType,
-        transform: @escaping (ReturnType, (Action) async -> Void) async throws -> Void,
-        onFailure: @escaping (Failure) async -> Action
+        transform: @Sendable @escaping (ReturnType, (Action) async -> Void) async throws -> Void,
+        onFailure: @Sendable @escaping (Failure) async -> Action
     ) -> SubscriptionID {
         let id = SubscriptionID()
         let future = FutureSubscription(id: id) { yield in
@@ -99,11 +99,11 @@ public struct AnySideEffects<Action, Output> {
         return id
     }
 
-    public func trySubscribe<each ParameterType, ReturnType, Failure: Error>(
+    public func trySubscribe<each ParameterType: Sendable, ReturnType, Failure: Error>(
         _ effect: KeyPath<DependencyScope, Effect<ReturnType, Failure, repeat each ParameterType>>,
         with parameters: repeat each ParameterType,
-        transform: @escaping (ReturnType, (Action) async -> Void) async throws -> Void,
-        onFailure: @escaping (Failure) async -> Action
+        transform: @Sendable @escaping (ReturnType, (Action) async -> Void) async throws -> Void,
+        onFailure: @Sendable @escaping (Failure) async -> Action
     ) -> SubscriptionID {
         trySubscribe(
             dependencyScope[keyPath: effect],
@@ -117,11 +117,11 @@ public struct AnySideEffects<Action, Output> {
         cancelThunk(subscriptionID)
     }
 
-    public func tryPerform<each ParameterType, ReturnType, Failure: Error>(
+    public func tryPerform<each ParameterType: Sendable, ReturnType, Failure: Error>(
         _ effect: KeyPath<DependencyScope, Effect<ReturnType, Failure, repeat each ParameterType>>,
         with parameters: repeat each ParameterType,
-        transform: @escaping (ReturnType) async -> Action,
-        onFailure: @escaping (Failure) async -> Action
+        transform: @Sendable @escaping (ReturnType) async -> Action,
+        onFailure: @Sendable @escaping (Failure) async -> Action
     ) {
         tryPerform(
             dependencyScope[keyPath: effect],
@@ -131,10 +131,10 @@ public struct AnySideEffects<Action, Output> {
         )
     }
     
-    public func perform<each ParameterType, ReturnType>(
+    public func perform<each ParameterType: Sendable, ReturnType>(
         _ effect: KeyPath<DependencyScope, Effect<ReturnType, Never, repeat each ParameterType>>,
         with parameters: repeat each ParameterType,
-        transform: @escaping (ReturnType) async -> Action
+        transform: @Sendable @escaping (ReturnType) async -> Action
     ) {
         perform(
             dependencyScope[keyPath: effect],
@@ -144,7 +144,7 @@ public struct AnySideEffects<Action, Output> {
     }
     
     public func map<ToAction, ToOutput>(
-        _ transform: @escaping (ToAction) -> Action,
+        _ transform: @Sendable @escaping (ToAction) -> Action,
         translate: @escaping (ToOutput) -> Action?
     ) -> AnySideEffects<ToAction, ToOutput> {
         // TODO: maybe a good time to create a child dependencyScope?

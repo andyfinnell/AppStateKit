@@ -43,10 +43,12 @@ final class ComponentMacroTests: XCTestCase {
                     var name: String
                     var score: Int
                 }
+                @MainActor
             
                 private static func increase(_ state: inout State, sideEffects: SideEffects) {
                     state.score += 1
                 }
+                @MainActor
             
                 private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
@@ -70,6 +72,7 @@ final class ComponentMacroTests: XCTestCase {
 
                 typealias SideEffects = AnySideEffects<Action, Output>
 
+                @MainActor
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case .increase:
@@ -81,6 +84,7 @@ final class ComponentMacroTests: XCTestCase {
                     }
                 }
             
+                @MainActor
                 struct EngineView: View {
                     @SwiftUI.State var engine: ViewEngine<State, Action, Output>
             
@@ -131,6 +135,7 @@ final class ComponentMacroTests: XCTestCase {
                     var name: String
                     var score: Int
                 }
+                @MainActor
             
                 private static func increase(_ state: inout State, sideEffects: SideEffects) {
                     state.score += 1
@@ -150,6 +155,7 @@ final class ComponentMacroTests: XCTestCase {
                     case increase
                 }
             
+                @MainActor
                 private static func updateName(_ state: inout State, sideEffects: SideEffects, _ p0: String) {
                     state.name = p0
                 }
@@ -158,6 +164,7 @@ final class ComponentMacroTests: XCTestCase {
 
                 typealias SideEffects = AnySideEffects<Action, Output>
 
+                @MainActor
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case let .updateName(p0):
@@ -169,6 +176,7 @@ final class ComponentMacroTests: XCTestCase {
                     }
                 }
             
+                @MainActor
                 struct EngineView: View {
                     @SwiftUI.State var engine: ViewEngine<State, Action, Output>
             
@@ -225,11 +233,13 @@ final class ComponentMacroTests: XCTestCase {
                     var count: Int
                     var countText: String
                 }
+                @MainActor
                 
                 private static func decrement(_ state: inout State, sideEffects: AnySideEffects<Action, Output>) {
                     state.count -= 1
                     state.countText = "\\(state.count)"
                 }
+                @MainActor
                 
                 private static func increment(_ state: inout State, sideEffects: AnySideEffects<Action, Output>) {
                     state.count += 1
@@ -254,6 +264,7 @@ final class ComponentMacroTests: XCTestCase {
 
                 typealias SideEffects = AnySideEffects<Action, Output>
 
+                @MainActor
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case .decrement:
@@ -265,6 +276,7 @@ final class ComponentMacroTests: XCTestCase {
                     }
                 }
             
+                @MainActor
                 struct EngineView: View {
                     @SwiftUI.State var engine: ViewEngine<State, Action, Output>
             
@@ -315,6 +327,7 @@ final class ComponentMacroTests: XCTestCase {
                     var name: String
                     var child: ChildFeature.State
                 }
+                @MainActor
                 
                 private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
@@ -338,6 +351,7 @@ final class ComponentMacroTests: XCTestCase {
 
                 typealias SideEffects = AnySideEffects<Action, Output>
 
+                @MainActor
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case let .updateName(newName: newName):
@@ -357,6 +371,7 @@ final class ComponentMacroTests: XCTestCase {
                     }
                 }
             
+                @MainActor
                 struct EngineView: View {
                     @SwiftUI.State var engine: ViewEngine<State, Action, Output>
             
@@ -422,6 +437,7 @@ final class ComponentMacroTests: XCTestCase {
                     var name: String
                     var children: [ChildFeature.State]
                 }
+                @MainActor
                 
                 private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
@@ -447,6 +463,7 @@ final class ComponentMacroTests: XCTestCase {
 
                 typealias SideEffects = AnySideEffects<Action, Output>
 
+                @MainActor
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case let .updateName(newName: newName):
@@ -471,6 +488,7 @@ final class ComponentMacroTests: XCTestCase {
                     }
                 }
             
+                @MainActor
                 struct EngineView: View {
                     @SwiftUI.State var engine: ViewEngine<State, Action, Output>
             
@@ -538,6 +556,7 @@ final class ComponentMacroTests: XCTestCase {
                     var name: String
                     var children: [String: ChildFeature.State]
                 }
+                @MainActor
                 
                 private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
@@ -563,6 +582,7 @@ final class ComponentMacroTests: XCTestCase {
 
                 typealias SideEffects = AnySideEffects<Action, Output>
 
+                @MainActor
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case let .updateName(newName: newName):
@@ -588,6 +608,7 @@ final class ComponentMacroTests: XCTestCase {
                     }
                 }
             
+                @MainActor
                 struct EngineView: View {
                     @SwiftUI.State var engine: ViewEngine<State, Action, Output>
             
@@ -657,6 +678,7 @@ final class ComponentMacroTests: XCTestCase {
                     var name: String
                     var children: IdentifiableArray<ChildFeature.State>
                 }
+                @MainActor
                 
                 private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
@@ -682,6 +704,7 @@ final class ComponentMacroTests: XCTestCase {
 
                 typealias SideEffects = AnySideEffects<Action, Output>
 
+                @MainActor
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case let .updateName(newName: newName):
@@ -707,6 +730,7 @@ final class ComponentMacroTests: XCTestCase {
                     }
                 }
             
+                @MainActor
                 struct EngineView: View {
                     @SwiftUI.State var engine: ViewEngine<State, Action, Output>
             
@@ -774,6 +798,7 @@ final class ComponentMacroTests: XCTestCase {
                     var name: String
                     var child: ChildFeature.State?
                 }
+                @MainActor
                 
                 private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
@@ -797,6 +822,7 @@ final class ComponentMacroTests: XCTestCase {
 
                 typealias SideEffects = AnySideEffects<Action, Output>
 
+                @MainActor
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case let .updateName(newName: newName):
@@ -819,6 +845,7 @@ final class ComponentMacroTests: XCTestCase {
                     }
                 }
             
+                @MainActor
                 struct EngineView: View {
                     @SwiftUI.State var engine: ViewEngine<State, Action, Output>
             
@@ -892,6 +919,7 @@ final class ComponentMacroTests: XCTestCase {
                 private static func translateChild(from output: ChildFeature.Output) -> Action? {
                     .updateName(newName: "bob")
                 }
+                @MainActor
             
                 private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
@@ -915,6 +943,7 @@ final class ComponentMacroTests: XCTestCase {
             
                 typealias SideEffects = AnySideEffects<Action, Output>
 
+                @MainActor
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case let .updateName(newName: newName):
@@ -932,6 +961,7 @@ final class ComponentMacroTests: XCTestCase {
                     }
                 }
             
+                @MainActor
                 struct EngineView: View {
                     @SwiftUI.State var engine: ViewEngine<State, Action, Output>
             
@@ -1004,6 +1034,7 @@ final class ComponentMacroTests: XCTestCase {
                 enum Output {
                     case letParentKnow
                 }
+                @MainActor
 
                 private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
@@ -1025,6 +1056,7 @@ final class ComponentMacroTests: XCTestCase {
             
                 typealias SideEffects = AnySideEffects<Action, Output>
 
+                @MainActor
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case let .updateName(newName: newName):
@@ -1044,6 +1076,7 @@ final class ComponentMacroTests: XCTestCase {
                     }
                 }
             
+                @MainActor
                 struct EngineView: View {
                     @SwiftUI.State var engine: ViewEngine<State, Action, Output>
             

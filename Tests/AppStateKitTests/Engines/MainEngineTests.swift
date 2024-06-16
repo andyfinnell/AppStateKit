@@ -69,6 +69,7 @@ fileprivate enum TestComponent {
 
 final class MainEngineTests: XCTestCase {
     
+    @MainActor
     func testActionSend() async {
         let initialState = TestComponent.State(value: "idle", lastTick: 0)
         let dependencies = DependencyScope()
@@ -86,7 +87,7 @@ final class MainEngineTests: XCTestCase {
             finishExpectation.fulfill()
         }
         
-        await subject.send(.doWhat)
+        subject.send(.doWhat)
         
         await fulfillment(of: [finishExpectation], timeout: 1.0)
         
@@ -99,6 +100,7 @@ final class MainEngineTests: XCTestCase {
         _ = sink
     }
 
+    @MainActor
     func testStartSubscription() async {
         let initialState = TestComponent.State(value: "idle", lastTick: 0)
         let dependencies = DependencyScope()
@@ -116,7 +118,7 @@ final class MainEngineTests: XCTestCase {
             finishExpectation.fulfill()
         }
 
-        await subject.send(.beginTimer(count: 3))
+        subject.send(.beginTimer(count: 3))
         
         await fulfillment(of: [finishExpectation], timeout: 1.0)
         
@@ -131,6 +133,7 @@ final class MainEngineTests: XCTestCase {
         _ = sink
     }
 
+    @MainActor
     func testCancelSubscription() async {
         let initialState = TestComponent.State(value: "idle", lastTick: 0)
         let dependencies = DependencyScope()
@@ -154,12 +157,12 @@ final class MainEngineTests: XCTestCase {
             }
         }
         
-        await subject.send(.beginTimer(count: 1000))
+        subject.send(.beginTimer(count: 1000))
         
         // Wait until we know we've started the subscription
         await fulfillment(of: [isGoingExpectation], timeout: 1.0)
         
-        await subject.send(.stopTimer)
+        subject.send(.stopTimer)
         
         // Wait until we see the timer go nil
         await fulfillment(of: [hasStopped], timeout: 1.0)
@@ -177,6 +180,7 @@ final class MainEngineTests: XCTestCase {
         _ = sink
     }
     
+    @MainActor
     func testStartFailableSubscription() async {
         let initialState = TestComponent.State(value: "idle", lastTick: 0)
         let dependencies = DependencyScope()
@@ -193,7 +197,7 @@ final class MainEngineTests: XCTestCase {
             finishExpectation.fulfill()
         }
 
-        await subject.send(.importURL(URL(string: "https://www.example.com")!))
+        subject.send(.importURL(URL(string: "https://www.example.com")!))
         
         await fulfillment(of: [finishExpectation], timeout: 1.0)
         

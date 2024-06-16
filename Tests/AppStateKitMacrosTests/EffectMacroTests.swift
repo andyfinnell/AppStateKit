@@ -87,16 +87,16 @@ final class EffectMacroTests: XCTestCase {
             
                 func loadAtIndex(
                     index p0: Int,
-                    transform: @escaping (String) async -> Action,
-                    onFailure: @escaping (Error) async -> Action
+                    transform: @Sendable @escaping (String) async -> Action,
+                    onFailure: @Sendable @escaping (Error) async -> Action
                 ) {
                     tryPerform(\\.loadAtIndex, with: p0, transform: transform, onFailure: onFailure)
                 }
 
                 func subscribeToLoadAtIndex(
                     index p0: Int,
-                    transform: @escaping (String, (Action) async -> Void) async throws -> Void,
-                    onFailure: @escaping (Error) async -> Action
+                    transform: @Sendable @escaping (String, (Action) async -> Void) async throws -> Void,
+                    onFailure: @Sendable @escaping (Error) async -> Action
                 ) -> SubscriptionID {
                     trySubscribe(\\.loadAtIndex, with: p0, transform: transform, onFailure: onFailure)
                 }
@@ -126,16 +126,16 @@ final class EffectMacroTests: XCTestCase {
             
                 func importURL(
                     _ p0: URL,
-                    transform: @escaping (String) async -> Action,
-                    onFailure: @escaping (Error) async -> Action
+                    transform: @Sendable @escaping (String) async -> Action,
+                    onFailure: @Sendable @escaping (Error) async -> Action
                 ) {
                     tryPerform(\\.importURL, with: p0, transform: transform, onFailure: onFailure)
                 }
 
                 func subscribeToImportURL(
                     _ p0: URL,
-                    transform: @escaping (String, (Action) async -> Void) async throws -> Void,
-                    onFailure: @escaping (Error) async -> Action
+                    transform: @Sendable @escaping (String, (Action) async -> Void) async throws -> Void,
+                    onFailure: @Sendable @escaping (Error) async -> Action
                 ) -> SubscriptionID {
                     trySubscribe(\\.importURL, with: p0, transform: transform, onFailure: onFailure)
                 }

@@ -1,6 +1,7 @@
 import Foundation
 
-public final class ScopeEngine<State, Action, Output>: Engine {
+@MainActor
+public final class ScopeEngine<State, Action: Sendable, Output>: Engine {
     private let isEqual: (State, State) -> Bool
     private let processor: ActionProcessor<State, Action, Output>
     private let _statePublisher = MainPublisher<State>()
@@ -44,7 +45,6 @@ public final class ScopeEngine<State, Action, Output>: Engine {
         }
     }
     
-    @MainActor
     public func send(_ action: Action) {
         processor.process(
             action,
@@ -56,7 +56,6 @@ public final class ScopeEngine<State, Action, Output>: Engine {
         )
     }
     
-    @MainActor
     public func signal(_ output: Output) {
         signalThunk(output)
     }

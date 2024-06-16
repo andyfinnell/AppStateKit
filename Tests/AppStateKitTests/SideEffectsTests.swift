@@ -20,6 +20,7 @@ final class SideEffectsTests: XCTestCase {
         case updateParent
     }
     
+    @MainActor
     func testParallelEffects() async {
         let dependencies = DependencyScope()
         let subject = SideEffectsContainer<Action>(dependencyScope: dependencies)
@@ -42,6 +43,7 @@ final class SideEffectsTests: XCTestCase {
         XCTAssertEqual(actual, expected)
     }
     
+    @MainActor
     func testCombinedEffects() async {
         let dependencies = DependencyScope()
         let subject = SideEffectsContainer<Action>(dependencyScope: dependencies)
@@ -74,6 +76,7 @@ final class SideEffectsTests: XCTestCase {
         XCTAssertEqual(actual, expected)
     }
     
+    @MainActor
     func testSubscription() async {
         let dependencies = DependencyScope()
         let subject = SideEffectsContainer<Action>(dependencyScope: dependencies)
@@ -97,6 +100,7 @@ final class SideEffectsTests: XCTestCase {
         XCTAssertEqual(actual, expected)
     }
     
+    @MainActor
     func testImmediateCancel() async {
         let dependencies = DependencyScope()
         let subject = SideEffectsContainer<Action>(dependencyScope: dependencies)
@@ -115,6 +119,7 @@ final class SideEffectsTests: XCTestCase {
         XCTAssertEqual(subject.subscriptions.count, 0)
     }
     
+    @MainActor
     func testLaterCancel() async {
         let dependencies = DependencyScope()
         let subject = SideEffectsContainer<Action>(dependencyScope: dependencies)
@@ -127,6 +132,7 @@ final class SideEffectsTests: XCTestCase {
         XCTAssertEqual(subject.cancellations, Set([subscriptionID]))
     }
     
+    @MainActor
     func testGeneratedMethods() async {
         let dependencies = DependencyScope()
         let subject = SideEffectsContainer<Action>(dependencyScope: dependencies)
@@ -144,6 +150,7 @@ final class SideEffectsTests: XCTestCase {
         XCTAssertEqual(actual, expected)
     }
     
+    @MainActor
     func testScheduleAction() async {
         let dependencies = DependencyScope()
         let subject = SideEffectsContainer<Action>(dependencyScope: dependencies)
@@ -160,6 +167,7 @@ final class SideEffectsTests: XCTestCase {
         XCTAssertEqual(actual, expected)
     }
     
+    @MainActor
     func testSignal() async {
         let dependencies = DependencyScope()
         let subject = SideEffectsContainer<Action>(dependencyScope: dependencies)

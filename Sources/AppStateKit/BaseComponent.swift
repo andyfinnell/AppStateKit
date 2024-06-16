@@ -1,5 +1,6 @@
 import Foundation
 
+@MainActor
 public protocol BaseComponent {
     associatedtype State
     associatedtype Action

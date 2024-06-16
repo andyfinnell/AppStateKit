@@ -1,6 +1,7 @@
 import Foundation
 
-public final class MapEngine<State, Action, Output>: Engine {
+@MainActor
+public final class MapEngine<State, Action: Sendable, Output>: Engine {
     private let sendThunk: @MainActor (Action) -> Void
     private let stateThunk: () -> State
     private let internalsThunk: () -> Internals
@@ -38,12 +39,10 @@ public final class MapEngine<State, Action, Output>: Engine {
         }
     }
     
-    @MainActor
     public func send(_ action: Action) {
         sendThunk(action)
     }
     
-    @MainActor
     public func signal(_ output: Output) {
         signalThunk(output)
     }

@@ -4,6 +4,7 @@ import SwiftSyntaxBuilder
 struct ComponentViewCodegen {
     static func codegen(from component: Component) -> DeclSyntax? {
         let decl: DeclSyntax = """
+            @MainActor
             struct EngineView: View {
                 @SwiftUI.State var engine: ViewEngine<State, Action, Output>
             

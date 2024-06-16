@@ -30,6 +30,7 @@ private extension ComponentActionCodegen {
         let parameters = generateImplementationParameters(from: action)
         let body = generateImplementationBody(from: action, implementation: impl)
         let decl: DeclSyntax = """
+            @MainActor
             private static func \(raw: action.label)(_ state: inout State, sideEffects: SideEffects\(raw: parameters)) {
                 \(raw: body)
             }

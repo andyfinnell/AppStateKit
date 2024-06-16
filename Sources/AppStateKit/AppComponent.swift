@@ -1,13 +1,13 @@
 import Foundation
 import SwiftUI
 
+@MainActor
 public protocol AppComponent: BaseComponent {
     associatedtype ComponentScene: Scene
         
     static func initialState() -> State
     static func dependencies() -> DependencyScope
     
-    @MainActor
     @SceneBuilder
     static func scene(_ engine: ViewEngine<State, Action, Output>) -> ComponentScene
 }

@@ -55,10 +55,12 @@ final class DetachmentMacroTests: XCTestCase {
                         Subfeature.State(score: state.score)
                     }
 
+                    @MainActor
                     static func actionToUpdateState(from state: State) -> Subfeature.Action? {
                         nil
                     }
 
+                    @MainActor
                     static func translate(from output: Subfeature.Output) -> Action? {
                         nil
                     }
@@ -79,10 +81,12 @@ final class DetachmentMacroTests: XCTestCase {
                          )
                     }
                 }
+                @MainActor
             
                 private static func increase(_ state: inout State, sideEffects: AnySideEffects<Action, Output>) {
                     state.score += 1
                 }
+                @MainActor
             
                 private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
@@ -106,6 +110,7 @@ final class DetachmentMacroTests: XCTestCase {
 
                 typealias SideEffects = AnySideEffects<Action, Output>
 
+                @MainActor
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case .increase:
@@ -117,6 +122,7 @@ final class DetachmentMacroTests: XCTestCase {
                     }
                 }
             
+                @MainActor
                 struct EngineView: View {
                     @SwiftUI.State var engine: ViewEngine<State, Action, Output>
             
@@ -201,6 +207,7 @@ final class DetachmentMacroTests: XCTestCase {
                         .updateScore(state.score)
                     }
 
+                    @MainActor
                     static func translate(from output: Subfeature.Output) -> Action? {
                         nil
                     }
@@ -221,10 +228,12 @@ final class DetachmentMacroTests: XCTestCase {
                          )
                     }
                 }
+                @MainActor
             
                 private static func increase(_ state: inout State, sideEffects: AnySideEffects<Action, Output>) {
                     state.score += 1
                 }
+                @MainActor
             
                 private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
@@ -248,6 +257,7 @@ final class DetachmentMacroTests: XCTestCase {
 
                 typealias SideEffects = AnySideEffects<Action, Output>
 
+                @MainActor
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case .increase:
@@ -259,6 +269,7 @@ final class DetachmentMacroTests: XCTestCase {
                     }
                 }
             
+                @MainActor
                 struct EngineView: View {
                     @SwiftUI.State var engine: ViewEngine<State, Action, Output>
             
@@ -343,6 +354,7 @@ final class DetachmentMacroTests: XCTestCase {
                         .increase
                     }
 
+                    @MainActor
                     static func actionToUpdateState(from state: State) -> Subfeature.Action? {
                         nil
                     }
@@ -363,10 +375,12 @@ final class DetachmentMacroTests: XCTestCase {
                          )
                     }
                 }
+                @MainActor
             
                 private static func increase(_ state: inout State, sideEffects: AnySideEffects<Action, Output>) {
                     state.score += 1
                 }
+                @MainActor
             
                 private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
                     state.name = newName
@@ -390,6 +404,7 @@ final class DetachmentMacroTests: XCTestCase {
 
                 typealias SideEffects = AnySideEffects<Action, Output>
 
+                @MainActor
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case .increase:
@@ -401,6 +416,7 @@ final class DetachmentMacroTests: XCTestCase {
                     }
                 }
             
+                @MainActor
                 struct EngineView: View {
                     @SwiftUI.State var engine: ViewEngine<State, Action, Output>
             

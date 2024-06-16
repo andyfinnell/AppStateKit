@@ -34,6 +34,7 @@ final class ViewEngineTests: XCTestCase {
     private var parentEngine: FakeEngine<TestComponent.State, TestComponent.Action, TestComponent.Output>!
     private var subject: ViewEngine<TestComponent.State, TestComponent.Action, TestComponent.Output>!
     
+    @MainActor 
     override func setUp() {
         super.setUp()
         
@@ -41,19 +42,21 @@ final class ViewEngineTests: XCTestCase {
         subject = ViewEngine(engine: parentEngine, isEqual: ==)
     }
 
+    @MainActor
     func testActionSend() async {
-        await subject.send(.doWhat)
+        subject.send(.doWhat)
         
         XCTAssertEqual(parentEngine.sentActions, [.doWhat])
     }
     
+    @MainActor
     func testOutputSignal() async {
-        await subject.signal(.letParentKnow)
+        subject.signal(.letParentKnow)
         
         XCTAssertEqual(parentEngine.signaledOutput, [.letParentKnow])
     }
 
-
+    @MainActor
     func testParentStateChanged() {
         var history = [TestComponent.State]()
         let finishExpectation = expectation(description: "finish")

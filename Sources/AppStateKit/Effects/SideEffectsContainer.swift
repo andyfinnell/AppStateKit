@@ -1,7 +1,7 @@
-
-final class SideEffectsContainer<Action> {
+@MainActor
+final class SideEffectsContainer<Action: Sendable> {
     private let dependencyScope: DependencyScope
-    private var futures: [FutureEffect<Action>]
+    private(set) var futures: [FutureEffect<Action>]
     private(set) var subscriptions: [FutureSubscription<Action>]
     private(set) var cancellations: Set<SubscriptionID>
     
@@ -33,23 +33,25 @@ final class SideEffectsContainer<Action> {
             }
         )
     }
-
-    func apply(using send: @MainActor @escaping (Action) async -> Void) async {
-        await withTaskGroup(of: Void.self) { taskGroup in
-            for future in futures {
-                taskGroup.addTask {
-                    let action = await future.call()
-                    await send(action)
+    
+    func apply(using send: @Sendable @MainActor @escaping (Action) async -> Void) {
+        let futures = self.futures
+        Task.detached {
+            await withTaskGroup(of: Void.self) { taskGroup in
+                for future in futures {
+                    taskGroup.addTask {
+                        let action = await future.call()
+                        await send(action)
+                    }
                 }
             }
         }
     }
     
-    @MainActor
     func startSubscriptions(
-        using send: @MainActor @escaping (Action) async -> Void,
+        using send: @Sendable @MainActor @escaping (Action) async -> Void,
         attachingWith attach: @MainActor @escaping (Task<Void, Never>, SubscriptionID) -> Void,
-        onFinish: @MainActor @escaping (SubscriptionID) -> Void
+        onFinish: @Sendable @MainActor @escaping (SubscriptionID) -> Void
     ) {
         for subscription in subscriptions {
             let task = Task.detached {

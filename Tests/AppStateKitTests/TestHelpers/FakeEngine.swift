@@ -2,8 +2,9 @@ import Foundation
 import XCTest
 @testable import AppStateKit
 
+@MainActor
 @Observable
-final class FakeEngine<State, Action, Output>: Engine {
+final class FakeEngine<State, Action: Sendable, Output>: Engine {
     var internals = Internals(dependencyScope: DependencyScope())
     var state: State {
         didSet {

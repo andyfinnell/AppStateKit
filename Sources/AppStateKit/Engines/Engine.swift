@@ -1,18 +1,17 @@
 import Foundation
 
+@MainActor
 public protocol Engine: AnyObject {
     associatedtype State
-    associatedtype Action
+    associatedtype Action: Sendable
     associatedtype Output
     
     var state: State { get }
     var statePublisher: any Publisher<State> { get }
     var internals: Internals { get }
     
-    @MainActor
     func send(_ action: Action)
     
-    @MainActor
     func signal(_ output: Output)
 }
 

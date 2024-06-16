@@ -115,6 +115,7 @@ final class ScopeEngineTests: XCTestCase {
     private var subject: ScopeEngine<TestComponent.State, TestComponent.Action, TestComponent.Output>!
     private var injectWasCalled = false
     
+    @MainActor
     override func setUp() {
         super.setUp()
     
@@ -129,6 +130,7 @@ final class ScopeEngineTests: XCTestCase {
         )
     }
 
+    @MainActor
     func testActionSend() async {
         var history = [TestComponent.State]()
         let finishExpectation = expectation(description: "finish")
@@ -139,7 +141,7 @@ final class ScopeEngineTests: XCTestCase {
             finishExpectation.fulfill()
         }
         
-        await subject.send(.doWhat)
+        subject.send(.doWhat)
         
         await fulfillment(of: [finishExpectation], timeout: 1.0)
         
@@ -152,6 +154,7 @@ final class ScopeEngineTests: XCTestCase {
         _ = sink
     }
 
+    @MainActor
     func testStartSubscription() async {
         var history = [TestComponent.State]()
         let finishExpectation = expectation(description: "finish")
@@ -162,7 +165,7 @@ final class ScopeEngineTests: XCTestCase {
             finishExpectation.fulfill()
         }
 
-        await subject.send(.beginTimer(count: 3))
+        subject.send(.beginTimer(count: 3))
         
         await fulfillment(of: [finishExpectation], timeout: 1.0)
         
@@ -177,6 +180,7 @@ final class ScopeEngineTests: XCTestCase {
         _ = sink
     }
 
+    @MainActor
     func testCancelSubscription() async {
         var history = [TestComponent.State]()
         let isGoingExpectation = expectation(description: "is going")
@@ -193,12 +197,12 @@ final class ScopeEngineTests: XCTestCase {
             }
         }
         
-        await subject.send(.beginTimer(count: 1000))
+        subject.send(.beginTimer(count: 1000))
         
         // Wait until we know we've started the subscription
         await fulfillment(of: [isGoingExpectation], timeout: 1.0)
         
-        await subject.send(.stopTimer)
+        subject.send(.stopTimer)
         
         // Wait until we see the timer go nil
         await fulfillment(of: [hasStopped], timeout: 1.0)
@@ -216,18 +220,21 @@ final class ScopeEngineTests: XCTestCase {
         _ = sink
     }
     
+    @MainActor
     func testTranslateOutput() async {
-        await subject.signal(.markFinished)
+        subject.signal(.markFinished)
         
         XCTAssertEqual(parentEngine.sentActions, [ParentComponent.Action.markFinished])
     }
 
+    @MainActor
     func testTranslateOutputThroughSideEffects() async {
-        await subject.send(.finishBigEffect(value: "finished"))
+        subject.send(.finishBigEffect(value: "finished"))
         
         XCTAssertEqual(parentEngine.sentActions, [ParentComponent.Action.markFinished])
     }
 
+    @MainActor
     func testParentStateChanged() {
         var history = [TestComponent.State]()
         let finishExpectation = expectation(description: "finish")

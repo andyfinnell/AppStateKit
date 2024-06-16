@@ -44,6 +44,14 @@ struct ComponentParser {
         )
     }
     
+    static func isUserDefinedActionMethod(_ member: some DeclSyntaxProtocol) -> Bool {
+        if let funcDecl = member.as(FunctionDeclSyntax.self) {
+            return computeActionFromFunction(funcDecl) != nil
+        } else {
+            return false
+        }
+    }
+    
     static func isViewMethod(_ member: some DeclSyntaxProtocol) -> Bool {
         guard let functionDecl = member.as(FunctionDeclSyntax.self),
               functionDecl.name.text == "view" else {

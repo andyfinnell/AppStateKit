@@ -11,6 +11,7 @@ struct ComponentReducerCodegen {
         }.joined(separator: "\n")
         
         let reduceDecl = """
+            @MainActor
             static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                 switch action {
                 \(cases)

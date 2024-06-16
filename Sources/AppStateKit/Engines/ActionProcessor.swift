@@ -1,5 +1,5 @@
-
-final class ActionProcessor<State, Action, Output> {
+@MainActor
+final class ActionProcessor<State, Action: Sendable, Output> {
     private var actions = [Action]()
     private var subscriptions = [SubscriptionID: Task<Void, Never>]()
     private var isProcessing = false
@@ -8,8 +8,8 @@ final class ActionProcessor<State, Action, Output> {
 
     init(
         dependencies: DependencyScope,
-        reduce: @escaping (inout State, Action, AnySideEffects<Action, Output>) -> Void)
-    {
+        reduce: @escaping (inout State, Action, AnySideEffects<Action, Output>) -> Void
+    ) {
         self.dependencies = dependencies
         self.reduce = reduce
     }
@@ -18,12 +18,11 @@ final class ActionProcessor<State, Action, Output> {
         Internals(dependencyScope: dependencies)
     }
     
-    @MainActor
     func process(
         _ action: Action,
         on getState: () -> State,
         _ setState: (State) -> Void,
-        using sendThunk: @MainActor @escaping (Action) -> Void,
+        using sendThunk: @MainActor @Sendable @escaping (Action) -> Void,
         _ signalThunk: @MainActor @escaping (Output) -> Void
     ) {
         actions.append(action)
@@ -37,11 +36,10 @@ final class ActionProcessor<State, Action, Output> {
 }
 
 private extension ActionProcessor {
-    @MainActor
     func processNextActionIfPossible(
         on getState: () -> State,
         _ setState: (State) -> Void,
-        using sendThunk: @MainActor @escaping (Action) -> Void,
+        using sendThunk: @MainActor @Sendable @escaping (Action) -> Void,
         _ signalThunk: @MainActor @escaping (Output) -> Void
     ) {
         guard !isProcessing,
@@ -57,9 +55,7 @@ private extension ActionProcessor {
         isProcessing = false
         
         // Perform effects
-        Task.detached {
-            await sideEffects.apply(using: sendThunk)
-        }
+        sideEffects.apply(using: sendThunk)
         
         // Start subscriptions
         sideEffects.startSubscriptions(

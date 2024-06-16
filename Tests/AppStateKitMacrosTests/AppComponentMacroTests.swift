@@ -67,6 +67,7 @@ final class AppComponentMacroTests: XCTestCase {
 
                 typealias SideEffects = AnySideEffects<Action, Output>
 
+                @MainActor
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case let .counters(innerAction):
@@ -83,6 +84,7 @@ final class AppComponentMacroTests: XCTestCase {
                     }
                 }
 
+                @MainActor
                 struct MainApp: App {
                     @SwiftUI.State var engine = MainEngine<State, Action>(
                         dependencies: dependencies(),
@@ -95,6 +97,7 @@ final class AppComponentMacroTests: XCTestCase {
                     }
                 }
 
+                @MainActor
                 static func main() {
                     MainApp.main()
                 }

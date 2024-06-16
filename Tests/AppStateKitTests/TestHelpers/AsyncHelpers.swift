@@ -1,6 +1,6 @@
 import Foundation
 
-actor AsyncSet<T: Hashable> {
+final actor AsyncSet<T: Hashable> {
     var set = Set<T>()
     
     func insert(_ value: T) {

@@ -3,6 +3,7 @@
 public struct Scope<each D> where repeat each D: Dependable {
     public init() {}
     
+    @MainActor
     func initialize(_ space: DependencyScope) {
         _ = (repeat (space[(each D).self]))
     }

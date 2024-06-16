@@ -4,6 +4,7 @@
 /// A tree structure of dependencies. Can construct `Dependable` instances
 /// when requested, and cache them off. It inherits dependencies from its
 /// parents.
+@MainActor
 public final class DependencyScope {
     private var dependencies = [ObjectIdentifier: Any]()
     

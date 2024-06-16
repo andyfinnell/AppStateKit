@@ -65,6 +65,7 @@ final class MapEngineTests: XCTestCase {
     private var parentEngine: FakeEngine<ParentComponent.State, ParentComponent.Action, ParentComponent.Output>!
     private var subject: MapEngine<TestComponent.State, TestComponent.Action, TestComponent.Output>!
     
+    @MainActor
     override func setUp() {
         super.setUp()
         
@@ -76,18 +77,21 @@ final class MapEngineTests: XCTestCase {
         )
     }
 
+    @MainActor
     func testActionSend() async {
-        await subject.send(.doWhat)
+        subject.send(.doWhat)
         
         XCTAssertEqual(parentEngine.sentActions, [ParentComponent.Action.test(.doWhat)])
     }
 
+    @MainActor
     func testOutputSignal() async {
-        await subject.signal(.letParentKnow)
+        subject.signal(.letParentKnow)
         
         XCTAssertEqual(parentEngine.sentActions, [ParentComponent.Action.finishBigEffect])
     }
 
+    @MainActor
     func testParentStateChanged() {
         var history = [TestComponent.State]()
         let finishExpectation = expectation(description: "finish")

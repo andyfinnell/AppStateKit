@@ -1,15 +1,15 @@
 import Foundation
 
-struct FutureSubscription<ReturnType> {
+struct FutureSubscription<ReturnType>: Sendable {
     let id: SubscriptionID
-    private let handler: ((ReturnType) async -> Void) async throws -> Void
+    private let handler: @Sendable ((ReturnType) async -> Void) async throws -> Void
     
-    init(id: SubscriptionID, handler: @escaping ((ReturnType) async -> Void) async throws -> Void) {
+    init(id: SubscriptionID, handler: @Sendable @escaping ((ReturnType) async -> Void) async throws -> Void) {
         self.id = id
         self.handler = handler
     }
     
-    func map<R>(_ transform: @escaping (ReturnType) -> R) -> FutureSubscription<R> {
+    func map<R>(_ transform: @Sendable @escaping (ReturnType) -> R) -> FutureSubscription<R> {
         FutureSubscription<R>(id: id) { yield in
             try await handler() { v in
                 await yield(transform(v))

@@ -61,7 +61,7 @@ extension ComponentMacro: MemberAttributeMacro {
         providingAttributesFor member: some DeclSyntaxProtocol,
         in context: some MacroExpansionContext
     ) throws -> [AttributeSyntax] {
-        guard ComponentParser.isViewMethod(member) else {
+        guard ComponentParser.isViewMethod(member) || ComponentParser.isUserDefinedActionMethod(member) else {
             return []
         }
         

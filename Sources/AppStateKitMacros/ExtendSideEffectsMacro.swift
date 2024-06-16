@@ -158,9 +158,9 @@ private extension ExtendSideEffectsMacro {
             }
         }
         
-        parameters.append("transform: @escaping (\(effect.returnType)) async -> Action")
+        parameters.append("transform: @Sendable @escaping (\(effect.returnType)) async -> Action")
         if effect.isThrowing {
-            parameters.append("onFailure: @escaping (Error) async -> Action")
+            parameters.append("onFailure: @Sendable @escaping (Error) async -> Action")
         }
         return parameters.joined(separator: ",\n")
     }
@@ -206,9 +206,9 @@ private extension ExtendSideEffectsMacro {
             }
         }
         
-        parameters.append("transform: @escaping (\(effect.returnType), (Action) async -> Void) async throws -> Void")
+        parameters.append("transform: @Sendable @escaping (\(effect.returnType), (Action) async -> Void) async throws -> Void")
         if effect.isThrowing {
-            parameters.append("onFailure: @escaping (Error) async -> Action")
+            parameters.append("onFailure: @Sendable @escaping (Error) async -> Action")
         }
         return parameters.joined(separator: ",\n")
     }
