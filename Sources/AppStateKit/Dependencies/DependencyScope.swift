@@ -9,7 +9,7 @@ public final class DependencyScope {
     private let parentScope: DependencyScope?
     private var dependencies = [ObjectIdentifier: Any]()
     
-    /// Create an empty `DependencySpace`
+    /// Create an empty `DependencyScope`
     public init() {
         parentScope = nil
     }
