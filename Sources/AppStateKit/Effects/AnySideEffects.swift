@@ -145,7 +145,7 @@ public struct AnySideEffects<Action: Sendable, Output> {
     
     public func map<ToAction, ToOutput>(
         _ transform: @Sendable @escaping (ToAction) -> Action,
-        translate: @escaping (ToOutput) -> Action?
+        translate: @escaping (ToOutput) -> Action? = { _ in nil }
     ) -> AnySideEffects<ToAction, ToOutput> {
         // TODO: maybe a good time to create a child dependencyScope?
         AnySideEffects<ToAction, ToOutput>(
