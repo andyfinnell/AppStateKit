@@ -2,7 +2,7 @@ import SwiftUI
 
 @attached(member, names: named(Action), named(reduce), named(EngineView), arbitrary)
 @attached(memberAttribute)
-@attached(extension, conformances: Component)
+@attached(extension, conformances: Component, BaseComponent)
 public macro Component() = #externalMacro(module: "AppStateKitMacros", type: "ComponentMacro")
 
 @attached(member, names: named(Action), named(reduce), named(MainApp), arbitrary)

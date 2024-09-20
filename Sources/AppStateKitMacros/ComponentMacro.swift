@@ -43,7 +43,7 @@ extension ComponentMacro: ExtensionMacro {
         }
 
         let decl: DeclSyntax = """
-            extension \(raw: enumDecl.name.text): Component {}
+            extension \(raw: enumDecl.name.text): Component, BaseComponent {}
             """
         
         // TODO: can we extend things like ViewEngine to make Actions look like methods?
