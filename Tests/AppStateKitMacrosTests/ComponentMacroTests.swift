@@ -94,7 +94,7 @@ final class ComponentMacroTests: XCTestCase {
                 }
             }
             
-            extension MyFeature: Component {
+            extension MyFeature: Component, BaseComponent {
             }
             """,
             macros: testMacros
@@ -186,7 +186,7 @@ final class ComponentMacroTests: XCTestCase {
                 }
             }
             
-            extension MyFeature: Component {
+            extension MyFeature: Component, BaseComponent {
             }
             """,
             macros: testMacros
@@ -286,7 +286,7 @@ final class ComponentMacroTests: XCTestCase {
                 }
             }
             
-            extension CounterComponent: Component {
+            extension CounterComponent: Component, BaseComponent {
             }
             """,
             macros: testMacros
@@ -394,7 +394,7 @@ final class ComponentMacroTests: XCTestCase {
                 }
             }
             
-            extension MyFeature: Component {
+            extension MyFeature: Component, BaseComponent {
             }
             """,
             macros: testMacros
@@ -513,7 +513,7 @@ final class ComponentMacroTests: XCTestCase {
                 }
             }
             
-            extension MyFeature: Component {
+            extension MyFeature: Component, BaseComponent {
             }
             """,
             macros: testMacros
@@ -635,7 +635,7 @@ final class ComponentMacroTests: XCTestCase {
                 }
             }
             
-            extension MyFeature: Component {
+            extension MyFeature: Component, BaseComponent {
             }
             """,
             macros: testMacros
@@ -757,7 +757,7 @@ final class ComponentMacroTests: XCTestCase {
                 }
             }
             
-            extension MyFeature: Component {
+            extension MyFeature: Component, BaseComponent {
             }
             """,
             macros: testMacros
@@ -870,7 +870,7 @@ final class ComponentMacroTests: XCTestCase {
                 }
             }
             
-            extension MyFeature: Component {
+            extension MyFeature: Component, BaseComponent {
             }
             """,
             macros: testMacros
@@ -985,7 +985,7 @@ final class ComponentMacroTests: XCTestCase {
                 }
             }
             
-            extension MyFeature: Component {
+            extension MyFeature: Component, BaseComponent {
             }
             """,
             macros: testMacros
@@ -1099,7 +1099,7 @@ final class ComponentMacroTests: XCTestCase {
                 }
             }
             
-            extension MyFeature: Component {
+            extension MyFeature: Component, BaseComponent {
             }
             """,
             macros: testMacros

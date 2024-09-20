@@ -26,8 +26,9 @@ public struct AnySideEffects<Action: Sendable, Output> {
         transform: @Sendable @escaping (ReturnType) async -> Action,
         onFailure: @Sendable @escaping (Failure) async -> Action
     ) {
+        let tuple = (repeat each parameters)
         let future = FutureEffect {
-            switch await effect.perform(repeat each parameters) {
+            switch await effect.perform(repeat each tuple) {
             case let .success(value):
                 return await transform(value)
             case let .failure(error):
@@ -42,8 +43,9 @@ public struct AnySideEffects<Action: Sendable, Output> {
         with parameters: repeat each ParameterType,
         transform: @Sendable @escaping (ReturnType) async -> Action
     ) {
+        let tuple = (repeat each parameters)
         let future = FutureEffect {
-            switch await effect.perform(repeat each parameters) {
+            switch await effect.perform(repeat each tuple) {
             case let .success(value):
                 return await transform(value)
             }
@@ -57,8 +59,9 @@ public struct AnySideEffects<Action: Sendable, Output> {
         transform: @Sendable @escaping (ReturnType, (Action) async -> Void) async throws -> Void
     ) -> SubscriptionID {
         let id = SubscriptionID()
+        let tuple = (repeat each parameters)
         let future = FutureSubscription(id: id) { yield in
-            switch await effect.perform(repeat each parameters) {
+            switch await effect.perform(repeat each tuple) {
             case let .success(value):
                 try await transform(value, yield)
             }
@@ -86,8 +89,9 @@ public struct AnySideEffects<Action: Sendable, Output> {
         onFailure: @Sendable @escaping (Failure) async -> Action
     ) -> SubscriptionID {
         let id = SubscriptionID()
+        let tuple = (repeat each parameters)
         let future = FutureSubscription(id: id) { yield in
-            switch await effect.perform(repeat each parameters) {
+            switch await effect.perform(repeat each tuple) {
             case let .success(value):
                 try await transform(value, yield)
             case let .failure(error):

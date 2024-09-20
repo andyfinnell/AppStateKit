@@ -55,12 +55,10 @@ final class DetachmentMacroTests: XCTestCase {
                         Subfeature.State(score: state.score)
                     }
 
-                    @MainActor
                     static func actionToUpdateState(from state: State) -> Subfeature.Action? {
                         nil
                     }
 
-                    @MainActor
                     static func translate(from output: Subfeature.Output) -> Action? {
                         nil
                     }
@@ -142,7 +140,7 @@ final class DetachmentMacroTests: XCTestCase {
                 }
             }
             
-            extension MyFeature: Component {
+            extension MyFeature: Component, BaseComponent {
             }
             """,
             macros: testMacros
@@ -207,7 +205,6 @@ final class DetachmentMacroTests: XCTestCase {
                         .updateScore(state.score)
                     }
 
-                    @MainActor
                     static func translate(from output: Subfeature.Output) -> Action? {
                         nil
                     }
@@ -289,7 +286,7 @@ final class DetachmentMacroTests: XCTestCase {
                 }
             }
             
-            extension MyFeature: Component {
+            extension MyFeature: Component, BaseComponent {
             }
             """,
             macros: testMacros
@@ -354,7 +351,6 @@ final class DetachmentMacroTests: XCTestCase {
                         .increase
                     }
 
-                    @MainActor
                     static func actionToUpdateState(from state: State) -> Subfeature.Action? {
                         nil
                     }
@@ -436,7 +432,7 @@ final class DetachmentMacroTests: XCTestCase {
                 }
             }
             
-            extension MyFeature: Component {
+            extension MyFeature: Component, BaseComponent {
             }
             """,
             macros: testMacros

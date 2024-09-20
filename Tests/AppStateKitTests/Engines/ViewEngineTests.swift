@@ -34,12 +34,11 @@ final class ViewEngineTests: XCTestCase {
     private var parentEngine: FakeEngine<TestComponent.State, TestComponent.Action, TestComponent.Output>!
     private var subject: ViewEngine<TestComponent.State, TestComponent.Action, TestComponent.Output>!
     
-    @MainActor 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         
-        parentEngine = FakeEngine(state: TestComponent.State(value: "idle"))
-        subject = ViewEngine(engine: parentEngine, isEqual: ==)
+        parentEngine = await FakeEngine(state: TestComponent.State(value: "idle"))
+        subject = await ViewEngine(engine: parentEngine, isEqual: ==)
     }
 
     @MainActor

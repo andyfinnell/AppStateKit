@@ -13,8 +13,8 @@ public enum BindMacro: ExpressionMacro {
         of node: some FreestandingMacroExpansionSyntax,
         in context: some MacroExpansionContext
     ) throws -> ExprSyntax {
-        guard let engineExpr = node.argumentList.first?.expression,
-              let keyPathExpr = node.argumentList.last?.expression else {
+        guard let engineExpr = node.arguments.first?.expression,
+              let keyPathExpr = node.arguments.last?.expression else {
             throw BindError.missingArguments
         }
         let actionName = try actionNameFromKeyPath(keyPathExpr)

@@ -75,9 +75,7 @@ private extension ExtendSideEffectsMacro {
         withMethodName methodName: String,
         subscribeName: String
     ) -> Effect? {
-        if let functionType = expression.as(FunctionTypeSyntax.self) {
-            return parseClosureType(functionType, withMethodName: methodName, subscribeName: subscribeName)
-        } else if let infixOperator = expression.as(InfixOperatorExprSyntax.self) {
+        if let infixOperator = expression.as(InfixOperatorExprSyntax.self) {
             return parseClosureType(infixOperator, withMethodName: methodName, subscribeName: subscribeName)
         } else {
             return nil
@@ -98,7 +96,7 @@ private extension ExtendSideEffectsMacro {
             Parameter(label: $0.label?.text, type: "\($0.expression)")
         }
         
-        let isThrowing = arrowExpr.effectSpecifiers?.throwsSpecifier != nil
+        let isThrowing = arrowExpr.effectSpecifiers?.throwsClause?.throwsSpecifier != nil
         let isAsync = arrowExpr.effectSpecifiers?.asyncSpecifier != nil
         let returnType = "\(infixOperation.rightOperand)"
         
@@ -111,30 +109,7 @@ private extension ExtendSideEffectsMacro {
             isAsync: isAsync
         )
     }
-    
-    // TODO: is this still needed?
-    static func parseClosureType(
-        _ closureType: FunctionTypeSyntax,
-        withMethodName methodName: String,
-        subscribeName: String
-    ) -> Effect? {
-        let parameters = closureType.parameters.map {
-            Parameter(label: $0.firstName?.text, type: "\($0.type)")
-        }
-        let isThrowing = closureType.effectSpecifiers?.throwsSpecifier != nil
-        let isAsync = closureType.effectSpecifiers?.asyncSpecifier != nil
-        let returnType = closureType.returnClause.type
         
-        return Effect(
-            methodName: methodName,
-            subscribeName: subscribeName,
-            parameters: parameters,
-            returnType: "\(returnType)",
-            isThrowing: isThrowing,
-            isAsync: isAsync
-        )
-    }
-    
     static func codegenMethod(from effect: Effect) -> DeclSyntax? {
         let parameters = codegenParameters(from: effect)
         let body = codegenBody(from: effect)

@@ -4,14 +4,14 @@ import SwiftSyntaxBuilder
 struct DetachmentCodegen {
     static func codegen(from detachment: Detachment) -> [DeclSyntax] {
         let defaultActionToUpdateState: DeclSyntax = """
-            @MainActor
+            
             static func actionToUpdateState(from state: State) -> \(raw: detachment.componentName).Action? {
                 nil
             }
             """
         
         let defaultTranslate: DeclSyntax = """
-            @MainActor
+            
             static func translate(from output: \(raw: detachment.componentName).Output) -> Action? {
                 nil
             }

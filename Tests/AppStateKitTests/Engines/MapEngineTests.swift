@@ -65,12 +65,11 @@ final class MapEngineTests: XCTestCase {
     private var parentEngine: FakeEngine<ParentComponent.State, ParentComponent.Action, ParentComponent.Output>!
     private var subject: MapEngine<TestComponent.State, TestComponent.Action, TestComponent.Output>!
     
-    @MainActor
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         
-        parentEngine = FakeEngine(state: ParentComponent.State(value: "idle"))
-        subject = parentEngine.map(
+        parentEngine = await FakeEngine(state: ParentComponent.State(value: "idle"))
+        subject = await parentEngine.map(
             state: { $0.test },
             action: ParentComponent.Action.test,
             translate: { _ in .finishBigEffect }

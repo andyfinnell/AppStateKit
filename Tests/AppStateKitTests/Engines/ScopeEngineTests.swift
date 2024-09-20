@@ -113,20 +113,17 @@ final class ScopeEngineTests: XCTestCase {
 
     private var parentEngine: FakeEngine<ParentComponent.State, ParentComponent.Action, ParentComponent.Output>!
     private var subject: ScopeEngine<TestComponent.State, TestComponent.Action, TestComponent.Output>!
-    private var injectWasCalled = false
     
-    @MainActor
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
     
-        injectWasCalled = false
-        parentEngine = FakeEngine(state: ParentComponent.State(count: 0, isFinished: false))
-        subject = parentEngine.scope(
+        parentEngine = await FakeEngine(state: ParentComponent.State(count: 0, isFinished: false))
+        subject = await parentEngine.scope(
             component: TestComponent.self,
             initialState: ParentComponent.Test.initialState,
             actionToUpdateState: ParentComponent.Test.actionToUpdateState,
             translate: ParentComponent.Test.translate,
-            inject: { _ in injectWasCalled = true }
+            inject: { _ in  }
         )
     }
 

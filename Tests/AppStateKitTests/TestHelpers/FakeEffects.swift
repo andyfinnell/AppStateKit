@@ -54,18 +54,26 @@ enum TimerEffect {
         }
     }
     
-    static func perform(dependencies: DependencyScope, delay: TimeInterval, count: Int) -> AsyncStream<TimeInterval> {
+    private actor Counter {
         var lastTime: TimeInterval = 0.0
         var iteration = 0
-        let cancelToken = CancelToken()
-        let stream = AsyncStream { () -> TimeInterval? in
-            guard await !cancelToken.isCancelled, iteration < count else {
-                return nil
-            }
+
+        func next(delay: TimeInterval) -> TimeInterval {
             let v = lastTime
             lastTime += delay
             iteration += 1
             return v
+        }
+    }
+    
+    static func perform(dependencies: DependencyScope, delay: TimeInterval, count: Int) -> AsyncStream<TimeInterval> {
+        let cancelToken = CancelToken()
+        let counter = Counter()
+        let stream = AsyncStream { () -> TimeInterval? in
+            guard await !cancelToken.isCancelled, await counter.iteration < count else {
+                return nil
+            }
+            return await counter.next(delay: delay)
         } onCancel: {
             Task {
                 await cancelToken.cancel()

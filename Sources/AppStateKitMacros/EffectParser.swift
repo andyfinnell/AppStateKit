@@ -67,7 +67,7 @@ private extension EffectParser {
         }
         
         let isAsync = functionDecl.signature.effectSpecifiers?.asyncSpecifier != nil
-        let isThrowing = functionDecl.signature.effectSpecifiers?.throwsSpecifier != nil
+        let isThrowing = functionDecl.signature.effectSpecifiers?.throwsClause?.throwsSpecifier != nil
         let returnType = functionDecl.signature.returnClause?.type
 
         return Effect(

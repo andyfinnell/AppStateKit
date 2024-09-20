@@ -49,7 +49,7 @@ private extension DetachmentParser {
               let returnClause = functionDecl.signature.returnClause,
               functionDecl.signature.parameterClause.parameters.count == 1
                 && functionDecl.signature.effectSpecifiers?.asyncSpecifier == nil
-                && functionDecl.signature.effectSpecifiers?.throwsSpecifier == nil
+                && functionDecl.signature.effectSpecifiers?.throwsClause?.throwsSpecifier == nil
                 && isStatic else {
             return nil
         }
@@ -80,7 +80,7 @@ private extension DetachmentParser {
               let returnClause = functionDecl.signature.returnClause,
               functionDecl.signature.parameterClause.parameters.count == 1
                 && functionDecl.signature.effectSpecifiers?.asyncSpecifier == nil
-                && functionDecl.signature.effectSpecifiers?.throwsSpecifier == nil
+                && functionDecl.signature.effectSpecifiers?.throwsClause?.throwsSpecifier == nil
                 && isStatic else {
             return false
         }
@@ -106,7 +106,7 @@ private extension DetachmentParser {
               let returnClause = functionDecl.signature.returnClause,
               functionDecl.signature.parameterClause.parameters.count == 1
                 && functionDecl.signature.effectSpecifiers?.asyncSpecifier == nil
-                && functionDecl.signature.effectSpecifiers?.throwsSpecifier == nil
+                && functionDecl.signature.effectSpecifiers?.throwsClause?.throwsSpecifier == nil
                 && isStatic else {
             return nil
         }

@@ -68,7 +68,7 @@ struct ComponentParser {
               functionDecl.signature.returnClause != nil,
               functionDecl.signature.parameterClause.parameters.count == 1
                 && functionDecl.signature.effectSpecifiers?.asyncSpecifier == nil
-                && functionDecl.signature.effectSpecifiers?.throwsSpecifier == nil
+                && functionDecl.signature.effectSpecifiers?.throwsClause?.throwsSpecifier == nil
                 && isStatic else {
             return false
         }
@@ -100,7 +100,7 @@ struct ComponentParser {
               functionDecl.signature.returnClause != nil,
               functionDecl.signature.parameterClause.parameters.count == 1
                 && functionDecl.signature.effectSpecifiers?.asyncSpecifier == nil
-                && functionDecl.signature.effectSpecifiers?.throwsSpecifier == nil
+                && functionDecl.signature.effectSpecifiers?.throwsClause?.throwsSpecifier == nil
                 && isStatic else {
             return false
         }
@@ -137,7 +137,7 @@ private extension ComponentParser {
               let componentName = extractComponentNameFromOutput(parameter.type),
               functionDecl.signature.parameterClause.parameters.count == 1
                 && functionDecl.signature.effectSpecifiers?.asyncSpecifier == nil
-                && functionDecl.signature.effectSpecifiers?.throwsSpecifier == nil
+                && functionDecl.signature.effectSpecifiers?.throwsClause?.throwsSpecifier == nil
                 && isStatic
                 && optionalTypeName(returnClause.type) == "Action" else {
             // TODO: should this be a warning if everything else matches?
@@ -347,7 +347,7 @@ private extension ComponentParser {
         }
         guard functionDecl.signature.parameterClause.parameters.count >= 2
                 && functionDecl.signature.effectSpecifiers?.asyncSpecifier == nil
-                && functionDecl.signature.effectSpecifiers?.throwsSpecifier == nil
+                && functionDecl.signature.effectSpecifiers?.throwsClause?.throwsSpecifier == nil
                 && functionDecl.signature.returnClause == nil
                 && isStatic else {
             // TODO: should this be a warning if everything else matches?
@@ -387,11 +387,22 @@ private extension ComponentParser {
         guard parameter.firstName.text == "_" else {
             return false
         }
-        guard let attributed = parameter.type.as(AttributedTypeSyntax.self),
-              let specifier = attributed.specifier,
-              specifier.text == "inout" else {
+        guard let attributed = parameter.type.as(AttributedTypeSyntax.self) else {
             return false
         }
+        
+        let specifiers = attributed.specifiers.compactMap { element -> SimpleTypeSpecifierSyntax? in
+            if case let .simpleTypeSpecifier(specifier) = element {
+                return specifier
+            } else {
+                return nil
+            }
+        }
+            
+        guard specifiers.contains(where: { $0.specifier.text == "inout" }) else {
+            return false
+        }
+        
         guard let identifier = attributed.baseType.as(IdentifierTypeSyntax.self),
               identifier.name.text == "State" else {
             return false
