@@ -31,9 +31,9 @@ final class EffectMacroTests: XCTestCase {
                 static func makeDefault(with dependencies: DependencyScope) -> Effect<String , Error, String, Int> {
                     Effect { name, index in
                         do {
-                            return try await Result<String , Error>.success(perform(dependencies: dependencies, name: name, index: index))
+                            return try await Result<String , Error> .success(perform(dependencies: dependencies, name: name, index: index))
                         } catch {
-                            return Result<String , Error>.failure(error)
+                            return Result<String , Error> .failure(error)
                         }
                     }
                 }

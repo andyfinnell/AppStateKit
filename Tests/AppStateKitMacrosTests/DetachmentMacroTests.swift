@@ -69,7 +69,7 @@ final class DetachmentMacroTests: XCTestCase {
                     static func view<E: Engine>(
                         _ engine: E,
                         inject: (DependencyScope) -> Void
-                    ) -> some View where E.State == State, E.Action == Action {
+                    ) -> Subfeature.EngineView where E.State == State, E.Action == Action, E.Output == Output {
                          Subfeature.EngineView(
                              engine: engine.scope(
                                  component: Subfeature.self,
@@ -216,7 +216,7 @@ final class DetachmentMacroTests: XCTestCase {
                     static func view<E: Engine>(
                         _ engine: E,
                         inject: (DependencyScope) -> Void
-                    ) -> some View where E.State == State, E.Action == Action {
+                    ) -> Subfeature.EngineView where E.State == State, E.Action == Action, E.Output == Output {
                          Subfeature.EngineView(
                              engine: engine.scope(
                                  component: Subfeature.self,
@@ -363,7 +363,7 @@ final class DetachmentMacroTests: XCTestCase {
                     static func view<E: Engine>(
                         _ engine: E,
                         inject: (DependencyScope) -> Void
-                    ) -> some View where E.State == State, E.Action == Action {
+                    ) -> Subfeature.EngineView where E.State == State, E.Action == Action, E.Output == Output {
                          Subfeature.EngineView(
                              engine: engine.scope(
                                  component: Subfeature.self,
