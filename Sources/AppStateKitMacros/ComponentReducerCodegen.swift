@@ -6,7 +6,8 @@ struct ComponentReducerCodegen {
         let cases = component.actions.map {
             generateReduceAction(
                 from: $0,
-                translateCompositionMethodNames: component.translateCompositionMethodNames
+                translateCompositionMethodNames: component.translateCompositionMethodNames,
+                component: component
             )
         }.joined(separator: "\n")
         
@@ -24,12 +25,13 @@ struct ComponentReducerCodegen {
 }
 
 private extension ComponentReducerCodegen {
-    static func generateReduceAction(from action: Action, translateCompositionMethodNames: [String: String]) -> String {
+    static func generateReduceAction(from action: Action, translateCompositionMethodNames: [String: String], component: Component) -> String {
         if let composition = action.composition {
             return generateReduceComposedAction(
                 from: action,
                 with: composition,
-                translateCompositionMethodNames: translateCompositionMethodNames
+                translateCompositionMethodNames: translateCompositionMethodNames,
+                component: component
             )
         } else {
             return generateReduceLocalAction(from: action)
@@ -157,7 +159,8 @@ private extension ComponentReducerCodegen {
     static func generateReduceComposedAction(
         from action: Action,
         with composition: Composition,
-        translateCompositionMethodNames: [String: String]
+        translateCompositionMethodNames: [String: String],
+        component: Component
     ) -> String {
         let accessors = actionExtractionParameters(composition)
         let caseParameters = generateCaseClauseParameters(parameters: action.parameters, accessors: accessors)
@@ -185,6 +188,8 @@ private extension ComponentReducerCodegen {
         
         if let methodName = translateCompositionMethodNames[childModule] {
             translateMethod = methodName
+        } else if component.isOutputNever {
+            translateMethod = "{ (_: \(childModule).Output) -> Action? in }"
         } else {
             translateMethod = "{ (_: \(childModule).Output) in nil }"
         }

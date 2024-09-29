@@ -72,8 +72,7 @@ final class AppComponentMacroTests: XCTestCase {
                     switch action {
                     case let .counters(innerAction):
 
-                    let innerSideEffects = sideEffects.map(Action.counters, translate: { (_: CounterListComponent.Output) in
-                            nil
+                    let innerSideEffects = sideEffects.map(Action.counters, translate: { (_: CounterListComponent.Output) -> Action? in
                         })
                     CounterListComponent.reduce(
                         &state.counters,

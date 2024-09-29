@@ -70,7 +70,7 @@ public extension Engine {
             engine: self,
             state: toLocalState,
             action: fromLocalAction,
-            translate: { _ in nil }
+            translate: { _ -> Action? in }
         )
     }
 

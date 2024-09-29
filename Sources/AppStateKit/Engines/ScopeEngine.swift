@@ -122,7 +122,7 @@ extension Engine {
             engine: self,
             initialState: initialState,
             state: actionToUpdateState,
-            translate: { _ in nil },
+            translate: { _ -> Action? in },
             dependencies: { $0.scoped(inject: inject) },
             isEqual: { _, _ in false },
             component: component
@@ -139,7 +139,7 @@ extension Engine {
             engine: self,
             initialState: initialState,
             state: actionToUpdateState,
-            translate: { _ in nil },
+            translate: { _ -> Action? in  },
             dependencies: { $0.scoped(inject: inject) },
             isEqual: { $0 == $1 },
             component: component

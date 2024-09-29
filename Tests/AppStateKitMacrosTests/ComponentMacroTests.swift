@@ -359,8 +359,7 @@ final class ComponentMacroTests: XCTestCase {
             
                     case let .child(innerAction):
             
-                        let innerSideEffects = sideEffects.map(Action.child, translate: { (_: ChildFeature.Output) in
-                            nil
+                        let innerSideEffects = sideEffects.map(Action.child, translate: { (_: ChildFeature.Output) -> Action? in
                         })
                         ChildFeature.reduce(
                             &state.child,
@@ -476,8 +475,7 @@ final class ComponentMacroTests: XCTestCase {
                         let innerSideEffects = sideEffects.map({
                             Action.children($0, index: innerIndex)
                         }
-                        , translate: { (_: ChildFeature.Output) in
-                            nil
+                        , translate: { (_: ChildFeature.Output) -> Action? in
                         })
                         ChildFeature.reduce(
                             &state.children[innerIndex],
@@ -595,8 +593,7 @@ final class ComponentMacroTests: XCTestCase {
                         let innerSideEffects = sideEffects.map({
                             Action.children($0, key: innerKey)
                         }
-                        , translate: { (_: ChildFeature.Output) in
-                            nil
+                        , translate: { (_: ChildFeature.Output) -> Action? in
                         })
                         ChildFeature.reduce(
                             &innerState,
@@ -717,8 +714,7 @@ final class ComponentMacroTests: XCTestCase {
                         let innerSideEffects = sideEffects.map({
                             Action.children($0, id: innerID)
                         }
-                        , translate: { (_: ChildFeature.Output) in
-                            nil
+                        , translate: { (_: ChildFeature.Output) -> Action? in
                         })
                         ChildFeature.reduce(
                             &innerState,
@@ -832,8 +828,7 @@ final class ComponentMacroTests: XCTestCase {
                         guard var innerState = state.child else {
                             return
                         }
-                        let innerSideEffects = sideEffects.map(Action.child, translate: { (_: ChildFeature.Output) in
-                            nil
+                        let innerSideEffects = sideEffects.map(Action.child, translate: { (_: ChildFeature.Output) -> Action? in
                         })
                         ChildFeature.reduce(
                             &innerState,

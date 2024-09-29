@@ -7,6 +7,7 @@ struct ComponentParser {
         var detachments = [DetachmentRef]()
         var translateCompositionMethodNames = [String: String]()
         var hasDefinedOutput = false
+        var outputTypealias: String? = nil
         
         for member in decl.memberBlock.members {
             if let funcDecl = member.decl.as(FunctionDeclSyntax.self) {
@@ -26,7 +27,7 @@ struct ComponentParser {
             }
             
             if !hasDefinedOutput {
-                hasDefinedOutput = isOutputDefinition(member.decl)
+                (hasDefinedOutput, outputTypealias) = isOutputDefinition(member.decl)
             }
         }
         
@@ -39,7 +40,8 @@ struct ComponentParser {
             compositions: compositions,
             actions: actions + compositionActions,
             detachments: detachments, 
-            hasDefinedOutput: hasDefinedOutput, 
+            hasDefinedOutput: hasDefinedOutput,
+            isOutputNever: !hasDefinedOutput || outputTypealias == "Never", 
             translateCompositionMethodNames: translateCompositionMethodNames
         )
     }
@@ -166,15 +168,19 @@ private extension ComponentParser {
         return memberSyntax.baseType.description
     }
     
-    static func isOutputDefinition(_ decl: DeclSyntax) -> Bool {
+    static func isOutputDefinition(_ decl: DeclSyntax) -> (Bool, String?) {
         if let structDecl = decl.as(StructDeclSyntax.self) {
-            return structDecl.name.text == "Output"
+            return (structDecl.name.text == "Output", nil)
         } else if let enumDecl = decl.as(EnumDeclSyntax.self) {
-            return enumDecl.name.text == "Output"
+            return (enumDecl.name.text == "Output", nil)
         } else if let typealiasDecl = decl.as(TypeAliasDeclSyntax.self) {
-            return typealiasDecl.name.text == "Output"
+            var realTypename: String?
+            if let backingType = typealiasDecl.initializer.value.as(IdentifierTypeSyntax.self) {
+                realTypename = backingType.name.text
+            }
+            return (typealiasDecl.name.text == "Output", realTypename)
         } else {
-            return false
+            return (false, nil)
         }
     }
     
