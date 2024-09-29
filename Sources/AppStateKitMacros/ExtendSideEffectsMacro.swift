@@ -133,7 +133,11 @@ private extension ExtendSideEffectsMacro {
             }
         }
         
-        parameters.append("transform: @Sendable @escaping (\(effect.returnType)) async -> Action")
+        if effect.returnType == "Void" {
+            parameters.append("transform: @Sendable @escaping () async -> Action")
+        } else {
+            parameters.append("transform: @Sendable @escaping (\(effect.returnType)) async -> Action")
+        }
         if effect.isThrowing {
             parameters.append("onFailure: @Sendable @escaping (Error) async -> Action")
         }
