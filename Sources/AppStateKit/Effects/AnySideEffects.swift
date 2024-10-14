@@ -82,6 +82,18 @@ public struct AnySideEffects<Action: Sendable, Output> {
         )
     }
 
+    public func subscribe<each ParameterType: Sendable, ReturnType, D: Dependable>(
+        _ effectType: D.Type,
+        with parameters: repeat each ParameterType,
+        transform: @Sendable @escaping (ReturnType, (Action) async -> Void) async throws -> Void
+    ) -> SubscriptionID where D.T == Effect<ReturnType, Never, repeat each ParameterType> {
+        subscribe(
+            dependencyScope[effectType],
+            with: repeat each parameters,
+            transform: transform
+        )
+    }
+
     public func trySubscribe<each ParameterType: Sendable, ReturnType, Failure: Error>(
         _ effect: Effect<ReturnType, Failure, repeat each ParameterType>,
         with parameters: repeat each ParameterType,
@@ -117,6 +129,20 @@ public struct AnySideEffects<Action: Sendable, Output> {
         )
     }
 
+    public func trySubscribe<each ParameterType: Sendable, ReturnType, Failure: Error, D: Dependable>(
+        _ effectType: D.Type,
+        with parameters: repeat each ParameterType,
+        transform: @Sendable @escaping (ReturnType, (Action) async -> Void) async throws -> Void,
+        onFailure: @Sendable @escaping (Failure) async -> Action
+    ) -> SubscriptionID where D.T == Effect<ReturnType, Failure, repeat each ParameterType> {
+        trySubscribe(
+            dependencyScope[effectType],
+            with: repeat each parameters,
+            transform: transform,
+            onFailure: onFailure
+        )
+    }
+
     public func cancel(_ subscriptionID: SubscriptionID) {
         cancelThunk(subscriptionID)
     }
@@ -134,7 +160,21 @@ public struct AnySideEffects<Action: Sendable, Output> {
             onFailure: onFailure
         )
     }
-    
+
+    public func tryPerform<each ParameterType: Sendable, ReturnType, Failure: Error, D: Dependable>(
+        _ effectType: D.Type,
+        with parameters: repeat each ParameterType,
+        transform: @Sendable @escaping (ReturnType) async -> Action,
+        onFailure: @Sendable @escaping (Failure) async -> Action
+    ) where D.T == Effect<ReturnType, Failure, repeat each ParameterType> {
+        tryPerform(
+            dependencyScope[effectType],
+            with: repeat each parameters,
+            transform: transform,
+            onFailure: onFailure
+        )
+    }
+
     public func perform<each ParameterType: Sendable, ReturnType>(
         _ effect: KeyPath<DependencyScope, Effect<ReturnType, Never, repeat each ParameterType>>,
         with parameters: repeat each ParameterType,
@@ -146,7 +186,19 @@ public struct AnySideEffects<Action: Sendable, Output> {
             transform: transform
         )
     }
-    
+
+    public func perform<each ParameterType: Sendable, ReturnType, D: Dependable>(
+        _ effectType: D.Type,
+        with parameters: repeat each ParameterType,
+        transform: @Sendable @escaping (ReturnType) async -> Action
+    ) where D.T == Effect<ReturnType, Never, repeat each ParameterType> {
+        perform(
+            dependencyScope[effectType],
+            with: repeat each parameters,
+            transform: transform
+        )
+    }
+
     public func map<ToAction, ToOutput>(
         _ transform: @Sendable @escaping (ToAction) -> Action,
         translate: @escaping (ToOutput) -> Action? = { _ in nil }

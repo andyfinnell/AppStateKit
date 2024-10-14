@@ -15,30 +15,16 @@ public enum ExtendSideEffectsMacro: MemberMacro {
         }
         
         let decls = [
-            codegenMethod(from: effect),
-            codegenSubscribeMethod(from: effect),
+            ExtendSideEffectsCodegen.codegenMethod(from: effect),
+            ExtendSideEffectsCodegen.codegenSubscribeMethod(from: effect),
         ]
         
         return decls.compactMap { $0 }
     }
 }
 
-private extension ExtendSideEffectsMacro {
-    struct Parameter {
-        let label: String?
-        let type: String
-    }
-    
-    struct Effect {
-        let methodName: String
-        let subscribeName: String
-        let parameters: [Parameter]
-        let returnType: String
-        let isThrowing: Bool
-        let isAsync: Bool
-    }
-    
-    static func parseArguments(_ arguments: LabeledExprListSyntax) -> Effect? {
+private extension ExtendSideEffectsMacro {    
+    static func parseArguments(_ arguments: LabeledExprListSyntax) -> SideEffect? {
         guard arguments.count == 2,
             let nameArgument = arguments.first,
             let closureTypeArgument = arguments.last,
@@ -74,7 +60,7 @@ private extension ExtendSideEffectsMacro {
         _ expression: ExprSyntax,
         withMethodName methodName: String,
         subscribeName: String
-    ) -> Effect? {
+    ) -> SideEffect? {
         if let infixOperator = expression.as(InfixOperatorExprSyntax.self) {
             return parseClosureType(infixOperator, withMethodName: methodName, subscribeName: subscribeName)
         } else {
@@ -86,127 +72,29 @@ private extension ExtendSideEffectsMacro {
         _ infixOperation: InfixOperatorExprSyntax,
         withMethodName name: String,
         subscribeName: String
-    ) -> Effect? {
+    ) -> SideEffect? {
         guard let arrowExpr = infixOperation.operator.as(ArrowExprSyntax.self),
               let parametersExpr = infixOperation.leftOperand.as(TupleExprSyntax.self) else {
             return nil
         }
         
         let parameters = parametersExpr.elements.map {
-            Parameter(label: $0.label?.text, type: "\($0.expression)")
+            SideEffectParameter(label: $0.label?.text, type: "\($0.expression)")
         }
         
         let isThrowing = arrowExpr.effectSpecifiers?.throwsClause?.throwsSpecifier != nil
         let isAsync = arrowExpr.effectSpecifiers?.asyncSpecifier != nil
         let returnType = "\(infixOperation.rightOperand)"
         
-        return Effect(
+        return SideEffect(
             methodName: name, 
             subscribeName: subscribeName,
             parameters: parameters,
             returnType: returnType,
             isThrowing: isThrowing,
-            isAsync: isAsync
+            isAsync: isAsync,
+            effectReference: .keyPath(name)
         )
     }
         
-    static func codegenMethod(from effect: Effect) -> DeclSyntax? {
-        let parameters = codegenParameters(from: effect)
-        let body = codegenBody(from: effect)
-        let decl: DeclSyntax = """
-            func \(raw: effect.methodName)(
-                \(raw: parameters)
-            ) {
-                \(raw: body)
-            }
-            """
-        
-        return decl
-    }
-    
-    static func codegenParameters(from effect: Effect) -> String {
-        var parameters = effect.parameters.enumerated().map { i, parameter in
-            if let label = parameter.label {
-                return "\(label) p\(i): \(parameter.type)"
-            } else {
-                return "_ p\(i): \(parameter.type)"
-            }
-        }
-        
-        if effect.returnType == "Void" {
-            parameters.append("transform: @Sendable @escaping () async -> Action")
-        } else {
-            parameters.append("transform: @Sendable @escaping (\(effect.returnType)) async -> Action")
-        }
-        if effect.isThrowing {
-            parameters.append("onFailure: @Sendable @escaping (Error) async -> Action")
-        }
-        return parameters.joined(separator: ",\n")
-    }
-    
-    static func codegenBody(from effect: Effect) -> String {
-        let arguments = (0..<effect.parameters.count).map { "p\($0)" }
-            .joined(separator: ", ")
-        if arguments.isEmpty {
-            if effect.isThrowing {
-                return "tryPerform(\\.\(effect.methodName), transform: transform, onFailure: onFailure)"
-            } else {
-                return "perform(\\.\(effect.methodName), transform: transform)"
-            }
-        } else {
-            if effect.isThrowing {
-                return "tryPerform(\\.\(effect.methodName), with: \(arguments), transform: transform, onFailure: onFailure)"
-            } else {
-                return "perform(\\.\(effect.methodName), with: \(arguments), transform: transform)"
-            }
-        }
-    }
-    
-    static func codegenSubscribeMethod(from effect: Effect) -> DeclSyntax? {
-        let parameters = codegenSubscribeParameters(from: effect)
-        let body = codegenSubscribeBody(from: effect)
-        let decl: DeclSyntax = """
-            func \(raw: effect.subscribeName)(
-                \(raw: parameters)
-            ) -> SubscriptionID {
-                \(raw: body)
-            }
-            """
-        
-        return decl
-    }
-
-    static func codegenSubscribeParameters(from effect: Effect) -> String {
-        var parameters = effect.parameters.enumerated().map { i, parameter in
-            if let label = parameter.label {
-                return "\(label) p\(i): \(parameter.type)"
-            } else {
-                return "_ p\(i): \(parameter.type)"
-            }
-        }
-        
-        parameters.append("transform: @Sendable @escaping (\(effect.returnType), (Action) async -> Void) async throws -> Void")
-        if effect.isThrowing {
-            parameters.append("onFailure: @Sendable @escaping (Error) async -> Action")
-        }
-        return parameters.joined(separator: ",\n")
-    }
-
-    static func codegenSubscribeBody(from effect: Effect) -> String {
-        let arguments = (0..<effect.parameters.count).map { "p\($0)" }
-            .joined(separator: ", ")
-        if arguments.isEmpty {
-            if effect.isThrowing {
-                return "trySubscribe(\\.\(effect.methodName), transform: transform, onFailure: onFailure)"
-            } else {
-                return "subscribe(\\.\(effect.methodName), transform: transform)"
-            }
-        } else {
-            if effect.isThrowing {
-                return "trySubscribe(\\.\(effect.methodName), with: \(arguments), transform: transform, onFailure: onFailure)"
-            } else {
-                return "subscribe(\\.\(effect.methodName), with: \(arguments), transform: transform)"
-            }
-        }
-    }
 }

@@ -15,5 +15,6 @@ struct AppStateKitMacrosPlugin: CompilerPlugin {
         BindMacro.self,
         BindIfPresentMacro.self,
         UpdatableMacro.self,
+        JSONStorageEffectsMacro.self,
     ]
 }

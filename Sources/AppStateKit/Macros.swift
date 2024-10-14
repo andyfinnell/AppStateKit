@@ -30,3 +30,9 @@ public macro bindIfPresent<State, Action, Output, P>(_ engine: ViewEngine<State,
 
 @attached(peer)
 public macro Updatable() = #externalMacro(module: "AppStateKitMacros", type: "UpdatableMacro")
+
+@attached(member, names: arbitrary)
+public macro JSONStorageEffects<T>(for type: T.Type, defaultValue expr: T) = #externalMacro(module: "AppStateKitMacros", type: "JSONStorageEffectsMacro")
+
+@attached(member, names: arbitrary)
+public macro JSONStorageEffects<T>(for type: T.Type) = #externalMacro(module: "AppStateKitMacros", type: "JSONStorageEffectsMacro")

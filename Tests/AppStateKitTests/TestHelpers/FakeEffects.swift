@@ -1,5 +1,6 @@
 import Foundation
 import AppStateKit
+import BaseKit
 
 enum TestError: Error {
     case importFailure
@@ -114,4 +115,17 @@ enum ImportURLEffect {
 extension DependencyScope {}
 
 @ExtendSideEffects(with: ImportURLEffect, (URL) async throws -> String)
+extension AnySideEffects {}
+
+struct TestModel: Codable {
+    let name: String
+    let score: Int
+    
+    @Sendable
+    static func defaultValue() -> TestModel {
+        TestModel(name: "Bob", score: 42)
+    }
+}
+
+@JSONStorageEffects(for: TestModel.self, defaultValue: TestModel.defaultValue())
 extension AnySideEffects {}

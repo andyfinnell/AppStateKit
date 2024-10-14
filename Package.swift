@@ -22,6 +22,7 @@ let package = Package(
         // .package(url: /* package url */, from: "1.0.0"),
         // Depend on the Swift 6.0 release of SwiftSyntax
         .package(url: "https://github.com/apple/swift-syntax.git", from: "600.0.0"),
+        .package(url: "https://github.com/andyfinnell/BaseKit.git", branch: "main"),
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
@@ -41,7 +42,7 @@ let package = Package(
         ),
         .testTarget(
             name: "AppStateKitTests",
-            dependencies: ["AppStateKit"]
+            dependencies: ["AppStateKit", "BaseKit"]
         ),
         // A test target used to develop the macro implementation.
         .testTarget(

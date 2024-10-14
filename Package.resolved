@@ -1,13 +1,22 @@
 {
-  "originHash" : "9276a0ac4d175344667f837f869ae10e0bcb58fcb02dba266b6ea94cd251ec5c",
+  "originHash" : "628dc583c2ec3553d3250375da1a6c3a31c1dc7f6a5626032414f892d579c05a",
   "pins" : [
+    {
+      "identity" : "basekit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/andyfinnell/BaseKit.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "a3aa70d0243a86201e84712c785121fcb58fdb92"
+      }
+    },
     {
       "identity" : "swift-syntax",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-syntax.git",
       "state" : {
-        "revision" : "cb53fa1bd3219b0b23ded7dfdd3b2baff266fd25",
-        "version" : "600.0.0"
+        "revision" : "0687f71944021d616d34d922343dcef086855920",
+        "version" : "600.0.1"
       }
     }
   ],
