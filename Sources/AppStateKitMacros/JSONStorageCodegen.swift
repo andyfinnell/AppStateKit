@@ -20,7 +20,7 @@ struct JSONStorageCodegen {
                 static var isGlobal: Bool { true }
 
                 static func makeDefault(with space: DependencyScope) -> any CodableStorage<\(raw: jsonStorage.typename)> {
-                    JSONStorage<PersistentState>(filename: "\(raw: jsonStorage.typename)")
+                    JSONStorage<\(raw: jsonStorage.typename)>(filename: "\(raw: jsonStorage.typename)")
                 }
             }
             """

@@ -129,3 +129,11 @@ struct TestModel: Codable {
 
 @JSONStorageEffects(for: TestModel.self, defaultValue: TestModel.defaultValue())
 extension AnySideEffects {}
+
+struct TestSettings: Codable {
+    let name: String
+    let score: Int
+}
+
+@JSONStorageEffects(for: TestSettings.self)
+extension AnySideEffects {}
