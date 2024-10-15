@@ -21,6 +21,21 @@ public enum ExtendSideEffectsMacro: MemberMacro {
         
         return decls.compactMap { $0 }
     }
+    
+    static func parseSubscribeToMethodName(from exprSyntax: ExprSyntax) -> String? {
+        var baseExpression = exprSyntax
+        // If it's appended with `.self`, strip off `.self`
+        if let member = baseExpression.as(MemberAccessExprSyntax.self),
+           let memberBaseExpr = member.base,
+            member.declName.baseName.text == "self" {
+            baseExpression = memberBaseExpr
+        }
+
+        guard let typename = parseName(baseExpression) else {
+            return nil
+        }
+        return parseSubscribeName(typename)
+    }
 }
 
 private extension ExtendSideEffectsMacro {    

@@ -104,6 +104,100 @@ final class ComponentMacroTests: XCTestCase {
         #endif
     }
 
+    func testBasicSubscriptionComponent() throws {
+        #if canImport(AppStateKitMacros)
+        assertMacroExpansion(
+            """
+            @Component
+            enum MyFeature {
+                struct State {
+                    @Updatable var name: String
+                    @Subscribe(to: FetchNameEffect.self, sending: ".updateName") var nameSubscription: SubscriptionID? = nil
+                }
+            
+                static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
+                    HStack {
+                        Text(engine.name)
+                    }
+                }
+            }
+            """,
+            expandedSource: """
+            
+            enum MyFeature {
+                struct State {
+                    var name: String
+                    var nameSubscription: SubscriptionID? = nil
+                }
+                @MainActor
+
+                static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
+                    HStack {
+                        Text(engine.name)
+                    }
+                }
+
+                enum Action: Equatable {
+                    case updateName(String)
+                    case componentInit
+                }
+
+                @MainActor
+                private static func updateName(_ state: inout State, sideEffects: SideEffects, _ p0: String) {
+                    state.name = p0
+                }
+
+                @MainActor
+                private static func componentInit(_ state: inout State, sideEffects: SideEffects) {
+                    if state.nameSubscription == nil {
+                    state.nameSubscription = sideEffects.subscribeToFetchName { stream, send in
+                        for await value in stream {
+                            await send(.updateName(value))
+                        }
+                    }
+                    }
+                }
+
+                typealias Output = Never
+
+                typealias SideEffects = AnySideEffects<Action, Output>
+
+                @MainActor
+                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
+                    switch action {
+                    case let .updateName(p0):
+                        updateName(&state, sideEffects: sideEffects, p0)
+
+                    case .componentInit:
+                        componentInit(&state, sideEffects: sideEffects)
+
+                    }
+                }
+
+                @MainActor
+                struct EngineView: View {
+                    @SwiftUI.State var engine: ViewEngine<State, Action, Output>
+
+                    var body: some View {
+                        view(engine)
+                            .task {
+                            engine.send(.componentInit)
+                        }
+
+                    }
+                }
+            }
+
+            extension MyFeature: Component, BaseComponent {
+            }
+            """,
+            macros: testMacros
+        )
+        #else
+        throw XCTSkip("macros are only supported when running tests for the host platform")
+        #endif
+    }
+
     func testBasicUpdatableLeafComponent() throws {
         #if canImport(AppStateKitMacros)
         assertMacroExpansion(

@@ -9,6 +9,7 @@ struct ComponentParser {
         var translateCompositionMethodNames = [String: ComponentMethod]()
         var hasDefinedOutput = false
         var outputTypealias: String? = nil
+        var subscriptions = [Subscription]()
         
         for member in decl.memberBlock.members {
             if let funcDecl = member.decl.as(FunctionDeclSyntax.self) {
@@ -18,10 +19,11 @@ struct ComponentParser {
                     translateCompositionMethodNames[outputTranslation.componentName] = outputTranslation.translateMethod
                 }
             } else if let structDecl = member.decl.as(StructDeclSyntax.self) {
-                let (stateCompositions, stateActions, stateOutputs) = computeCompositionAndActionsFromStateStruct(structDecl)
+                let (stateCompositions, stateActions, stateOutputs, stateSubscriptions) = computeCompositionAndActionsFromStateStruct(structDecl)
                 compositions.append(contentsOf: stateCompositions)
                 actions.append(contentsOf: stateActions)
                 outputs.append(contentsOf: stateOutputs)
+                subscriptions.append(contentsOf: stateSubscriptions)
             } else if let enumDecl = member.decl.as(EnumDeclSyntax.self) {
                 if let detachmentRef = parseDetachment(enumDecl) {
                     detachments.append(detachmentRef)
@@ -45,15 +47,28 @@ struct ComponentParser {
             withCompositions: compositions
         )
         
+        var subscriptionActions = [Action]()
+        if !subscriptions.isEmpty {
+            subscriptionActions.append(
+                Action(
+                    label: "componentInit",
+                    parameters: [],
+                    composition: nil,
+                    implementation: .componentInit
+                )
+            )
+        }
+        
         return Component(
             name: decl.name.text,
             compositions: compositions,
-            actions: actions + compositionActions,
-            detachments: detachments, 
+            actions: actions + compositionActions + subscriptionActions,
+            detachments: detachments,
             hasDefinedOutput: hasDefinedOutput,
             isOutputNever: !hasDefinedOutput || outputTypealias == "Never", 
             translateCompositionMethodNames: translateCompositionMethodNames,
-            outputs: outputs + compositionOutputs
+            outputs: outputs + compositionOutputs,
+            subscriptions: subscriptions
         )
     }
     
@@ -357,14 +372,17 @@ private extension ComponentParser {
         TypeSyntax(MemberTypeSyntax(baseType: baseType, name: TokenSyntax(stringLiteral: name)))
     }
 
-    static func computeCompositionAndActionsFromStateStruct(_ structDecl: StructDeclSyntax) -> ([ComponentComposition], [Action], [ComponentOutput]) {
+    static func computeCompositionAndActionsFromStateStruct(
+        _ structDecl: StructDeclSyntax
+    ) -> ([ComponentComposition], [Action], [ComponentOutput], [Subscription]) {
         guard structDecl.name.text == "State" else {
-            return ([], [], [])
+            return ([], [], [], [])
         }
         
         var compositions = [ComponentComposition]()
         var actions = [Action]()
         var outputs = [ComponentOutput]()
+        var subscriptions = [Subscription]()
         for member in structDecl.memberBlock.members {
             guard let varDecl = member.decl.as(VariableDeclSyntax.self) else {
                 continue
@@ -373,8 +391,9 @@ private extension ComponentParser {
             let (varActions, varOutputs) = computeActions(from: varDecl)
             actions.append(contentsOf: varActions)
             outputs.append(contentsOf: varOutputs)
+            subscriptions.append(contentsOf: computeSubscriptions(from: varDecl))
         }
-        return (compositions, actions, outputs)
+        return (compositions, actions, outputs, subscriptions)
     }
     
     static func computeComposition(from varDecl: VariableDeclSyntax) -> [ComponentComposition] {
@@ -505,6 +524,45 @@ private extension ComponentParser {
             return nil
         }
     }
+    
+    static func computeSubscriptions(from varDecl: VariableDeclSyntax) -> [Subscription] {
+        let subscriptionAttribute = varDecl.attributes.compactMap { attribute -> AttributeSyntax? in
+            guard case let .attribute(attr) = attribute,
+                let identifierType = attr.attributeName.as(IdentifierTypeSyntax.self),
+                  identifierType.name.text == "Subscribe" else {
+                return nil
+            }
+            return attr
+        }.first
+        guard let subscriptionAttribute,
+              let args = subscriptionAttribute.arguments?.as(LabeledExprListSyntax.self),
+              let effectType = args.first, effectType.label?.text == "to",
+              let convertExpression = args.last, convertExpression.label?.text == "sending",
+              args.count == 2 else {
+            return []
+        }
+        
+        guard let subscribeToMethodName = ExtendSideEffectsMacro.parseSubscribeToMethodName(from: effectType.expression) else {
+            return []
+        }
+        
+        var subscriptions = [Subscription]()
+        for binding in varDecl.bindings {
+            guard let identifierPattern = binding.pattern.as(IdentifierPatternSyntax.self),
+                 let stringLiteralExpr = convertExpression.expression.as(StringLiteralExprSyntax.self) else {
+                continue
+            }
+            
+            let subscription = Subscription(
+                propertyName: identifierPattern.identifier.text,
+                subscribeMethodName: subscribeToMethodName,
+                convertToActionExpr: stringLiteralExpr.representedLiteralValue ?? ""
+            )
+            subscriptions.append(subscription)
+        }
+        return subscriptions
+    }
+
     
     static func computeActionFromFunction(_ functionDecl: FunctionDeclSyntax) -> Action? {
         // needs to be static

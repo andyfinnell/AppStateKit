@@ -189,3 +189,18 @@ enum ScoreboardComponent {
         }
     }
 }
+
+@Component
+enum NamedComponent {
+    struct State: Equatable {
+        @Updatable var name: String
+        @Subscribe(to: GenerateNames.self, sending: ".updateName")
+        var nameSubscription: SubscriptionID? = nil
+    }
+        
+    static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
+        HStack {
+            Text(engine.name)
+        }
+    }
+}

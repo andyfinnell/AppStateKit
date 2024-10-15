@@ -39,3 +39,6 @@ public macro JSONStorageEffects<T>(for type: T.Type, defaultValue expr: T) = #ex
 
 @attached(member, names: arbitrary)
 public macro JSONStorageEffects<T>(for type: T.Type) = #externalMacro(module: "AppStateKitMacros", type: "JSONStorageEffectsMacro")
+
+@attached(peer)
+public macro Subscribe<E: Dependable, T>(to effect: E.Type, sending: String) = #externalMacro(module: "AppStateKitMacros", type: "SubscribeMacro") where E.T == Effect<AsyncStream<T>, Never>

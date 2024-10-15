@@ -137,3 +137,49 @@ struct TestSettings: Codable {
 
 @JSONStorageEffects(for: TestSettings.self)
 extension AnySideEffects {}
+
+@Effect
+enum GenerateNames {
+    private actor CancelToken {
+        private(set) var isCancelled = false
+        
+        func cancel() {
+            isCancelled = true
+        }
+    }
+    
+    private actor NameList {
+        private let names = ["Alice", "Bob", "Ethel", "Jim"]
+
+        func next() -> String {
+            names.randomElement() ?? "Spanish Inquisition"
+        }
+    }
+    
+    static func perform(dependencies: DependencyScope) -> AsyncStream<String> {
+        let cancelToken = CancelToken()
+        let nameList = NameList()
+        let stream = AsyncStream { () -> String? in
+            guard await !cancelToken.isCancelled else {
+                return nil
+            }
+            do {
+                try await Task.sleep(nanoseconds: 500 * UInt64(1e6))
+            } catch {
+                return nil
+            }
+            return await nameList.next()
+        } onCancel: {
+            Task {
+                await cancelToken.cancel()
+            }
+        }
+        return stream
+    }
+}
+
+@ExtendDependencyScope(with: GenerateNames)
+extension DependencyScope {}
+
+@ExtendSideEffects(with: GenerateNames, () -> AsyncStream<String>)
+extension AnySideEffects {}
