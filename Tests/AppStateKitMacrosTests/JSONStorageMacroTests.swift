@@ -20,7 +20,9 @@ final class JSONStorageMacroTests: XCTestCase {
             extension AnySideEffects {
 
                 private struct TestModelStoreDependency: Dependable {
-                    static let isGlobal = true
+                    static var isGlobal: Bool {
+                        true
+                    }
             
                     static func makeDefault(with space: DependencyScope) -> any CodableStorage<TestModel> {
                         JSONStorage<TestModel>(filename: "TestModel", defaultValue: { @Sendable in

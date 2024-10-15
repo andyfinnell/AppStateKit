@@ -7,7 +7,7 @@ struct JSONStorageCodegen {
         if let defaultValue = jsonStorage.defaultValueExpression {
             storeDependencyDecl = """
             private struct \(raw: jsonStorage.typename)StoreDependency: Dependable {
-                static let isGlobal = true
+                static var isGlobal: Bool { true }
             
                 static func makeDefault(with space: DependencyScope) -> any CodableStorage<\(raw: jsonStorage.typename)> {
                     JSONStorage<\(raw: jsonStorage.typename)>(filename: "\(raw: jsonStorage.typename)", defaultValue: { @Sendable in \(defaultValue) })
@@ -17,7 +17,7 @@ struct JSONStorageCodegen {
         } else {
             storeDependencyDecl = """
             private struct \(raw: jsonStorage.typename)StoreDependency: Dependable {
-                static let isGlobal = true
+                static var isGlobal: Bool { true }
 
                 static func makeDefault(with space: DependencyScope) -> any CodableStorage<\(raw: jsonStorage.typename)> {
                     JSONStorage<PersistentState>(filename: "\(raw: jsonStorage.typename)")
