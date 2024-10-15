@@ -26,13 +26,13 @@ public final class DependencyScope {
                 return cached
             } else {
                 let dependency = D.makeDefault(with: self)
-                dependencies[id] = dependency
+                addToCache(dependency, forID: id, dependency: D.self)
                 return dependency
             }
         }
         set {
             let id = ObjectIdentifier(D.self)
-            dependencies[id] = newValue
+            addToCache(newValue, forID: id, dependency: D.self)
         }
     }
 
@@ -43,13 +43,13 @@ public final class DependencyScope {
                 return cached
             } else {
                 let dependency = D.makeDefault(with: self)
-                dependencies[id] = dependency
+                addToCache(dependency, forID: id, dependency: D.self)
                 return dependency
             }
         }
         set {
             let id = ObjectIdentifier(D.self)
-            dependencies[id] = newValue
+            addToCache(newValue, forID: id, dependency: D.self)
         }
     }
 
@@ -77,6 +77,22 @@ private extension DependencyScope {
             return value
         } else {
             return parentScope?.cached(id: id, as: type)
+        }
+    }
+    
+    func addToCache<D: Dependable, T>(_ value: T, forID id: ObjectIdentifier, dependency: D.Type) {
+        if D.isGlobal {
+            addToGlobalCache(value, forID: id)
+        } else {
+            dependencies[id] = value
+        }
+    }
+    
+    func addToGlobalCache<T>(_ value: T, forID id: ObjectIdentifier) {
+        if let parentScope {
+            parentScope.addToGlobalCache(value, forID: id)
+        } else {
+            dependencies[id] = value
         }
     }
 }

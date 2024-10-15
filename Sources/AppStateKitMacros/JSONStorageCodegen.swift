@@ -3,24 +3,25 @@ import SwiftSyntaxBuilder
 
 struct JSONStorageCodegen {
     static func codegen(from jsonStorage: JSONStorageModel) -> [DeclSyntax] {
-                
-        // TODO: this dependency should really be at global scope, but not a way to do that right now
-        
         let storeDependencyDecl: DeclSyntax
         if let defaultValue = jsonStorage.defaultValueExpression {
             storeDependencyDecl = """
             private struct \(raw: jsonStorage.typename)StoreDependency: Dependable {
-                 static func makeDefault(with space: DependencyScope) -> any CodableStorage<\(raw: jsonStorage.typename)> {
-                     JSONStorage<\(raw: jsonStorage.typename)>(filename: "\(raw: jsonStorage.typename)", defaultValue: { @Sendable in \(defaultValue) })
-                 }
+                static let isGlobal = true
+            
+                static func makeDefault(with space: DependencyScope) -> any CodableStorage<\(raw: jsonStorage.typename)> {
+                    JSONStorage<\(raw: jsonStorage.typename)>(filename: "\(raw: jsonStorage.typename)", defaultValue: { @Sendable in \(defaultValue) })
+                }
             }
             """
         } else {
             storeDependencyDecl = """
             private struct \(raw: jsonStorage.typename)StoreDependency: Dependable {
-                 static func makeDefault(with space: DependencyScope) -> any CodableStorage<\(raw: jsonStorage.typename)> {
-                     JSONStorage<PersistentState>(filename: "\(raw: jsonStorage.typename)")
-                 }
+                static let isGlobal = true
+
+                static func makeDefault(with space: DependencyScope) -> any CodableStorage<\(raw: jsonStorage.typename)> {
+                    JSONStorage<PersistentState>(filename: "\(raw: jsonStorage.typename)")
+                }
             }
             """
         }
