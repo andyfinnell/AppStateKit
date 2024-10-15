@@ -4,7 +4,7 @@ import SwiftSyntaxBuilder
 struct ComponentChildViewCodegen {
     static func codegen(from component: Component) -> [DeclSyntax] {
         component.compositions.compactMap {
-            codegen(from: $0, translateCompositionMethodNames: component.translateCompositionMethodNames)
+            codegen(from: $0.composition, translateCompositionMethodNames: component.translateCompositionMethodNames)
         } + component.detachments.compactMap {
             codegen(from: $0)
         }
@@ -118,11 +118,31 @@ private extension ComponentChildViewCodegen {
         return compositionClosure
     }
 
+    static func generateOutputCompositionClosure(for translateMethod: ComponentMethod, extraction: Extraction) -> String {
+        let compositionClosure: String
+        if extraction.accessors.isEmpty {
+            compositionClosure = translateMethod.name
+        } else {
+            let arguments = ["$0"] + extraction.accessors.map {
+                switch $0 {
+                case .index:
+                    return "index"
+                case .key:
+                    return "key"
+                case .id:
+                    return "id"
+                }
+            }
+            compositionClosure = "{ \(ComponentMethodCodegen.codegenCall(to: translateMethod, usingArguments: arguments)) }"
+        }
+        return compositionClosure
+    }
+
     static func generateCallToChildView(
         composition: Composition,
         extraction: Extraction,
         fallbackState: String?,
-        translateCompositionMethodNames: [String: String]
+        translateCompositionMethodNames: [String: ComponentMethod]
     ) -> String {
         let dereferenceGenerator = DereferenceGenerator(
             keyName: "key",
@@ -141,13 +161,17 @@ private extension ComponentChildViewCodegen {
         )
         let componentName = componentName(from: composition)
         let template: String
-        if let translateMethodName = translateCompositionMethodNames[componentName] {
+        if let translateMethod = translateCompositionMethodNames[componentName] {
+            let translateClosure = generateOutputCompositionClosure(
+                for: translateMethod,
+                extraction: extraction
+            )
             template = """
                 \(extraction.componentType).EngineView(
                     engine: engine.map(
                         state: { \(innerStateExtract) },
                         action: \(actionClosure),
-                        translate: \(translateMethodName)
+                        translate: \(translateClosure)
                     ).view()
                 )
             """
@@ -164,7 +188,7 @@ private extension ComponentChildViewCodegen {
         return template
     }
     
-    static func codegen(from composition: Composition, translateCompositionMethodNames: [String: String]) -> DeclSyntax? {
+    static func codegen(from composition: Composition, translateCompositionMethodNames: [String: ComponentMethod]) -> DeclSyntax? {
         guard let extraction = extract(composition) else {
             return nil
         }
@@ -206,19 +230,6 @@ private extension ComponentChildViewCodegen {
     }
 
     static func componentName(from composition: Composition) -> String {
-        switch composition {
-        case let .property(_, value):
-            return componentName(from: value)
-        case let .optional(value):
-            return componentName(from: value)
-        case let .array(value):
-            return componentName(from: value)
-        case let .identifiableArray(id: _, value: value):
-            return componentName(from: value)
-        case let .dictionary(key: _, value: value):
-            return componentName(from: value)
-        case let .named(namedType):
-            return namedType.description
-        }
+        composition.componentName
     }
 }

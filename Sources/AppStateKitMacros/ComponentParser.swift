@@ -3,9 +3,10 @@ import SwiftSyntax
 struct ComponentParser {
     static func parse(_ decl: EnumDeclSyntax) -> Component {
         var actions = [Action]()
-        var compositions = [Composition]()
+        var outputs = [ComponentOutput]()
+        var compositions = [ComponentComposition]()
         var detachments = [DetachmentRef]()
-        var translateCompositionMethodNames = [String: String]()
+        var translateCompositionMethodNames = [String: ComponentMethod]()
         var hasDefinedOutput = false
         var outputTypealias: String? = nil
         
@@ -17,9 +18,10 @@ struct ComponentParser {
                     translateCompositionMethodNames[outputTranslation.componentName] = outputTranslation.translateMethod
                 }
             } else if let structDecl = member.decl.as(StructDeclSyntax.self) {
-                let (stateCompositions, stateActions) = computeCompositionAndActionsFromStateStruct(structDecl)
+                let (stateCompositions, stateActions, stateOutputs) = computeCompositionAndActionsFromStateStruct(structDecl)
                 compositions.append(contentsOf: stateCompositions)
                 actions.append(contentsOf: stateActions)
+                outputs.append(contentsOf: stateOutputs)
             } else if let enumDecl = member.decl.as(EnumDeclSyntax.self) {
                 if let detachmentRef = parseDetachment(enumDecl) {
                     detachments.append(detachmentRef)
@@ -31,9 +33,17 @@ struct ComponentParser {
             }
         }
         
-        let compositionActions = compositions.compactMap {
-            actionFromComposition($0)
+        let compositionActions = compositions.flatMap {
+            actionsFromComposition($0)
         }
+        let compositionOutputs = compositions.flatMap {
+            outputsFromComposition($0)
+        }
+
+        updateTranslateCompositionMethodNames(
+            &translateCompositionMethodNames,
+            withCompositions: compositions
+        )
         
         return Component(
             name: decl.name.text,
@@ -42,7 +52,8 @@ struct ComponentParser {
             detachments: detachments, 
             hasDefinedOutput: hasDefinedOutput,
             isOutputNever: !hasDefinedOutput || outputTypealias == "Never", 
-            translateCompositionMethodNames: translateCompositionMethodNames
+            translateCompositionMethodNames: translateCompositionMethodNames,
+            outputs: outputs + compositionOutputs
         )
     }
     
@@ -123,7 +134,7 @@ struct ComponentParser {
 private extension ComponentParser {
     struct OutputTranslation {
         let componentName: String
-        let translateMethod: String
+        let translateMethod: ComponentMethod
     }
     
     static func computeOutputTranslationFromFunction(_ functionDecl: FunctionDeclSyntax) -> OutputTranslation? {
@@ -137,7 +148,7 @@ private extension ComponentParser {
         guard let returnClause = functionDecl.signature.returnClause,
               let parameter = functionDecl.signature.parameterClause.parameters.first,
               let componentName = extractComponentNameFromOutput(parameter.type),
-              functionDecl.signature.parameterClause.parameters.count == 1
+              functionDecl.signature.parameterClause.parameters.count >= 1
                 && functionDecl.signature.effectSpecifiers?.asyncSpecifier == nil
                 && functionDecl.signature.effectSpecifiers?.throwsClause?.throwsSpecifier == nil
                 && isStatic
@@ -146,9 +157,20 @@ private extension ComponentParser {
             return nil
         }
         
+        let methodParameters = functionDecl.signature.parameterClause.parameters.map { parameter in
+            Parameter(
+                label: parameter.firstName.text == "_" ? nil : parameter.firstName.text,
+                type: parameter.type
+            )
+        }
+        let method = ComponentMethod(
+            name: functionDecl.name.text,
+            parameters: methodParameters,
+            returnType: returnClause.type
+        )
         return OutputTranslation(
             componentName: componentName,
-            translateMethod: functionDecl.name.text
+            translateMethod: method
         )
     }
     
@@ -184,20 +206,95 @@ private extension ComponentParser {
         }
     }
     
-    static func actionFromComposition(_ composition: Composition) -> Action? {
+    static func actionsFromComposition(_ composition: ComponentComposition) -> [Action] {
         // Should only have a property at this level
-        switch composition {
+        switch composition.composition {
         case let .property(name, innerComposition):
-            return Action(
-                label: name,
-                parameters: parametersFromComposition(innerComposition),
-                composition: composition, 
-                implementation: nil
-            )
+            var actions = [
+                Action(
+                    label: name,
+                    parameters: parametersFromComposition(innerComposition),
+                    composition: composition.composition,
+                    implementation: nil
+                )
+            ]
+            if composition.passthroughOutput {
+                actions.append(
+                    passthroughActionForOutputComposition(propertyName: name, innerComposition: innerComposition)
+                )
+            }
+            return actions
             
         case .array, .dictionary, .named, .optional, .identifiableArray:
-            return nil
+            return []
         }
+    }
+
+    static func passthroughActionForOutputComposition(propertyName name: String, innerComposition: Composition) -> Action {
+        Action(
+            label: "passthrough\(name.uppercaseFirstLetter())Output",
+            parameters: outputParametersFromComposition(innerComposition),
+            composition: nil,
+            implementation: .passthroughOutput(name)
+        )
+    }
+    
+    static func outputsFromComposition(_ composition: ComponentComposition) -> [ComponentOutput] {
+        // Should only have a property at this level
+        switch composition.composition {
+        case let .property(name, innerComposition):
+            if composition.passthroughOutput {
+                let passthroughAction = passthroughActionForOutputComposition(propertyName: name, innerComposition: innerComposition)
+                let translateMethod = translateOutputToActionMethod(propertyName: name, innerComposition: innerComposition)
+                return [
+                    ComponentOutput(
+                        label: name,
+                        parameters: outputParametersFromComposition(innerComposition),
+                        composition: ComponentOutputComposition(
+                            componentName: composition.composition.componentName,
+                            passthroughAction: passthroughAction,
+                            translateOutputMethod: translateMethod
+                        )
+                    )
+                ]
+            } else {
+                return []
+            }
+            
+        case .array, .dictionary, .named, .optional, .identifiableArray:
+            return []
+        }
+    }
+    
+    static func updateTranslateCompositionMethodNames(
+        _ translateCompositionMethodNames: inout [String: ComponentMethod],
+        withCompositions compositions: [ComponentComposition]
+    ) {
+        for composition in compositions {
+            updateTranslateCompositionMethodNames(
+                &translateCompositionMethodNames,
+                withComposition: composition
+            )
+        }
+    }
+    
+    static func updateTranslateCompositionMethodNames(
+        _ translateCompositionMethodNames: inout [String: ComponentMethod],
+        withComposition composition: ComponentComposition
+    ) {
+        guard case let .property(name, innerComposition) = composition.composition, composition.passthroughOutput else {
+            return
+        }
+        let method = translateOutputToActionMethod(propertyName: name, innerComposition: innerComposition)
+        translateCompositionMethodNames[composition.composition.componentName] = method
+    }
+    
+    static func translateOutputToActionMethod(propertyName name: String, innerComposition: Composition) -> ComponentMethod {
+        ComponentMethod(
+            name: "translate\(name.uppercaseFirstLetter())OutputToAction",
+            parameters: outputParametersFromComposition(innerComposition),
+            returnType: optionalType(of: identifierType("Action"))
+        )
     }
 
     static func parametersFromComposition(_ composition: Composition) -> [Parameter] {
@@ -223,6 +320,34 @@ private extension ComponentParser {
             return parametersFromComposition(wrapped)
         }
     }
+
+    static func outputParametersFromComposition(_ composition: Composition) -> [Parameter] {
+        switch composition {
+        case .property:
+            // Shouldn't get property at this level
+            return []
+        case let .named(typeDecl):
+            return [Parameter(label: nil, type: memberType("Output", of: typeDecl))]
+        case let .array(elementComposition):
+            return outputParametersFromComposition(elementComposition) + [
+                Parameter(label: "index", type: identifierType("Int"))
+            ]
+        case let .identifiableArray(id: id, value: valueComposition):
+            return outputParametersFromComposition(valueComposition) + [
+                Parameter(label: "id", type: id)
+            ]
+        case let .dictionary(key: key, value: valueComposition):
+            return outputParametersFromComposition(valueComposition) + [
+                Parameter(label: "key", type: key)
+            ]
+        case let .optional(wrapped):
+            return outputParametersFromComposition(wrapped)
+        }
+    }
+
+    static func optionalType(of baseType: TypeSyntax) -> TypeSyntax {
+        TypeSyntax(OptionalTypeSyntax(wrappedType: baseType))
+    }
     
     static func identifierType(_ name: String) -> TypeSyntax {
         TypeSyntax(IdentifierTypeSyntax(name: TokenSyntax(stringLiteral: name)))
@@ -232,25 +357,37 @@ private extension ComponentParser {
         TypeSyntax(MemberTypeSyntax(baseType: baseType, name: TokenSyntax(stringLiteral: name)))
     }
 
-    static func computeCompositionAndActionsFromStateStruct(_ structDecl: StructDeclSyntax) -> ([Composition], [Action]) {
+    static func computeCompositionAndActionsFromStateStruct(_ structDecl: StructDeclSyntax) -> ([ComponentComposition], [Action], [ComponentOutput]) {
         guard structDecl.name.text == "State" else {
-            return ([], [])
+            return ([], [], [])
         }
         
-        var compositions = [Composition]()
+        var compositions = [ComponentComposition]()
         var actions = [Action]()
+        var outputs = [ComponentOutput]()
         for member in structDecl.memberBlock.members {
             guard let varDecl = member.decl.as(VariableDeclSyntax.self) else {
                 continue
             }
             compositions.append(contentsOf: computeComposition(from: varDecl))
-            actions.append(contentsOf: computeActions(from: varDecl))
+            let (varActions, varOutputs) = computeActions(from: varDecl)
+            actions.append(contentsOf: varActions)
+            outputs.append(contentsOf: varOutputs)
         }
-        return (compositions, actions)
+        return (compositions, actions, outputs)
     }
     
-    static func computeComposition(from varDecl: VariableDeclSyntax) -> [Composition] {
-        var compositions = [Composition]()
+    static func computeComposition(from varDecl: VariableDeclSyntax) -> [ComponentComposition] {
+        var compositions = [ComponentComposition]()
+        let shouldPassthroughOutput = varDecl.attributes.contains { attribute in
+            guard case let .attribute(attr) = attribute,
+                let identifierType = attr.attributeName.as(IdentifierTypeSyntax.self),
+                  identifierType.name.text == "PassthroughOutput" else {
+                return false
+            }
+            return true
+        }
+        
         for binding in varDecl.bindings {
             guard let typeDecl = binding.typeAnnotation?.type else {
                 continue // Only interested where explicitly declared
@@ -263,25 +400,38 @@ private extension ComponentParser {
                 continue
             }
             let propertyComposition = Composition.property(identifierPattern.identifier.text, composition)
-            compositions.append(propertyComposition)
+            compositions.append(
+                ComponentComposition(
+                    composition: propertyComposition,
+                    passthroughOutput: shouldPassthroughOutput
+                )
+            )
             
         }
         return compositions
     }
 
-    static func computeActions(from varDecl: VariableDeclSyntax) -> [Action] {
-        let isUpdatable = varDecl.attributes.contains { attribute in
+    static func computeActions(from varDecl: VariableDeclSyntax) -> ([Action], [ComponentOutput]) {
+        let updatableAttribute = varDecl.attributes.compactMap { attribute -> AttributeSyntax? in
             guard case let .attribute(attr) = attribute,
-                let identifierType = attr.attributeName.as(IdentifierTypeSyntax.self) else {
-                return false
+                let identifierType = attr.attributeName.as(IdentifierTypeSyntax.self),
+                  identifierType.name.text == "Updatable" else {
+                return nil
             }
-            return identifierType.name.text == "Updatable"
+            return attr
+        }.first
+        guard let updatableAttribute else {
+            return ([], [])
         }
-        guard isUpdatable else {
-            return []
+        
+        var shouldOutputExpr: ExprSyntax?
+        if let args = updatableAttribute.arguments?.as(LabeledExprListSyntax.self),
+           let firstArg = args.first, firstArg.label?.text == "output" {
+            shouldOutputExpr = firstArg.expression
         }
 
         var actions = [Action]()
+        var outputs = [ComponentOutput]()
         for binding in varDecl.bindings {
             guard let typeDecl = binding.typeAnnotation?.type,
                   let identifierPattern = binding.pattern.as(IdentifierPatternSyntax.self) else {
@@ -289,7 +439,10 @@ private extension ComponentParser {
             }
             
             let actionName = "update" + identifierPattern.identifier.text.uppercaseFirstLetter()
-            let implementation = AutogeneratedImplementation.updateStateProperty(identifierPattern.identifier.text)
+            let implementation = AutogeneratedImplementation.updateStateProperty(
+                identifierPattern.identifier.text,
+                shouldOutputExpr: shouldOutputExpr
+            )
             let action = Action(
                 label: actionName,
                 parameters: [
@@ -299,8 +452,20 @@ private extension ComponentParser {
                 implementation: implementation
             )
             actions.append(action)
+            
+            if shouldOutputExpr != nil {
+                let outputName = "updated" + identifierPattern.identifier.text.uppercaseFirstLetter()
+                let output = ComponentOutput(
+                    label: outputName,
+                    parameters: [
+                        Parameter(label: nil, type: typeDecl)
+                    ],
+                    composition: nil
+                )
+                outputs.append(output)
+            }
         }
-        return actions
+        return (actions, outputs)
     }
 
     static func computeComposition(from typeDecl: TypeSyntax) -> Composition? {

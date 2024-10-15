@@ -25,7 +25,7 @@ struct ComponentReducerCodegen {
 }
 
 private extension ComponentReducerCodegen {
-    static func generateReduceAction(from action: Action, translateCompositionMethodNames: [String: String], component: Component) -> String {
+    static func generateReduceAction(from action: Action, translateCompositionMethodNames: [String: ComponentMethod], component: Component) -> String {
         if let composition = action.composition {
             return generateReduceComposedAction(
                 from: action,
@@ -118,6 +118,28 @@ private extension ComponentReducerCodegen {
         return compositionClosure
     }
 
+    static func generateOutputCompositionClosure(for translateMethod: ComponentMethod, accessors: [Accessor]) -> String {
+        let compositionClosure: String
+        if accessors.count == 1 {
+            compositionClosure = translateMethod.name
+        } else {
+            let arguments = accessors.map {
+                switch $0 {
+                case .action:
+                    return "$0"
+                case .index:
+                    return "innerIndex"
+                case .key:
+                    return "innerKey"
+                case .id:
+                    return "innerID"
+                }
+            }
+            compositionClosure = "{\n        \(ComponentMethodCodegen.codegenCall(to: translateMethod, usingArguments: arguments))\n    }\n"
+        }
+        return compositionClosure
+    }
+
     static func childModuleName(_ composition: Composition) -> String {
         switch composition {
         case let .array(element):
@@ -159,7 +181,7 @@ private extension ComponentReducerCodegen {
     static func generateReduceComposedAction(
         from action: Action,
         with composition: Composition,
-        translateCompositionMethodNames: [String: String],
+        translateCompositionMethodNames: [String: ComponentMethod],
         component: Component
     ) -> String {
         let accessors = actionExtractionParameters(composition)
@@ -184,10 +206,10 @@ private extension ComponentReducerCodegen {
         let innerStateDeref = stateNeedsCopy ? "innerState" : innerStateExtract
         let copyStateBack = stateNeedsCopy ? "\(innerStateExtract) = innerState\n" : ""
         let childModule = childModuleName(composition)
-        let translateMethod: String
         
-        if let methodName = translateCompositionMethodNames[childModule] {
-            translateMethod = methodName
+        let translateMethod: String
+        if let method = translateCompositionMethodNames[childModule] {
+            translateMethod = generateOutputCompositionClosure(for: method, accessors: accessors)
         } else if component.isOutputNever {
             translateMethod = "{ (_: \(childModule).Output) -> Action? in }"
         } else {

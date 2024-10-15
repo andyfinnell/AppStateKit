@@ -196,6 +196,112 @@ final class ComponentMacroTests: XCTestCase {
         #endif
     }
 
+    func testUpdatableWithOutputComponent() throws {
+        #if canImport(AppStateKitMacros)
+        assertMacroExpansion(
+            """
+            @Component
+            enum MyFeature {
+                struct State {
+                    @Updatable var name: String
+                    @Updatable(output: true) var score: Int
+                }
+            
+                private static func increase(_ state: inout State, sideEffects: SideEffects) {
+                    state.score += 1
+                }
+                        
+                static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
+                    HStack {
+                        Text(engine.name)
+            
+                        Text("\\(engine.score)")
+                    }
+                }
+            }
+            """,
+            expandedSource: """
+            
+            enum MyFeature {
+                struct State {
+                    var name: String
+                    var score: Int
+                }
+                @MainActor
+            
+                private static func increase(_ state: inout State, sideEffects: SideEffects) {
+                    state.score += 1
+                }
+                @MainActor
+                        
+                static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
+                    HStack {
+                        Text(engine.name)
+            
+                        Text("\\(engine.score)")
+                    }
+                }
+
+                enum Action: Equatable {
+                    case updateName(String)
+                    case updateScore(Int)
+                    case increase
+                }
+            
+                @MainActor
+                private static func updateName(_ state: inout State, sideEffects: SideEffects, _ p0: String) {
+                    state.name = p0
+                }
+
+                @MainActor
+                private static func updateScore(_ state: inout State, sideEffects: SideEffects, _ p0: Int) {
+                    state.score = p0
+                    if true {
+                        sideEffects.signal(.updatedScore(p0))
+                    }
+                }
+
+                enum Output: Equatable {
+                    case updatedScore(Int)
+                }
+            
+                typealias SideEffects = AnySideEffects<Action, Output>
+
+                @MainActor
+                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
+                    switch action {
+                    case let .updateName(p0):
+                        updateName(&state, sideEffects: sideEffects, p0)
+
+                    case let .updateScore(p0):
+                        updateScore(&state, sideEffects: sideEffects, p0)
+
+                    case .increase:
+                        increase(&state, sideEffects: sideEffects)
+
+                    }
+                }
+            
+                @MainActor
+                struct EngineView: View {
+                    @SwiftUI.State var engine: ViewEngine<State, Action, Output>
+            
+                    var body: some View {
+                        view(engine)
+                    }
+                }
+            }
+            
+            extension MyFeature: Component, BaseComponent {
+            }
+            """,
+            macros: testMacros
+        )
+        #else
+        throw XCTSkip("macros are only supported when running tests for the host platform")
+        #endif
+    }
+
     func testBasicComponent() throws {
         #if canImport(AppStateKitMacros)
         assertMacroExpansion(
@@ -1094,6 +1200,128 @@ final class ComponentMacroTests: XCTestCase {
                 }
             }
             
+            extension MyFeature: Component, BaseComponent {
+            }
+            """,
+            macros: testMacros
+        )
+#else
+        throw XCTSkip("macros are only supported when running tests for the host platform")
+#endif
+    }
+
+    func testChildPropertyWithPassthroughOutputComponent() throws {
+#if canImport(AppStateKitMacros)
+        assertMacroExpansion(
+            """
+            @Component
+            enum MyFeature {
+                struct State {
+                    @Updatable(output: true) var name: String
+                    @PassthroughOutput var child: ChildFeature.State
+                }
+            
+                static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
+                    VStack {
+                        Text(engine.name)
+            
+                        child(engine)
+                    }
+                }
+            }
+            """,
+            expandedSource: """
+            
+            enum MyFeature {
+                struct State {
+                    var name: String
+                    var child: ChildFeature.State
+                }
+                @MainActor
+
+                static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
+                    VStack {
+                        Text(engine.name)
+
+                        child(engine)
+                    }
+                }
+
+                enum Action: Equatable {
+                    case updateName(String)
+                    case child(ChildFeature.Action)
+                    case passthroughChildOutput(ChildFeature.Output)
+                }
+
+                @MainActor
+                private static func updateName(_ state: inout State, sideEffects: SideEffects, _ p0: String) {
+                    state.name = p0
+                    if true {
+                        sideEffects.signal(.updatedName(p0))
+                    }
+                }
+
+                @MainActor
+                private static func passthroughChildOutput(_ state: inout State, sideEffects: SideEffects, _ p0: ChildFeature.Output) {
+                    sideEffects.signal(.child(p0))
+                }
+
+                enum Output: Equatable {
+                    case updatedName(String)
+                    case child(ChildFeature.Output)
+                }
+
+                private static func translateChildOutputToAction(_ p0: ChildFeature.Output) -> Action? {
+                    .passthroughChildOutput(p0)
+                }
+
+                typealias SideEffects = AnySideEffects<Action, Output>
+
+                @MainActor
+                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
+                    switch action {
+                    case let .updateName(p0):
+                        updateName(&state, sideEffects: sideEffects, p0)
+
+                    case let .child(innerAction):
+
+                        let innerSideEffects = sideEffects.map(Action.child, translate: translateChildOutputToAction)
+                        ChildFeature.reduce(
+                            &state.child,
+                            action: innerAction,
+                            sideEffects: innerSideEffects
+                        )
+
+                    case let .passthroughChildOutput(p0):
+                        passthroughChildOutput(&state, sideEffects: sideEffects, p0)
+
+                    }
+                }
+
+                @MainActor
+                struct EngineView: View {
+                    @SwiftUI.State var engine: ViewEngine<State, Action, Output>
+
+                    var body: some View {
+                        view(engine)
+                    }
+                }
+
+                @MainActor
+                @ViewBuilder
+                private static func child(_ engine: ViewEngine<State, Action, Output>) -> some View {
+                    ChildFeature.EngineView(
+                        engine: engine.map(
+                            state: {
+                                $0.child
+                            },
+                            action: Action.child,
+                            translate: translateChildOutputToAction
+                        ).view()
+                    )
+                }
+            }
+
             extension MyFeature: Component, BaseComponent {
             }
             """,

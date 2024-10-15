@@ -16,5 +16,6 @@ let testMacros: [String: Macro.Type] = [
     "bindIfPresent": BindIfPresentMacro.self,
     "Updatable": UpdatableMacro.self,
     "JSONStorageEffects": JSONStorageEffectsMacro.self,
+    "PassthroughOutput": PassthroughOutputMacro.self,
 ]
 #endif

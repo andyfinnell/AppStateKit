@@ -29,7 +29,10 @@ public macro bind<State, Action, Output, P>(_ engine: ViewEngine<State, Action, 
 public macro bindIfPresent<State, Action, Output, P>(_ engine: ViewEngine<State, Action, Output>, _ keyPath: KeyPath<State, P?>) -> Binding<Bool> = #externalMacro(module: "AppStateKitMacros", type: "BindIfPresentMacro")
 
 @attached(peer)
-public macro Updatable() = #externalMacro(module: "AppStateKitMacros", type: "UpdatableMacro")
+public macro Updatable(output: Bool = false) = #externalMacro(module: "AppStateKitMacros", type: "UpdatableMacro")
+
+@attached(peer)
+public macro PassthroughOutput() = #externalMacro(module: "AppStateKitMacros", type: "PassthroughOutputMacro")
 
 @attached(member, names: arbitrary)
 public macro JSONStorageEffects<T>(for type: T.Type, defaultValue expr: T) = #externalMacro(module: "AppStateKitMacros", type: "JSONStorageEffectsMacro")

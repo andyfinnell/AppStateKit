@@ -131,3 +131,61 @@ enum MyApp {
         }
     }
 }
+
+@Component
+enum ScoreComponent {
+    struct State: Equatable {
+        @Updatable(output: true) var score: Int
+        @Updatable(output: true) var name: String
+    }
+    
+    static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
+        VStack {
+            HStack {
+                Text("Name")
+                
+                Spacer()
+                
+                Text(engine.name)
+            }
+            
+            HStack {
+                Text("Score")
+                
+                Spacer()
+                
+                Text("\(engine.score)")
+            }
+            
+            Spacer()
+        }
+    }
+}
+
+@Component
+enum PlayerComponent {
+    struct State: Equatable {
+        @PassthroughOutput var score: ScoreComponent.State
+    }
+    
+    static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
+        VStack {
+            score(engine)
+        }
+    }
+}
+
+@Component
+enum ScoreboardComponent {
+    struct State: Equatable {
+        @PassthroughOutput var scores: [ScoreComponent.State]
+    }
+    
+    static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
+        VStack {
+            ForEach(engine.scores.indices, id: \.self) {
+                scores(engine, at: $0)
+            }
+        }
+    }
+}
