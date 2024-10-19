@@ -117,7 +117,7 @@ extension DependencyScope {}
 @ExtendSideEffects(with: ImportURLEffect, (URL) async throws -> String)
 extension AnySideEffects {}
 
-struct TestModel: Codable {
+struct TestModel: Codable, Equatable {
     let name: String
     let score: Int
     
@@ -130,7 +130,7 @@ struct TestModel: Codable {
 @JSONStorageEffects(for: TestModel.self, defaultValue: TestModel.defaultValue())
 extension AnySideEffects {}
 
-struct TestSettings: Codable {
+struct TestSettings: Codable, Equatable {
     let name: String
     let score: Int
 }

@@ -525,7 +525,7 @@ private extension ComponentParser {
         }
     }
     
-    static func computeSubscriptions(from varDecl: VariableDeclSyntax) -> [Subscription] {
+    static func parseSubscribeAttribute(from varDecl: VariableDeclSyntax) -> String? {
         let subscriptionAttribute = varDecl.attributes.compactMap { attribute -> AttributeSyntax? in
             guard case let .attribute(attr) = attribute,
                 let identifierType = attr.attributeName.as(IdentifierTypeSyntax.self),
@@ -537,32 +537,72 @@ private extension ComponentParser {
         guard let subscriptionAttribute,
               let args = subscriptionAttribute.arguments?.as(LabeledExprListSyntax.self),
               let effectType = args.first, effectType.label?.text == "to",
-              let convertExpression = args.last, convertExpression.label?.text == "sending",
-              args.count == 2 else {
-            return []
+              args.count == 1 else {
+            return nil
         }
         
-        guard let subscribeToMethodName = ExtendSideEffectsMacro.parseSubscribeToMethodName(from: effectType.expression) else {
+        return ExtendSideEffectsMacro.parseSubscribeToMethodName(from: effectType.expression)
+    }
+
+    static func parseSubscribeToJSONStorageAttribute(from varDecl: VariableDeclSyntax) -> String? {
+        let subscriptionAttribute = varDecl.attributes.compactMap { attribute -> AttributeSyntax? in
+            guard case let .attribute(attr) = attribute,
+                let identifierType = attr.attributeName.as(IdentifierTypeSyntax.self),
+                  identifierType.name.text == "SubscribeToJSONStorage" else {
+                return nil
+            }
+            return attr
+        }.first
+        
+        guard let subscriptionAttribute,
+              let args = subscriptionAttribute.arguments?.as(LabeledExprListSyntax.self),
+              let effectType = args.first, effectType.label?.text == "for",
+              args.count == 1 else {
+            return nil
+        }
+        guard let typename = JSONStorageEffectsMacro.parseName(effectType.expression) else {
+            return nil
+        }
+        return "subscribeToFetch\(typename)"
+    }
+
+    static func computeSubscriptions(from varDecl: VariableDeclSyntax) -> [Subscription] {
+        if let subscribeToMethodName = parseSubscribeAttribute(from: varDecl) {
+            return computeSubscriptions(
+                from: varDecl,
+                subscribeToMethodName: subscribeToMethodName
+            )
+        } else if let subscribeToMethodName = parseSubscribeToJSONStorageAttribute(from: varDecl) {
+            return computeSubscriptions(
+                from: varDecl,
+                subscribeToMethodName: subscribeToMethodName
+            )
+        } else {
             return []
         }
-        
+    }
+    
+    static func computeSubscriptions(
+        from varDecl: VariableDeclSyntax,
+        subscribeToMethodName: String
+    ) -> [Subscription] {
         var subscriptions = [Subscription]()
         for binding in varDecl.bindings {
-            guard let identifierPattern = binding.pattern.as(IdentifierPatternSyntax.self),
-                 let stringLiteralExpr = convertExpression.expression.as(StringLiteralExprSyntax.self) else {
+            guard let identifierPattern = binding.pattern.as(IdentifierPatternSyntax.self) else {
                 continue
             }
             
+            let propertyName = identifierPattern.identifier.text
+            let convertToActionExpr = ".\(propertyName)Update"
             let subscription = Subscription(
-                propertyName: identifierPattern.identifier.text,
+                propertyName: propertyName,
                 subscribeMethodName: subscribeToMethodName,
-                convertToActionExpr: stringLiteralExpr.representedLiteralValue ?? ""
+                convertToActionExpr: convertToActionExpr
             )
             subscriptions.append(subscription)
         }
         return subscriptions
     }
-
     
     static func computeActionFromFunction(_ functionDecl: FunctionDeclSyntax) -> Action? {
         // needs to be static

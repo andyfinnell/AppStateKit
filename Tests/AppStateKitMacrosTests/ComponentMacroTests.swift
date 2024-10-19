@@ -112,7 +112,7 @@ final class ComponentMacroTests: XCTestCase {
             enum MyFeature {
                 struct State {
                     @Updatable var name: String
-                    @Subscribe(to: FetchNameEffect.self, sending: ".updateName") var nameSubscription: SubscriptionID? = nil
+                    @Subscribe(to: FetchNameEffect.self) var nameSubscription: SubscriptionID? = nil
                 }
             
                 static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
@@ -152,7 +152,7 @@ final class ComponentMacroTests: XCTestCase {
                     if state.nameSubscription == nil {
                     state.nameSubscription = sideEffects.subscribeToFetchName { stream, send in
                         for await value in stream {
-                            await send(.updateName(value))
+                            await send(.nameSubscriptionUpdate(value))
                         }
                     }
                     }
@@ -167,6 +167,102 @@ final class ComponentMacroTests: XCTestCase {
                     switch action {
                     case let .updateName(p0):
                         updateName(&state, sideEffects: sideEffects, p0)
+
+                    case .componentInit:
+                        componentInit(&state, sideEffects: sideEffects)
+
+                    }
+                }
+
+                @MainActor
+                struct EngineView: View {
+                    @SwiftUI.State var engine: ViewEngine<State, Action, Output>
+
+                    var body: some View {
+                        view(engine)
+                            .task {
+                            engine.send(.componentInit)
+                        }
+
+                    }
+                }
+            }
+
+            extension MyFeature: Component, BaseComponent {
+            }
+            """,
+            macros: testMacros
+        )
+        #else
+        throw XCTSkip("macros are only supported when running tests for the host platform")
+        #endif
+    }
+
+    func testJSONStorageSubscriptionComponent() throws {
+        #if canImport(AppStateKitMacros)
+        assertMacroExpansion(
+            """
+            @Component
+            enum MyFeature {
+                struct State {
+                    @Updatable var toolSettings: ToolSettings
+                    @SubscribeToJSONStorage(for: ToolSettings.self) 
+                    var toolSettingsSubscription: SubscriptionID? = nil
+                }
+            
+                static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
+                    HStack {
+                        Text("Hello world")
+                    }
+                }
+            }
+            """,
+            expandedSource: """
+            
+            enum MyFeature {
+                struct State {
+                    var toolSettings: ToolSettings
+            
+                    var toolSettingsSubscription: SubscriptionID? = nil
+                }
+                @MainActor
+
+                static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
+                    HStack {
+                        Text("Hello world")
+                    }
+                }
+
+                enum Action: Equatable {
+                    case updateToolSettings(ToolSettings)
+                    case componentInit
+                }
+
+                @MainActor
+                private static func updateToolSettings(_ state: inout State, sideEffects: SideEffects, _ p0: ToolSettings) {
+                    state.toolSettings = p0
+                }
+
+                @MainActor
+                private static func componentInit(_ state: inout State, sideEffects: SideEffects) {
+                    if state.toolSettingsSubscription == nil {
+                    state.toolSettingsSubscription = sideEffects.subscribeToFetchToolSettings { stream, send in
+                        for await value in stream {
+                            await send(.toolSettingsSubscriptionUpdate(value))
+                        }
+                    }
+                    }
+                }
+
+                typealias Output = Never
+
+                typealias SideEffects = AnySideEffects<Action, Output>
+
+                @MainActor
+                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
+                    switch action {
+                    case let .updateToolSettings(p0):
+                        updateToolSettings(&state, sideEffects: sideEffects, p0)
 
                     case .componentInit:
                         componentInit(&state, sideEffects: sideEffects)

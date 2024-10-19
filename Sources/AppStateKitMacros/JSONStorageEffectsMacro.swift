@@ -18,6 +18,14 @@ public enum JSONStorageEffectsMacro: MemberMacro {
         
         return decls.compactMap { $0 }
     }
+    
+    static func parseName(_ expression: ExprSyntax) -> String? {
+        guard let access = expression.as(MemberAccessExprSyntax.self),
+              let ref = access.base?.as(DeclReferenceExprSyntax.self) else {
+            return nil
+        }
+        return ref.baseName.text
+    }
 }
 
 private extension JSONStorageEffectsMacro {
@@ -39,12 +47,5 @@ private extension JSONStorageEffectsMacro {
         )
     }
 
-    static func parseName(_ expression: ExprSyntax) -> String? {
-        guard let access = expression.as(MemberAccessExprSyntax.self),
-              let ref = access.base?.as(DeclReferenceExprSyntax.self) else {
-            return nil
-        }
-        return ref.baseName.text
-    }
 
 }

@@ -18,5 +18,6 @@ let testMacros: [String: Macro.Type] = [
     "JSONStorageEffects": JSONStorageEffectsMacro.self,
     "PassthroughOutput": PassthroughOutputMacro.self,
     "Subscribe": SubscribeMacro.self,
+    "SubscribeToJSONStorage": SubscribeToJSONStorageMacro.self,
 ]
 #endif

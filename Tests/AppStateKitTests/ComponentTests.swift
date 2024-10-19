@@ -193,14 +193,45 @@ enum ScoreboardComponent {
 @Component
 enum NamedComponent {
     struct State: Equatable {
-        @Updatable var name: String
-        @Subscribe(to: GenerateNames.self, sending: ".updateName")
+        var name: String
+        @Subscribe(to: GenerateNames.self)
         var nameSubscription: SubscriptionID? = nil
     }
         
+    private static func nameSubscriptionUpdate(_ state: inout State, sideEffects: SideEffects, _ name: String) {
+        state.name = name
+    }
+    
     static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
         HStack {
             Text(engine.name)
         }
     }
+}
+
+@Component
+enum TestSettingsComponent {
+    struct State: Equatable {
+        var name: String
+        var score: Int
+        
+        @SubscribeToJSONStorage(for: TestSettings.self)
+        var testSettingsSubscription: SubscriptionID? = nil
+    }
+    
+    private static func testSettingsSubscriptionUpdate(_ state: inout State, sideEffects: SideEffects, _ settings: TestSettings) {
+        state.name = settings.name
+        state.score = settings.score
+    }
+    
+    static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
+        HStack {
+            Text(engine.name)
+            
+            Spacer()
+            
+            Text("\(engine.score)")
+        }
+    }
+
 }

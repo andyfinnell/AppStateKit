@@ -38,7 +38,11 @@ public macro PassthroughOutput() = #externalMacro(module: "AppStateKitMacros", t
 public macro JSONStorageEffects<T>(for type: T.Type, defaultValue expr: T) = #externalMacro(module: "AppStateKitMacros", type: "JSONStorageEffectsMacro")
 
 @attached(member, names: arbitrary)
-public macro JSONStorageEffects<T>(for type: T.Type) = #externalMacro(module: "AppStateKitMacros", type: "JSONStorageEffectsMacro")
+public macro JSONStorageEffects<T: Codable>(for type: T.Type) = #externalMacro(module: "AppStateKitMacros", type: "JSONStorageEffectsMacro")
 
 @attached(peer)
-public macro Subscribe<E: Dependable, T>(to effect: E.Type, sending: String) = #externalMacro(module: "AppStateKitMacros", type: "SubscribeMacro") where E.T == Effect<AsyncStream<T>, Never>
+public macro Subscribe<E: Dependable, T>(to effect: E.Type) = #externalMacro(module: "AppStateKitMacros", type: "SubscribeMacro") where E.T == Effect<AsyncStream<T>, Never>
+
+@attached(peer)
+public macro SubscribeToJSONStorage<T: Codable & Equatable>(for type: T.Type) = #externalMacro(module: "AppStateKitMacros", type: "SubscribeToJSONStorageMacro")
+
