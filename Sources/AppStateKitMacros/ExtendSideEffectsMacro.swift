@@ -52,7 +52,8 @@ private extension ExtendSideEffectsMacro {
         return parseClosureType(
             closureTypeArgument.expression,
             withMethodName: methodName,
-            subscribeName: subscribeName
+            subscribeName: subscribeName,
+            typename: typename
         )
     }
     
@@ -74,10 +75,16 @@ private extension ExtendSideEffectsMacro {
     static func parseClosureType(
         _ expression: ExprSyntax,
         withMethodName methodName: String,
-        subscribeName: String
+        subscribeName: String,
+        typename: String
     ) -> SideEffect? {
         if let infixOperator = expression.as(InfixOperatorExprSyntax.self) {
-            return parseClosureType(infixOperator, withMethodName: methodName, subscribeName: subscribeName)
+            return parseClosureType(
+                infixOperator,
+                withMethodName: methodName,
+                subscribeName: subscribeName,
+                typename: typename
+            )
         } else {
             return nil
         }
@@ -86,7 +93,8 @@ private extension ExtendSideEffectsMacro {
     static func parseClosureType(
         _ infixOperation: InfixOperatorExprSyntax,
         withMethodName name: String,
-        subscribeName: String
+        subscribeName: String,
+        typename: String
     ) -> SideEffect? {
         guard let arrowExpr = infixOperation.operator.as(ArrowExprSyntax.self),
               let parametersExpr = infixOperation.leftOperand.as(TupleExprSyntax.self) else {
@@ -108,7 +116,7 @@ private extension ExtendSideEffectsMacro {
             returnType: returnType,
             isThrowing: isThrowing,
             isAsync: isAsync,
-            effectReference: .keyPath(name)
+            effectReference: .typename(typename)
         )
     }
         

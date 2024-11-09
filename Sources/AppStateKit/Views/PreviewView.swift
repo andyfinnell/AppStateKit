@@ -29,10 +29,10 @@ struct PreviewView<C: Component>: View {
         }
     }
 
-    @SwiftUI.State private var engine: MainEngine<C.State, C.Action>
+    @LazyState private var engine: MainEngine<C.State, C.Action>
 
     init(state: C.State, dependencyScope: DependencyScope) {
-        engine = MainEngine(dependencies: dependencyScope, state: state, component: PreviewComponent.self)
+        _engine = LazyState(wrappedValue: MainEngine(dependencies: dependencyScope, state: state, component: PreviewComponent.self))
     }
 
     var body: some View {

@@ -85,7 +85,7 @@ final class AppComponentMacroTests: XCTestCase {
 
                 @MainActor
                 struct MainApp: App {
-                    @SwiftUI.State var engine = MainEngine<State, Action>(
+                    @LazyState var engine = MainEngine<State, Action>(
                         dependencies: dependencies(),
                         state: initialState(),
                         component: MyApp.self

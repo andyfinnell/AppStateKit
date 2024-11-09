@@ -24,7 +24,7 @@ struct DetachmentCodegen {
             @MainActor
             static func view<E: Engine>(
                 _ engine: E,
-                inject: (DependencyScope) -> Void
+                inject: @escaping (DependencyScope) -> Void
             ) -> \(raw: detachment.componentName).EngineView where E.State == State, E.Action == Action, E.Output == Output {
                  \(raw: detachment.componentName).EngineView(
                      engine: engine.scope(

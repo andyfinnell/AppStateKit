@@ -13,9 +13,6 @@ enum LoadAtIndexEffect {
     }
 }
 
-@ExtendDependencyScope(with: LoadAtIndexEffect)
-extension DependencyScope {}
-
 @ExtendSideEffects(with: LoadAtIndexEffect, (index: Int) async -> String)
 extension AnySideEffects {}
 
@@ -26,9 +23,6 @@ enum SaveEffect {
     }
 }
 
-@ExtendDependencyScope(with: SaveEffect)
-extension DependencyScope {}
-
 @ExtendSideEffects(with: SaveEffect, (index: Int, content: String) -> Void)
 extension AnySideEffects {}
 
@@ -38,9 +32,6 @@ enum UpdateEffect {
         "update \(content) to \(index)"
     }
 }
-
-@ExtendDependencyScope(with: UpdateEffect)
-extension DependencyScope {}
 
 @ExtendSideEffects(with: UpdateEffect, (index: Int, content: String) -> String)
 extension AnySideEffects {}
@@ -85,9 +76,6 @@ enum TimerEffect {
     }
 }
 
-@ExtendDependencyScope(with: TimerEffect)
-extension DependencyScope {}
-
 @ExtendSideEffects(with: TimerEffect, (delay: TimeInterval, count: Int) -> AsyncStream<TimeInterval>)
 extension AnySideEffects {}
 
@@ -98,9 +86,6 @@ enum GenerateEffect {
     }
 }
 
-@ExtendDependencyScope(with: GenerateEffect)
-extension DependencyScope {}
-
 @ExtendSideEffects(with: GenerateEffect, () -> String)
 extension AnySideEffects {}
 
@@ -110,9 +95,6 @@ enum ImportURLEffect {
         throw TestError.importFailure
     }
 }
-
-@ExtendDependencyScope(with: ImportURLEffect)
-extension DependencyScope {}
 
 @ExtendSideEffects(with: ImportURLEffect, (URL) async throws -> String)
 extension AnySideEffects {}
@@ -177,9 +159,6 @@ enum GenerateNames {
         return stream
     }
 }
-
-@ExtendDependencyScope(with: GenerateNames)
-extension DependencyScope {}
 
 @ExtendSideEffects(with: GenerateNames, () -> AsyncStream<String>)
 extension AnySideEffects {}

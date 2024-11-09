@@ -66,7 +66,7 @@ final class DetachmentMacroTests: XCTestCase {
                     @MainActor
                     static func view<E: Engine>(
                         _ engine: E,
-                        inject: (DependencyScope) -> Void
+                        inject: @escaping (DependencyScope) -> Void
                     ) -> Subfeature.EngineView where E.State == State, E.Action == Action, E.Output == Output {
                          Subfeature.EngineView(
                              engine: engine.scope(
@@ -122,7 +122,7 @@ final class DetachmentMacroTests: XCTestCase {
             
                 @MainActor
                 struct EngineView: View {
-                    @SwiftUI.State var engine: ViewEngine<State, Action, Output>
+                    @LazyState var engine: ViewEngine<State, Action, Output>
             
                     var body: some View {
                         view(engine)
@@ -133,7 +133,7 @@ final class DetachmentMacroTests: XCTestCase {
                 @ViewBuilder
                 private static func subfeature(
                     _ engine: ViewEngine<State, Action, Output>,
-                    inject: (DependencyScope) -> Void = { _ in
+                    inject: @escaping (DependencyScope) -> Void = { _ in
                     }
                 ) -> some View {
                     Subfeature.view(engine, inject: inject)
@@ -212,7 +212,7 @@ final class DetachmentMacroTests: XCTestCase {
                     @MainActor
                     static func view<E: Engine>(
                         _ engine: E,
-                        inject: (DependencyScope) -> Void
+                        inject: @escaping (DependencyScope) -> Void
                     ) -> Subfeature.EngineView where E.State == State, E.Action == Action, E.Output == Output {
                          Subfeature.EngineView(
                              engine: engine.scope(
@@ -268,7 +268,7 @@ final class DetachmentMacroTests: XCTestCase {
             
                 @MainActor
                 struct EngineView: View {
-                    @SwiftUI.State var engine: ViewEngine<State, Action, Output>
+                    @LazyState var engine: ViewEngine<State, Action, Output>
             
                     var body: some View {
                         view(engine)
@@ -279,7 +279,7 @@ final class DetachmentMacroTests: XCTestCase {
                 @ViewBuilder
                 private static func subfeature(
                     _ engine: ViewEngine<State, Action, Output>,
-                    inject: (DependencyScope) -> Void = { _ in
+                    inject: @escaping (DependencyScope) -> Void = { _ in
                     }
                 ) -> some View {
                     Subfeature.view(engine, inject: inject)
@@ -358,7 +358,7 @@ final class DetachmentMacroTests: XCTestCase {
                     @MainActor
                     static func view<E: Engine>(
                         _ engine: E,
-                        inject: (DependencyScope) -> Void
+                        inject: @escaping (DependencyScope) -> Void
                     ) -> Subfeature.EngineView where E.State == State, E.Action == Action, E.Output == Output {
                          Subfeature.EngineView(
                              engine: engine.scope(
@@ -414,7 +414,7 @@ final class DetachmentMacroTests: XCTestCase {
             
                 @MainActor
                 struct EngineView: View {
-                    @SwiftUI.State var engine: ViewEngine<State, Action, Output>
+                    @LazyState var engine: ViewEngine<State, Action, Output>
             
                     var body: some View {
                         view(engine)
@@ -425,7 +425,7 @@ final class DetachmentMacroTests: XCTestCase {
                 @ViewBuilder
                 private static func subfeature(
                     _ engine: ViewEngine<State, Action, Output>,
-                    inject: (DependencyScope) -> Void = { _ in
+                    inject: @escaping (DependencyScope) -> Void = { _ in
                     }
                 ) -> some View {
                     Subfeature.view(engine, inject: inject)

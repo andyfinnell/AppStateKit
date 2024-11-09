@@ -220,7 +220,7 @@ private extension ComponentChildViewCodegen {
             @ViewBuilder
             private static func \(raw: detachment.methodName)(
                 _ engine: ViewEngine<State, Action, Output>,
-                inject: (DependencyScope) -> Void = { _ in }
+                inject: @escaping (DependencyScope) -> Void = { _ in }
             ) -> some View {
                 \(raw: detachment.typename).view(engine, inject: inject)
             }

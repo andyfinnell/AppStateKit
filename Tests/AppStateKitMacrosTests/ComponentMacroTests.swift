@@ -86,7 +86,7 @@ final class ComponentMacroTests: XCTestCase {
             
                 @MainActor
                 struct EngineView: View {
-                    @SwiftUI.State var engine: ViewEngine<State, Action, Output>
+                    @LazyState var engine: ViewEngine<State, Action, Output>
             
                     var body: some View {
                         view(engine)
@@ -176,7 +176,7 @@ final class ComponentMacroTests: XCTestCase {
 
                 @MainActor
                 struct EngineView: View {
-                    @SwiftUI.State var engine: ViewEngine<State, Action, Output>
+                    @LazyState var engine: ViewEngine<State, Action, Output>
 
                     var body: some View {
                         view(engine)
@@ -272,7 +272,7 @@ final class ComponentMacroTests: XCTestCase {
 
                 @MainActor
                 struct EngineView: View {
-                    @SwiftUI.State var engine: ViewEngine<State, Action, Output>
+                    @LazyState var engine: ViewEngine<State, Action, Output>
 
                     var body: some View {
                         view(engine)
@@ -368,7 +368,7 @@ final class ComponentMacroTests: XCTestCase {
             
                 @MainActor
                 struct EngineView: View {
-                    @SwiftUI.State var engine: ViewEngine<State, Action, Output>
+                    @LazyState var engine: ViewEngine<State, Action, Output>
             
                     var body: some View {
                         view(engine)
@@ -474,7 +474,7 @@ final class ComponentMacroTests: XCTestCase {
             
                 @MainActor
                 struct EngineView: View {
-                    @SwiftUI.State var engine: ViewEngine<State, Action, Output>
+                    @LazyState var engine: ViewEngine<State, Action, Output>
             
                     var body: some View {
                         view(engine)
@@ -574,7 +574,7 @@ final class ComponentMacroTests: XCTestCase {
             
                 @MainActor
                 struct EngineView: View {
-                    @SwiftUI.State var engine: ViewEngine<State, Action, Output>
+                    @LazyState var engine: ViewEngine<State, Action, Output>
             
                     var body: some View {
                         view(engine)
@@ -668,7 +668,7 @@ final class ComponentMacroTests: XCTestCase {
             
                 @MainActor
                 struct EngineView: View {
-                    @SwiftUI.State var engine: ViewEngine<State, Action, Output>
+                    @LazyState var engine: ViewEngine<State, Action, Output>
             
                     var body: some View {
                         view(engine)
@@ -784,7 +784,7 @@ final class ComponentMacroTests: XCTestCase {
             
                 @MainActor
                 struct EngineView: View {
-                    @SwiftUI.State var engine: ViewEngine<State, Action, Output>
+                    @LazyState var engine: ViewEngine<State, Action, Output>
             
                     var body: some View {
                         view(engine)
@@ -903,7 +903,7 @@ final class ComponentMacroTests: XCTestCase {
             
                 @MainActor
                 struct EngineView: View {
-                    @SwiftUI.State var engine: ViewEngine<State, Action, Output>
+                    @LazyState var engine: ViewEngine<State, Action, Output>
             
                     var body: some View {
                         view(engine)
@@ -1024,7 +1024,7 @@ final class ComponentMacroTests: XCTestCase {
             
                 @MainActor
                 struct EngineView: View {
-                    @SwiftUI.State var engine: ViewEngine<State, Action, Output>
+                    @LazyState var engine: ViewEngine<State, Action, Output>
             
                     var body: some View {
                         view(engine)
@@ -1138,7 +1138,7 @@ final class ComponentMacroTests: XCTestCase {
             
                 @MainActor
                 struct EngineView: View {
-                    @SwiftUI.State var engine: ViewEngine<State, Action, Output>
+                    @LazyState var engine: ViewEngine<State, Action, Output>
             
                     var body: some View {
                         view(engine)
@@ -1254,7 +1254,7 @@ final class ComponentMacroTests: XCTestCase {
             
                 @MainActor
                 struct EngineView: View {
-                    @SwiftUI.State var engine: ViewEngine<State, Action, Output>
+                    @LazyState var engine: ViewEngine<State, Action, Output>
             
                     var body: some View {
                         view(engine)
@@ -1369,7 +1369,7 @@ final class ComponentMacroTests: XCTestCase {
             
                 @MainActor
                 struct EngineView: View {
-                    @SwiftUI.State var engine: ViewEngine<State, Action, Output>
+                    @LazyState var engine: ViewEngine<State, Action, Output>
             
                     var body: some View {
                         view(engine)
@@ -1490,7 +1490,7 @@ final class ComponentMacroTests: XCTestCase {
 
                 @MainActor
                 struct EngineView: View {
-                    @SwiftUI.State var engine: ViewEngine<State, Action, Output>
+                    @LazyState var engine: ViewEngine<State, Action, Output>
 
                     var body: some View {
                         view(engine)
