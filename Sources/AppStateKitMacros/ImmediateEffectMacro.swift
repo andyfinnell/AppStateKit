@@ -3,7 +3,7 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
 
-public enum EffectMacro: ExtensionMacro {
+public enum ImmediateEffectMacro: ExtensionMacro {
     public static func expansion(
         of node: AttributeSyntax,
         attachedTo declaration: some DeclGroupSyntax,
@@ -12,7 +12,7 @@ public enum EffectMacro: ExtensionMacro {
         in context: some MacroExpansionContext
     ) throws -> [ExtensionDeclSyntax] {
         guard let enumDecl = declaration.as(EnumDeclSyntax.self),
-              let effect = EffectParser.parse(enumDecl, isImmediate: false) else {
+              let effect = EffectParser.parse(enumDecl, isImmediate: true) else {
             // TODO: emit error that it must be enum
             return []
         }
@@ -23,5 +23,26 @@ public enum EffectMacro: ExtensionMacro {
         return decls.compactMap {
             $0?.as(ExtensionDeclSyntax.self)
         }
+    }
+}
+
+extension ImmediateEffectMacro: MemberAttributeMacro {
+    public static func expansion(
+        of node: AttributeSyntax,
+        attachedTo declaration: some DeclGroupSyntax,
+        providingAttributesFor member: some DeclSyntaxProtocol,
+        in context: some MacroExpansionContext
+    ) throws -> [AttributeSyntax] {
+        guard EffectParser.isImmediatePerformMethod(member) else {
+            return []
+        }
+        
+        let attr: AttributeSyntax = """
+            @MainActor
+            """
+        
+        return [
+            attr
+        ]
     }
 }

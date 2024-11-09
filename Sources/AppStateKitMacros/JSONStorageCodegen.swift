@@ -65,7 +65,8 @@ struct JSONStorageCodegen {
             returnType: "AsyncStream<\(jsonStorage.typename)>",
             isThrowing: false,
             isAsync: true,
-            effectReference: .typename("Fetch\(jsonStorage.typename)Effect")
+            effectReference: .typename("Fetch\(jsonStorage.typename)Effect"),
+            isImmediate: false
         )
 
         let saveSideEffect = SideEffect(
@@ -77,7 +78,8 @@ struct JSONStorageCodegen {
             returnType: "Void",
             isThrowing: true,
             isAsync: true,
-            effectReference: .typename("Save\(jsonStorage.typename)Effect")
+            effectReference: .typename("Save\(jsonStorage.typename)Effect"),
+            isImmediate: false
         )
 
         return [

@@ -541,7 +541,7 @@ private extension ComponentParser {
             return nil
         }
         
-        return ExtendSideEffectsMacro.parseSubscribeToMethodName(from: effectType.expression)
+        return ExtendSideEffectsParser.parseSubscribeToMethodName(from: effectType.expression)
     }
 
     static func parseSubscribeToJSONStorageAttribute(from varDecl: VariableDeclSyntax) -> String? {

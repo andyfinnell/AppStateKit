@@ -44,6 +44,25 @@ final class SideEffectsTests: XCTestCase {
     }
     
     @MainActor
+    func testImmediateEffect() async {
+        let dependencies = DependencyScope()
+        let subject = SideEffectsContainer<Action>(dependencyScope: dependencies)
+        let signal = { (output: Never) -> Void in
+        }
+        let sideEffects = subject.eraseToAnySideEffects(signal: signal)
+
+        sideEffects.print("Hello world") {
+            .saved
+        }
+                
+        let actual = await testMaterializeEffects(subject)
+        let expected = Set<Action>([
+            .saved
+        ])
+        XCTAssertEqual(actual, expected)
+    }
+    
+    @MainActor
     func testCombinedEffects() async {
         let dependencies = DependencyScope()
         let subject = SideEffectsContainer<Action>(dependencyScope: dependencies)

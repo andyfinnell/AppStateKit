@@ -13,11 +13,18 @@ public macro AppComponent() = #externalMacro(module: "AppStateKitMacros", type: 
 @attached(extension, conformances: Dependable, names: named(makeDefault(with:)))
 public macro Effect() = #externalMacro(module: "AppStateKitMacros", type: "EffectMacro")
 
+@attached(memberAttribute)
+@attached(extension, conformances: Dependable, names: named(makeDefault(with:)))
+public macro ImmediateEffect() = #externalMacro(module: "AppStateKitMacros", type: "ImmediateEffectMacro")
+
 @attached(member, names: arbitrary)
 public macro ExtendDependencyScope<T>(with t: T) = #externalMacro(module: "AppStateKitMacros", type: "ExtendDependencyScopeMacro")
 
 @attached(member, names: arbitrary)
 public macro ExtendSideEffects<N, T>(with name: N, _ expr: T) = #externalMacro(module: "AppStateKitMacros", type: "ExtendSideEffectsMacro")
+
+@attached(member, names: arbitrary)
+public macro ExtendImmediateSideEffects<N, T>(with name: N, _ expr: T) = #externalMacro(module: "AppStateKitMacros", type: "ExtendImmediateSideEffectsMacro")
 
 @attached(member, names: named(actionToUpdateState(from:)), named(translate(from:)), named(view(_:inject:)))
 public macro Detachment() = #externalMacro(module: "AppStateKitMacros", type: "DetachmentMacro")

@@ -4,7 +4,6 @@ struct SideEffectParameter {
 }
 
 enum SideEffectReference {
-    case keyPath(String)
     case typename(String)
 }
 
@@ -16,4 +15,5 @@ struct SideEffect {
     let isThrowing: Bool
     let isAsync: Bool
     let effectReference: SideEffectReference
+    let isImmediate: Bool
 }

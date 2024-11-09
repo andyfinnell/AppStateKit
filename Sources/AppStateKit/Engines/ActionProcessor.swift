@@ -54,6 +54,9 @@ private extension ActionProcessor {
         setState(state)
         isProcessing = false
         
+        // Perform immediate effects
+        sideEffects.applyImmediateEffects(using: sendThunk)
+        
         // Perform effects
         sideEffects.apply(using: sendThunk)
         

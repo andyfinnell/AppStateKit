@@ -162,3 +162,13 @@ enum GenerateNames {
 
 @ExtendSideEffects(with: GenerateNames, () -> AsyncStream<String>)
 extension AnySideEffects {}
+
+@ImmediateEffect
+enum PrintEffect {
+    static func perform(dependencies: DependencyScope, _ content: String) {
+        // nop
+    }
+}
+
+@ExtendImmediateSideEffects(with: PrintEffect, (String) -> Void)
+extension AnySideEffects {}

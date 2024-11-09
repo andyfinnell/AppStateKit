@@ -1,12 +1,17 @@
 import SwiftSyntax
 
 struct EffectParser {
-    static func parse(_ decl: EnumDeclSyntax) -> Effect? {
+    static func parse(_ decl: EnumDeclSyntax, isImmediate: Bool) -> Effect? {
         let effectName = parseEffectName(decl)
         let performMethods = decl.memberBlock.members.compactMap {
             $0.decl.as(FunctionDeclSyntax.self)
         }.compactMap {
-            parsePerformMethod($0, withMethodName: effectName, typename: decl.name.text)
+            parsePerformMethod(
+                $0,
+                withMethodName: effectName,
+                typename: decl.name.text,
+                isImmediate: isImmediate
+            )
         }
         return performMethods.first
     }
@@ -18,6 +23,30 @@ struct EffectParser {
         }
         return basename.lowercasedFirstWord()
     }
+    
+    static func isImmediatePerformMethod(_ member: some DeclSyntaxProtocol) -> Bool {
+        guard let functionDecl = member.as(FunctionDeclSyntax.self),
+              functionDecl.name.text == "perform" else {
+            return false
+        }
+        // needs to be static
+        // needs to take dependencies: DependencyScope as first parameter
+        // it is not async
+        
+        let isStatic = functionDecl.modifiers.contains { declModifier in
+            declModifier.name.text == "static"
+        }
+        guard let parameter = functionDecl.signature.parameterClause.parameters.first,
+              functionDecl.signature.parameterClause.parameters.count >= 1
+                && functionDecl.signature.effectSpecifiers?.asyncSpecifier == nil
+                && isStatic
+                && isDependencyScope(parameter) else {
+            return false
+        }
+        
+        return true
+    }
+
 }
 
 private extension EffectParser {
@@ -28,7 +57,8 @@ private extension EffectParser {
     static func parsePerformMethod(
         _ functionDecl: FunctionDeclSyntax,
         withMethodName methodName: String,
-        typename: String
+        typename: String,
+        isImmediate: Bool
     ) -> Effect? {
         // needs to be static
         // needs to take DependencyScope as first parameter
@@ -76,7 +106,8 @@ private extension EffectParser {
             parameters: parameters,
             returnType: returnType,
             isThrowing: isThrowing,
-            isAsync: isAsync
+            isAsync: isAsync,
+            isImmediate: isImmediate
         )
     }
     

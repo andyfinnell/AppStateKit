@@ -6,10 +6,11 @@ struct EffectDependableCodegen {
         let effectTypename = generateEffectTypename(from: effect)
         let closureParameters = generateClosureParameters(from: effect)
         let contents = generateDoCatchIfNecessary(from: effect)
+        let effectType = effect.isImmediate ? "ImmediateEffect" : "Effect"
         let decl: DeclSyntax = """
             extension \(raw: effect.typename): Dependable {
                 static func makeDefault(with dependencies: DependencyScope) -> \(raw: effectTypename) {
-                    Effect { \(raw: closureParameters)
+                    \(raw: effectType) { \(raw: closureParameters)
                         \(raw: contents)
                     }
                 }
@@ -21,7 +22,7 @@ struct EffectDependableCodegen {
 
 private extension EffectDependableCodegen {
     static func generateEffectTypename(from effect: Effect) -> String {
-        var typename = "Effect<"
+        var typename = effect.isImmediate ? "ImmediateEffect<" : "Effect<"
         if let returnType = effect.returnType {
             typename += "\(returnType), "
         } else {

@@ -19,5 +19,7 @@ struct AppStateKitMacrosPlugin: CompilerPlugin {
         PassthroughOutputMacro.self,
         SubscribeMacro.self,
         SubscribeToJSONStorageMacro.self,
+        ImmediateEffectMacro.self,
+        ExtendImmediateSideEffectsMacro.self,
     ]
 }

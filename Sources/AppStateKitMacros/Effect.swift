@@ -13,4 +13,5 @@ struct Effect {
     let returnType: TypeSyntax?
     let isThrowing: Bool
     let isAsync: Bool
+    let isImmediate: Bool
 }

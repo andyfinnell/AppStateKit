@@ -42,13 +42,14 @@ private extension ExtendSideEffectsCodegen {
             }
         }
         
+        let asyncString = effect.isImmediate ? "" : "async "
         if effect.returnType == "Void" {
-            parameters.append("transform: @Sendable @escaping () async -> Action")
+            parameters.append("transform: @Sendable @escaping () \(asyncString)-> Action")
         } else {
-            parameters.append("transform: @Sendable @escaping (\(effect.returnType)) async -> Action")
+            parameters.append("transform: @Sendable @escaping (\(effect.returnType)) \(asyncString)-> Action")
         }
         if effect.isThrowing {
-            parameters.append("onFailure: @Sendable @escaping (Error) async -> Action")
+            parameters.append("onFailure: @Sendable @escaping (Error) \(asyncString)-> Action")
         }
         return parameters.joined(separator: ",\n")
     }
@@ -73,8 +74,6 @@ private extension ExtendSideEffectsCodegen {
     
     static func codegenEffectReference(_ effectReference: SideEffectReference) -> String {
         switch effectReference {
-        case let .keyPath(keyPath):
-            return "\\.\(keyPath)"
         case let .typename(typename):
             return "\(typename).self"
         }

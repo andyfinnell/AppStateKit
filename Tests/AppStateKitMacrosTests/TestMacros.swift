@@ -19,5 +19,7 @@ let testMacros: [String: Macro.Type] = [
     "PassthroughOutput": PassthroughOutputMacro.self,
     "Subscribe": SubscribeMacro.self,
     "SubscribeToJSONStorage": SubscribeToJSONStorageMacro.self,
+    "ImmediateEffect": ImmediateEffectMacro.self,
+    "ExtendImmediateSideEffects": ExtendImmediateSideEffectsMacro.self,
 ]
 #endif
