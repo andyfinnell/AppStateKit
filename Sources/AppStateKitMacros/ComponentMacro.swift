@@ -16,16 +16,13 @@ public enum ComponentMacro: MemberMacro {
         }
                 
         let component = ComponentParser.parse(enumDecl)
-        let decls: [DeclSyntax?] = 
-        ComponentActionCodegen.codegen(from: component)
-        + ComponentOutputCodegen.codegen(from: component)
-        + [
-            ComponentSideEffectsCodegen.codegen(from: component),
-            ComponentReducerCodegen.codegen(from: component),
-            ComponentViewCodegen.codegen(from: component),
-        ] + ComponentChildViewCodegen.codegen(from: component)
         
-        return decls.compactMap { $0 }
+        return ComponentActionCodegen.codegen(from: component)
+        + ComponentOutputCodegen.codegen(from: component)
+        + ComponentSideEffectsCodegen.codegen(from: component)
+        + ComponentReducerCodegen.codegen(from: component)
+        + ComponentViewCodegen.codegen(from: component)
+        + ComponentChildViewCodegen.codegen(from: component)
     }
 }
 

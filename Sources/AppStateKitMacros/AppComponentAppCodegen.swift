@@ -2,7 +2,7 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 
 struct AppComponentAppCodegen {
-    static func codegen(from component: Component) -> DeclSyntax? {
+    static func codegen(from component: Component) -> [DeclSyntax] {
         let decl: DeclSyntax = """
             @MainActor
             struct MainApp: App {
@@ -18,6 +18,6 @@ struct AppComponentAppCodegen {
             }
             """
         
-        return decl
+        return [decl]
     }
 }

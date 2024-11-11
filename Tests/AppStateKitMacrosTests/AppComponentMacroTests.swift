@@ -68,9 +68,7 @@ final class AppComponentMacroTests: XCTestCase {
                 typealias SideEffects = AnySideEffects<Action, Output>
 
                 @MainActor
-                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
-                    switch action {
-                    case let .counters(innerAction):
+                private static func counters(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, action innerAction: CounterListComponent.Action) {
 
                     let innerSideEffects = sideEffects.map(Action.counters, translate: { (_: CounterListComponent.Output) -> Action? in
                         })
@@ -80,6 +78,13 @@ final class AppComponentMacroTests: XCTestCase {
                         sideEffects: innerSideEffects
                     )
 
+                }
+
+                @MainActor
+                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
+                    switch action {
+                    case let .counters(innerAction):
+                        counters(&state, sideEffects: sideEffects, action: innerAction)
                     }
                 }
 

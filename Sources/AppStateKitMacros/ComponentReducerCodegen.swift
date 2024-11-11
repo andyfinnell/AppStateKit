@@ -2,7 +2,7 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 
 struct ComponentReducerCodegen {
-    static func codegen(from component: Component) -> DeclSyntax? {
+    static func codegen(from component: Component) -> [DeclSyntax] {
         let cases = component.actions.map {
             generateReduceAction(
                 from: $0,
@@ -11,16 +11,24 @@ struct ComponentReducerCodegen {
             )
         }.joined(separator: "\n")
         
-        let reduceDecl = """
+        let funcs = component.actions.map {
+            generateReduceComposedActionMethod(
+                from: $0,
+                translateCompositionMethodNames: component.translateCompositionMethodNames,
+                component: component
+            )
+        }
+        
+        let reduceDecl: DeclSyntax = """
             @MainActor
             static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                 switch action {
-                \(cases)
+                \(raw: cases)
                 }
             }
             """
         
-        return DeclSyntax(stringLiteral: reduceDecl)
+        return (funcs + [reduceDecl]).compactMap { $0 }
     }
 }
 
@@ -36,6 +44,108 @@ private extension ComponentReducerCodegen {
         } else {
             return generateReduceLocalAction(from: action)
         }
+    }
+
+    static func generateReduceComposedActionMethod(
+        from action: Action,
+        translateCompositionMethodNames: [String: ComponentMethod],
+        component: Component
+    ) -> DeclSyntax? {
+        if let composition = action.composition {
+            return generateReduceComposedActionMethod(
+                from: action,
+                with: composition,
+                translateCompositionMethodNames: translateCompositionMethodNames,
+                component: component
+            )
+        } else {
+            return nil
+        }
+    }
+
+    static func generateReduceComposedActionMethod(
+        from action: Action,
+        with composition: Composition,
+        translateCompositionMethodNames: [String: ComponentMethod],
+        component: Component
+    ) -> DeclSyntax? {
+        let accessors = actionExtractionParameters(composition)
+        let caseParameters = generateActionMethodParameters(parameters: action.parameters, accessors: accessors)
+        let dereferenceGenerator = DereferenceGenerator(
+            keyName: "innerKey",
+            indexName: "innerIndex",
+            idName: "innerID",
+            stateName: "state"
+        )
+        let dereference = dereferenceGenerator.generate(for: composition)
+        let arrayBoundsCheck = generateBoundsCheck(for: dereference)
+        let (innerStateExtract, stateNeedsCopy) = dereferenceGenerator.generateStateExtraction(for: dereference)
+        let innerStateLet = stateNeedsCopy ? "var innerState = \(innerStateExtract)" : nil
+        let guardClauses = (
+            arrayBoundsCheck
+            + (innerStateLet.map { [$0] } ?? [])
+        ).joined(separator: ", ")
+        let guardStatement = guardClauses.isEmpty ? "" : "guard \(guardClauses) else {\n        return\n    }"
+        
+        let actionComposition = generateActionCompositionClosure(for: action, accessors: accessors)
+        let innerStateDeref = stateNeedsCopy ? "innerState" : innerStateExtract
+        let copyStateBack = stateNeedsCopy ? "\(innerStateExtract) = innerState\n" : ""
+        let childModule = childModuleName(composition)
+        
+        let translateMethod: String
+        if let method = translateCompositionMethodNames[childModule] {
+            translateMethod = generateOutputCompositionClosure(for: method, accessors: accessors)
+        } else if component.isOutputNever {
+            translateMethod = "{ (_: \(childModule).Output) -> Action? in }"
+        } else {
+            translateMethod = "{ (_: \(childModule).Output) in nil }"
+        }
+        
+        let definition: DeclSyntax = """
+            @MainActor
+            private static func \(raw: action.label)(_ state: inout State, sideEffects: AnySideEffects<Action, Output>\(raw: caseParameters)) {
+                \(raw: guardStatement)
+                let innerSideEffects = sideEffects.map(\(raw: actionComposition), translate: \(raw: translateMethod))
+                \(raw: childModule).reduce(
+                    &\(raw: innerStateDeref),
+                    action: innerAction,
+                    sideEffects: innerSideEffects
+                )
+                \(raw: copyStateBack)
+            }
+            """
+        
+        return definition
+    }
+
+    static func generateActionMethodParameters(parameters: [Parameter], accessors: [Accessor]) -> String {
+        let code = zip(parameters, accessors).map { parameter, accessor in
+            let valueName: String
+            let defaultLabel: String
+            switch accessor {
+            case .action:
+                valueName = "innerAction"
+                defaultLabel = "action"
+            case .index:
+                valueName = "innerIndex"
+                defaultLabel = "index"
+            case .key:
+                valueName = "innerKey"
+                defaultLabel = "key"
+            case .id:
+                valueName = "innerID"
+                defaultLabel = "id"
+            }
+            if let label = parameter.label {
+                return "\(label) \(valueName): \(parameter.type)"
+            } else {
+                return "\(defaultLabel) \(valueName): \(parameter.type)"
+            }
+        }.joined(separator: ", ")
+        if code.isEmpty {
+            return code
+        }
+        return ", " + code
     }
 
     enum Accessor {
@@ -178,6 +288,37 @@ private extension ComponentReducerCodegen {
         }.joined(separator: ", ")
     }
     
+    static func generateComposedArguments(parameters: [Parameter], accessors: [Accessor]) -> String {
+        let code = zip(parameters, accessors).map { parameter, accessor in
+            let valueName: String
+            let defaultLabel: String
+            switch accessor {
+            case .action:
+                valueName = "innerAction"
+                defaultLabel = "action"
+            case .index:
+                valueName = "innerIndex"
+                defaultLabel = "index"
+            case .key:
+                valueName = "innerKey"
+                defaultLabel = "key"
+            case .id:
+                valueName = "innerID"
+                defaultLabel = "id"
+            }
+            if let label = parameter.label {
+                return "\(label): \(valueName)"
+            } else {
+                return "\(defaultLabel): \(valueName)"
+            }
+        }.joined(separator: ", ")
+        if code.isEmpty {
+            return code
+        } else {
+            return ", " + code
+        }
+    }
+
     static func generateReduceComposedAction(
         from action: Action,
         with composition: Composition,
@@ -186,46 +327,11 @@ private extension ComponentReducerCodegen {
     ) -> String {
         let accessors = actionExtractionParameters(composition)
         let caseParameters = generateCaseClauseParameters(parameters: action.parameters, accessors: accessors)
-        let dereferenceGenerator = DereferenceGenerator(
-            keyName: "innerKey",
-            indexName: "innerIndex",
-            idName: "innerID",
-            stateName: "state"
-        )
-        let dereference = dereferenceGenerator.generate(for: composition)
-        let arrayBoundsCheck = generateBoundsCheck(for: dereference)
-        let (innerStateExtract, stateNeedsCopy) = dereferenceGenerator.generateStateExtraction(for: dereference)
-        let innerStateLet = stateNeedsCopy ? "var innerState = \(innerStateExtract)" : nil
-        let guardClauses = (
-            arrayBoundsCheck
-            + (innerStateLet.map { [$0] } ?? [])
-        ).joined(separator: ", ")
-        let guardStatement = guardClauses.isEmpty ? "" : "guard \(guardClauses) else {\n        return\n    }"
-        
-        let actionComposition = generateActionCompositionClosure(for: action, accessors: accessors)
-        let innerStateDeref = stateNeedsCopy ? "innerState" : innerStateExtract
-        let copyStateBack = stateNeedsCopy ? "\(innerStateExtract) = innerState\n" : ""
-        let childModule = childModuleName(composition)
-        
-        let translateMethod: String
-        if let method = translateCompositionMethodNames[childModule] {
-            translateMethod = generateOutputCompositionClosure(for: method, accessors: accessors)
-        } else if component.isOutputNever {
-            translateMethod = "{ (_: \(childModule).Output) -> Action? in }"
-        } else {
-            translateMethod = "{ (_: \(childModule).Output) in nil }"
-        }
-        
+        let arguments = generateComposedArguments(parameters: action.parameters, accessors: accessors)
+                
         let definition = """
             case let .\(action.label)(\(caseParameters)):
-                \(guardStatement)
-                let innerSideEffects = sideEffects.map(\(actionComposition), translate: \(translateMethod))
-                \(childModule).reduce(
-                    &\(innerStateDeref),
-                    action: innerAction,
-                    sideEffects: innerSideEffects
-                )
-                \(copyStateBack)
+                    \(action.label)(&state, sideEffects: sideEffects\(arguments))
             """
         
         return definition

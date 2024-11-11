@@ -648,21 +648,26 @@ final class ComponentMacroTests: XCTestCase {
                 typealias SideEffects = AnySideEffects<Action, Output>
 
                 @MainActor
+                private static func child(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, action innerAction: ChildFeature.Action) {
+
+                    let innerSideEffects = sideEffects.map(Action.child, translate: { (_: ChildFeature.Output) -> Action? in
+                        })
+                    ChildFeature.reduce(
+                        &state.child,
+                        action: innerAction,
+                        sideEffects: innerSideEffects
+                    )
+
+                }
+
+                @MainActor
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case let .updateName(newName: newName):
                         updateName(&state, sideEffects: sideEffects, newName: newName)
-            
+
                     case let .child(innerAction):
-            
-                        let innerSideEffects = sideEffects.map(Action.child, translate: { (_: ChildFeature.Output) -> Action? in
-                        })
-                        ChildFeature.reduce(
-                            &state.child,
-                            action: innerAction,
-                            sideEffects: innerSideEffects
-                        )
-            
+                            child(&state, sideEffects: sideEffects, action: innerAction)
                     }
                 }
             
@@ -759,26 +764,31 @@ final class ComponentMacroTests: XCTestCase {
                 typealias SideEffects = AnySideEffects<Action, Output>
 
                 @MainActor
+                private static func children(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, action innerAction: ChildFeature.Action, index innerIndex: Int) {
+                    guard innerIndex >= state.children.startIndex, innerIndex < state.children.endIndex else {
+                        return
+                    }
+                    let innerSideEffects = sideEffects.map({
+                        Action.children($0, index: innerIndex)
+                    }
+                        , translate: { (_: ChildFeature.Output) -> Action? in
+                        })
+                    ChildFeature.reduce(
+                        &state.children[innerIndex],
+                        action: innerAction,
+                        sideEffects: innerSideEffects
+                    )
+
+                }
+
+                @MainActor
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case let .updateName(newName: newName):
                         updateName(&state, sideEffects: sideEffects, newName: newName)
-            
+
                     case let .children(innerAction, index: innerIndex):
-                        guard innerIndex >= state.children.startIndex, innerIndex < state.children.endIndex else {
-                            return
-                        }
-                        let innerSideEffects = sideEffects.map({
-                            Action.children($0, index: innerIndex)
-                        }
-                        , translate: { (_: ChildFeature.Output) -> Action? in
-                        })
-                        ChildFeature.reduce(
-                            &state.children[innerIndex],
-                            action: innerAction,
-                            sideEffects: innerSideEffects
-                        )
-            
+                            children(&state, sideEffects: sideEffects, action: innerAction, index: innerIndex)
                     }
                 }
             
@@ -877,27 +887,32 @@ final class ComponentMacroTests: XCTestCase {
                 typealias SideEffects = AnySideEffects<Action, Output>
 
                 @MainActor
+                private static func children(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, action innerAction: ChildFeature.Action, key innerKey: String) {
+                    guard var innerState = state.children[innerKey] else {
+                        return
+                    }
+                    let innerSideEffects = sideEffects.map({
+                        Action.children($0, key: innerKey)
+                    }
+                        , translate: { (_: ChildFeature.Output) -> Action? in
+                        })
+                    ChildFeature.reduce(
+                        &innerState,
+                        action: innerAction,
+                        sideEffects: innerSideEffects
+                    )
+                    state.children[innerKey] = innerState
+
+                }
+
+                @MainActor
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case let .updateName(newName: newName):
                         updateName(&state, sideEffects: sideEffects, newName: newName)
-            
+
                     case let .children(innerAction, key: innerKey):
-                        guard var innerState = state.children[innerKey] else {
-                            return
-                        }
-                        let innerSideEffects = sideEffects.map({
-                            Action.children($0, key: innerKey)
-                        }
-                        , translate: { (_: ChildFeature.Output) -> Action? in
-                        })
-                        ChildFeature.reduce(
-                            &innerState,
-                            action: innerAction,
-                            sideEffects: innerSideEffects
-                        )
-                        state.children[innerKey] = innerState
-            
+                            children(&state, sideEffects: sideEffects, action: innerAction, key: innerKey)
                     }
                 }
             
@@ -998,27 +1013,32 @@ final class ComponentMacroTests: XCTestCase {
                 typealias SideEffects = AnySideEffects<Action, Output>
 
                 @MainActor
+                private static func children(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, action innerAction: ChildFeature.Action, id innerID: ChildFeature.State.ID) {
+                    guard var innerState = state.children[byID: innerID] else {
+                        return
+                    }
+                    let innerSideEffects = sideEffects.map({
+                        Action.children($0, id: innerID)
+                    }
+                        , translate: { (_: ChildFeature.Output) -> Action? in
+                        })
+                    ChildFeature.reduce(
+                        &innerState,
+                        action: innerAction,
+                        sideEffects: innerSideEffects
+                    )
+                    state.children[byID: innerID] = innerState
+
+                }
+
+                @MainActor
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case let .updateName(newName: newName):
                         updateName(&state, sideEffects: sideEffects, newName: newName)
-            
+
                     case let .children(innerAction, id: innerID):
-                        guard var innerState = state.children[byID: innerID] else {
-                            return
-                        }
-                        let innerSideEffects = sideEffects.map({
-                            Action.children($0, id: innerID)
-                        }
-                        , translate: { (_: ChildFeature.Output) -> Action? in
-                        })
-                        ChildFeature.reduce(
-                            &innerState,
-                            action: innerAction,
-                            sideEffects: innerSideEffects
-                        )
-                        state.children[byID: innerID] = innerState
-            
+                            children(&state, sideEffects: sideEffects, action: innerAction, id: innerID)
                     }
                 }
             
@@ -1115,24 +1135,29 @@ final class ComponentMacroTests: XCTestCase {
                 typealias SideEffects = AnySideEffects<Action, Output>
 
                 @MainActor
+                private static func child(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, action innerAction: ChildFeature.Action) {
+                    guard var innerState = state.child else {
+                        return
+                    }
+                    let innerSideEffects = sideEffects.map(Action.child, translate: { (_: ChildFeature.Output) -> Action? in
+                        })
+                    ChildFeature.reduce(
+                        &innerState,
+                        action: innerAction,
+                        sideEffects: innerSideEffects
+                    )
+                    state.child = innerState
+
+                }
+
+                @MainActor
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case let .updateName(newName: newName):
                         updateName(&state, sideEffects: sideEffects, newName: newName)
-            
+
                     case let .child(innerAction):
-                        guard var innerState = state.child else {
-                            return
-                        }
-                        let innerSideEffects = sideEffects.map(Action.child, translate: { (_: ChildFeature.Output) -> Action? in
-                        })
-                        ChildFeature.reduce(
-                            &innerState,
-                            action: innerAction,
-                            sideEffects: innerSideEffects
-                        )
-                        state.child = innerState
-            
+                            child(&state, sideEffects: sideEffects, action: innerAction)
                     }
                 }
             
@@ -1235,20 +1260,25 @@ final class ComponentMacroTests: XCTestCase {
                 typealias SideEffects = AnySideEffects<Action, Output>
 
                 @MainActor
+                private static func child(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, action innerAction: ChildFeature.Action) {
+
+                    let innerSideEffects = sideEffects.map(Action.child, translate: translateChild)
+                    ChildFeature.reduce(
+                        &state.child,
+                        action: innerAction,
+                        sideEffects: innerSideEffects
+                    )
+
+                }
+
+                @MainActor
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case let .updateName(newName: newName):
                         updateName(&state, sideEffects: sideEffects, newName: newName)
-            
+
                     case let .child(innerAction):
-            
-                        let innerSideEffects = sideEffects.map(Action.child, translate: translateChild)
-                        ChildFeature.reduce(
-                            &state.child,
-                            action: innerAction,
-                            sideEffects: innerSideEffects
-                        )
-            
+                            child(&state, sideEffects: sideEffects, action: innerAction)
                     }
                 }
             
@@ -1348,22 +1378,27 @@ final class ComponentMacroTests: XCTestCase {
                 typealias SideEffects = AnySideEffects<Action, Output>
 
                 @MainActor
+                private static func child(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, action innerAction: ChildFeature.Action) {
+
+                    let innerSideEffects = sideEffects.map(Action.child, translate: { (_: ChildFeature.Output) in
+                            nil
+                        })
+                    ChildFeature.reduce(
+                        &state.child,
+                        action: innerAction,
+                        sideEffects: innerSideEffects
+                    )
+
+                }
+
+                @MainActor
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case let .updateName(newName: newName):
                         updateName(&state, sideEffects: sideEffects, newName: newName)
-            
+
                     case let .child(innerAction):
-            
-                        let innerSideEffects = sideEffects.map(Action.child, translate: { (_: ChildFeature.Output) in
-                            nil
-                        })
-                        ChildFeature.reduce(
-                            &state.child,
-                            action: innerAction,
-                            sideEffects: innerSideEffects
-                        )
-            
+                            child(&state, sideEffects: sideEffects, action: innerAction)
                     }
                 }
             
@@ -1468,20 +1503,25 @@ final class ComponentMacroTests: XCTestCase {
                 typealias SideEffects = AnySideEffects<Action, Output>
 
                 @MainActor
+                private static func child(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, action innerAction: ChildFeature.Action) {
+
+                    let innerSideEffects = sideEffects.map(Action.child, translate: translateChildOutputToAction)
+                    ChildFeature.reduce(
+                        &state.child,
+                        action: innerAction,
+                        sideEffects: innerSideEffects
+                    )
+
+                }
+
+                @MainActor
                 static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
                     switch action {
                     case let .updateName(p0):
                         updateName(&state, sideEffects: sideEffects, p0)
 
                     case let .child(innerAction):
-
-                        let innerSideEffects = sideEffects.map(Action.child, translate: translateChildOutputToAction)
-                        ChildFeature.reduce(
-                            &state.child,
-                            action: innerAction,
-                            sideEffects: innerSideEffects
-                        )
-
+                            child(&state, sideEffects: sideEffects, action: innerAction)
                     case let .passthroughChildOutput(p0):
                         passthroughChildOutput(&state, sideEffects: sideEffects, p0)
 

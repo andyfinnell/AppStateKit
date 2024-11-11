@@ -2,7 +2,7 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 
 struct ComponentViewCodegen {
-    static func codegen(from component: Component) -> DeclSyntax? {
+    static func codegen(from component: Component) -> [DeclSyntax] {
         let hasComponentInit = !component.subscriptions.isEmpty
         let componentInitCall = hasComponentInit ? "\n            .task { engine.send(.componentInit) }\n" : ""
         let decl: DeclSyntax = """
@@ -16,6 +16,6 @@ struct ComponentViewCodegen {
             }
             """
         
-        return decl
+        return [decl]
     }
 }
