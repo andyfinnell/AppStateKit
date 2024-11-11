@@ -35,11 +35,43 @@ private extension EffectDependableCodegen {
         }
         if !effect.parameters.isEmpty {
             typename += ", "
-            typename += effect.parameters.map { "\($0.type)" }
+            typename += effect.parameters.map { "\(stripTypeAttributes(from: $0.type))" }
                 .joined(separator: ", ")
         }
         typename += ">"
         return typename
+    }
+    
+    static func stripTypeAttributes(from type: TypeSyntax) -> TypeSyntax {
+        guard let attributedType = type.as(AttributedTypeSyntax.self) else {
+            return type
+        }
+        
+        let remainingAttributes = attributedType.attributes.filter {
+            if case let .attribute(attribute) = $0,
+               let identifier = attribute.attributeName.as(IdentifierTypeSyntax.self) {
+                return identifier.name.text == "Sendable"
+            } else {
+                return false
+            }
+        }
+        
+        let remainingAttributeList: AttributeListSyntax = remainingAttributes
+        let specifiers: TypeSpecifierListSyntax = []
+         
+        let newAttributedType = AttributedTypeSyntax(
+            leadingTrivia: attributedType.leadingTrivia,
+            attributedType.unexpectedBeforeSpecifiers,
+            specifiers: specifiers,
+            attributedType.unexpectedBetweenSpecifiersAndAttributes,
+            attributes: remainingAttributeList,
+            attributedType.unexpectedBetweenAttributesAndBaseType,
+            baseType: attributedType.baseType,
+            attributedType.unexpectedAfterBaseType,
+            trailingTrivia: attributedType.trailingTrivia
+        )
+        
+        return TypeSyntax(newAttributedType)
     }
     
     static func generateClosureParameters(from effect: Effect) -> String {

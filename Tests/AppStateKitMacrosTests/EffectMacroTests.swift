@@ -149,4 +149,77 @@ final class EffectMacroTests: XCTestCase {
         throw XCTSkip("macros are only supported when running tests for the host platform")
 #endif
     }
+
+    func testEscapingEffectParameter() throws {
+#if canImport(AppStateKitMacros)
+        assertMacroExpansion(
+            """
+            @Effect
+            enum FilterEffect {
+               static func perform(dependencies: DependencyScope, including predicate: @escaping (String) -> Bool) async -> Int {
+                    models.filter { predicate($0.name) }.count
+               }
+            }
+            """,
+            expandedSource: """
+            
+            enum FilterEffect {
+               static func perform(dependencies: DependencyScope, including predicate: @escaping (String) -> Bool) async -> Int {
+                    models.filter { predicate($0.name) }.count
+               }
+            }
+
+            extension FilterEffect: Dependable {
+                static func makeDefault(with dependencies: DependencyScope) -> Effect<Int , Never, (String) -> Bool> {
+                    Effect { predicate in
+                        return await Result<Int , Never>.success(perform(dependencies: dependencies, including: predicate))
+                    }
+                }
+            }
+            """,
+            macros: testMacros
+        )
+#else
+        throw XCTSkip("macros are only supported when running tests for the host platform")
+#endif
+    }
+
+    func testExtendSideEffectsWithEscapingParameter() throws {
+#if canImport(AppStateKitMacros)
+        assertMacroExpansion(
+            """
+            @ExtendSideEffects(with: FilterEffect, (including: @escaping (String) -> Bool) async -> Int)
+            extension AnySideEffects {
+            
+            }
+            """,
+            expandedSource: """
+            
+            extension AnySideEffects {
+            
+                func filter(
+                    including p0: @escaping (String) -> Bool,
+                    transform: @Sendable @escaping (Int) async -> Action
+                ) {
+                    perform(FilterEffect.self, with: p0, transform: transform)
+                }
+
+                func subscribeToFilter(
+                    including p0: @escaping (String) -> Bool,
+                    transform: @Sendable @escaping (Int, (Action) async -> Void) async throws -> Void
+                ) -> SubscriptionID {
+                    subscribe(FilterEffect.self, with: p0, transform: transform)
+                }
+
+            }
+            
+            """,
+            macros: testMacros
+        )
+#else
+        throw XCTSkip("macros are only supported when running tests for the host platform")
+#endif
+    }
+
+    // TODO: test passing a closure with escaping through as a parameter to an effect
 }
