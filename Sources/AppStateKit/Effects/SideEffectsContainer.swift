@@ -47,16 +47,11 @@ final class SideEffectsContainer<Action: Sendable> {
         }
     }
     
-    func apply(using send: @Sendable @MainActor @escaping (Action) async -> Void) {
-        let futures = self.futures
-        Task.detached {
-            await withTaskGroup(of: Void.self) { taskGroup in
-                for future in futures {
-                    taskGroup.addTask {
-                        let action = await future.call()
-                        await send(action)
-                    }
-                }
+    func apply(using send: @Sendable @MainActor @escaping (Action) async -> Void) -> [Block] {
+        futures.map { future in
+            { @Sendable () async -> Void in
+                let action = await future.call()
+                await send(action)
             }
         }
     }

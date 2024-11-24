@@ -1,3 +1,8 @@
+import Foundation
+import BaseKit
+
+typealias Block = @Sendable () async -> Void
+
 @MainActor
 final class ActionProcessor<State, Action: Sendable, Output> {
     private var actions = [Action]()
@@ -5,15 +10,37 @@ final class ActionProcessor<State, Action: Sendable, Output> {
     private var isProcessing = false
     private let reduce: (inout State, Action, AnySideEffects<Action, Output>) -> Void
     private let dependencies: DependencyScope
-
+    private let continuation: AsyncStream<[Block]>.Continuation
+    private let executionTask: Task<Void, Never>
+    
     init(
         dependencies: DependencyScope,
         reduce: @escaping (inout State, Action, AnySideEffects<Action, Output>) -> Void
     ) {
         self.dependencies = dependencies
         self.reduce = reduce
+        
+        let (stream, continuation) = AsyncStream.makeStream(of: [Block].self)
+        self.continuation = continuation
+        
+        executionTask = Task.detached { [stream] in
+            do {
+                for await blocks in stream {
+                    await executeBlocks(blocks)
+                    try Task.checkCancellation()
+                }
+                try Task.checkCancellation()
+            } catch {
+                // something cancelled
+            }
+        }
     }
     
+    deinit {
+        continuation.finish()
+        executionTask.cancel()
+    }
+        
     var internals: Internals {
         Internals(dependencyScope: dependencies)
     }
@@ -58,8 +85,9 @@ private extension ActionProcessor {
         sideEffects.applyImmediateEffects(using: sendThunk)
         
         // Perform effects
-        sideEffects.apply(using: sendThunk)
-        
+        let blocks = sideEffects.apply(using: sendThunk)
+        continuation.yield(blocks)
+
         // Start subscriptions
         sideEffects.startSubscriptions(
             using: sendThunk,
@@ -84,5 +112,15 @@ private extension ActionProcessor {
         
         // recurse
         processNextActionIfPossible(on: getState, setState, using: sendThunk, signalThunk)
+    }
+}
+
+private nonisolated func executeBlocks(_ blocks: [Block]) async {
+    await withDiscardingTaskGroup(returning: Void.self) { taskGroup in
+        for block in blocks {
+            taskGroup.addTask {
+                await block()
+            }
+        }
     }
 }

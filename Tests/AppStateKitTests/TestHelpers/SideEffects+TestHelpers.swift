@@ -5,12 +5,11 @@ import XCTest
 @MainActor
 func testMaterializeEffects<Action: Hashable>(_ sideEffects: SideEffectsContainer<Action>) async -> Set<Action> {
     let actions = AsyncSet<Action>(sideEffects.immediateFutures.map { $0.call() })
-    let futures = sideEffects.futures
+    let blocks = sideEffects.apply(using: { await actions.insert($0) })
     await withTaskGroup(of: Void.self) { taskGroup in
-        for future in futures {
+        for block in blocks {
             taskGroup.addTask {
-                let action = await future.call()
-                await actions.insert(action)
+                await block()
             }
         }
     }
