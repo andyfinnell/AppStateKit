@@ -1,7 +1,7 @@
 import Foundation
 
 @MainActor
-public final class ScopeEngine<State, Action: Sendable, Output>: Engine {
+public final class DetachedEngine<State, Action: Sendable, Output>: Engine {
     private let isEqual: (State, State) -> Bool
     private let processor: ActionProcessor<State, Action, Output>
     private let _statePublisher = MainPublisher<State>()
@@ -61,7 +61,7 @@ public final class ScopeEngine<State, Action: Sendable, Output>: Engine {
     }
 }
 
-private extension ScopeEngine {
+private extension DetachedEngine {
     func getState() -> State {
         state
     }
@@ -76,14 +76,14 @@ private extension ScopeEngine {
 }
 
 extension Engine {
-    public func scope<C: Component>(
+    public func detach<C: Component>(
         component: C.Type,
         initialState: (State) -> C.State,
         actionToUpdateState: @escaping (State) -> C.Action?,
         translate: @escaping (C.Output) -> Action?,
         inject: (DependencyScope) -> Void
-    ) -> ScopeEngine<C.State, C.Action, C.Output> {
-        ScopeEngine<C.State, C.Action, C.Output>(
+    ) -> DetachedEngine<C.State, C.Action, C.Output> {
+        DetachedEngine<C.State, C.Action, C.Output>(
             engine: self,
             initialState: initialState,
             state: actionToUpdateState,
@@ -94,14 +94,14 @@ extension Engine {
         )
     }
     
-    public func scope<C: Component>(
+    public func detach<C: Component>(
         component: C.Type,
         initialState: (State) -> C.State,
         actionToUpdateState: @escaping (State) -> C.Action?,
         translate: @escaping (C.Output) -> Action?,
         inject: (DependencyScope) -> Void
-    ) -> ScopeEngine<C.State, C.Action, C.Output> where C.State: Equatable {
-        ScopeEngine<C.State, C.Action, C.Output>(
+    ) -> DetachedEngine<C.State, C.Action, C.Output> where C.State: Equatable {
+        DetachedEngine<C.State, C.Action, C.Output>(
             engine: self,
             initialState: initialState,
             state: actionToUpdateState,
@@ -112,13 +112,13 @@ extension Engine {
         )
     }
 
-    public func scope<C: Component>(
+    public func detach<C: Component>(
         component: C.Type,
         initialState: (State) -> C.State,
         actionToUpdateState: @escaping (State) -> C.Action?,
         inject: (DependencyScope) -> Void
-    ) -> ScopeEngine<C.State, C.Action, Never> where C.Output == Never {
-        ScopeEngine<C.State, C.Action, Never>(
+    ) -> DetachedEngine<C.State, C.Action, Never> where C.Output == Never {
+        DetachedEngine<C.State, C.Action, Never>(
             engine: self,
             initialState: initialState,
             state: actionToUpdateState,
@@ -129,13 +129,13 @@ extension Engine {
         )
     }
     
-    public func scope<C: Component>(
+    public func detach<C: Component>(
         component: C.Type,
         initialState: (State) -> C.State,
         actionToUpdateState: @escaping (State) -> C.Action?,
         inject: (DependencyScope) -> Void
-    ) -> ScopeEngine<C.State, C.Action, Never> where C.State: Equatable, C.Output == Never  {
-        ScopeEngine<C.State, C.Action, Never>(
+    ) -> DetachedEngine<C.State, C.Action, Never> where C.State: Equatable, C.Output == Never  {
+        DetachedEngine<C.State, C.Action, Never>(
             engine: self,
             initialState: initialState,
             state: actionToUpdateState,

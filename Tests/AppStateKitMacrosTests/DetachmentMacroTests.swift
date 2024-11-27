@@ -69,7 +69,7 @@ final class DetachmentMacroTests: XCTestCase {
                         inject: @escaping (DependencyScope) -> Void
                     ) -> Subfeature.EngineView where E.State == State, E.Action == Action, E.Output == Output {
                          Subfeature.EngineView(
-                             engine: engine.scope(
+                             engine: engine.detach(
                                  component: Subfeature.self,
                                  initialState: initialState,
                                  actionToUpdateState: actionToUpdateState,
@@ -215,7 +215,7 @@ final class DetachmentMacroTests: XCTestCase {
                         inject: @escaping (DependencyScope) -> Void
                     ) -> Subfeature.EngineView where E.State == State, E.Action == Action, E.Output == Output {
                          Subfeature.EngineView(
-                             engine: engine.scope(
+                             engine: engine.detach(
                                  component: Subfeature.self,
                                  initialState: initialState,
                                  actionToUpdateState: actionToUpdateState,
@@ -361,7 +361,7 @@ final class DetachmentMacroTests: XCTestCase {
                         inject: @escaping (DependencyScope) -> Void
                     ) -> Subfeature.EngineView where E.State == State, E.Action == Action, E.Output == Output {
                          Subfeature.EngineView(
-                             engine: engine.scope(
+                             engine: engine.detach(
                                  component: Subfeature.self,
                                  initialState: initialState,
                                  actionToUpdateState: actionToUpdateState,

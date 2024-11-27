@@ -112,13 +112,13 @@ final class ScopeEngineTests: XCTestCase {
     }
 
     private var parentEngine: FakeEngine<ParentComponent.State, ParentComponent.Action, ParentComponent.Output>!
-    private var subject: ScopeEngine<TestComponent.State, TestComponent.Action, TestComponent.Output>!
+    private var subject: DetachedEngine<TestComponent.State, TestComponent.Action, TestComponent.Output>!
     
     override func setUp() async throws {
         try await super.setUp()
     
         parentEngine = await FakeEngine(state: ParentComponent.State(count: 0, isFinished: false))
-        subject = await parentEngine.scope(
+        subject = await parentEngine.detach(
             component: TestComponent.self,
             initialState: ParentComponent.Test.initialState,
             actionToUpdateState: ParentComponent.Test.actionToUpdateState,

@@ -27,7 +27,7 @@ struct DetachmentCodegen {
                 inject: @escaping (DependencyScope) -> Void
             ) -> \(raw: detachment.componentName).EngineView where E.State == State, E.Action == Action, E.Output == Output {
                  \(raw: detachment.componentName).EngineView(
-                     engine: engine.scope(
+                     engine: engine.detach(
                          component: \(raw: detachment.componentName).self,
                          initialState: initialState,
                          actionToUpdateState: actionToUpdateState,
