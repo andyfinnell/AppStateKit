@@ -32,6 +32,7 @@ struct DetachmentCodegen {
                          initialState: initialState,
                          actionToUpdateState: actionToUpdateState,
                          translate: self.\(raw: translateMethodName),
+                         detachment: \(raw: detachment.name).self,
                          inject: inject
                      ).view()
                  )

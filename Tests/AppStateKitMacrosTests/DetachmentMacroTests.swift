@@ -74,6 +74,7 @@ final class DetachmentMacroTests: XCTestCase {
                                  initialState: initialState,
                                  actionToUpdateState: actionToUpdateState,
                                  translate: self.translate,
+                                 detachment: Subfeature.self,
                                  inject: inject
                              ).view()
                          )
@@ -138,6 +139,10 @@ final class DetachmentMacroTests: XCTestCase {
                 ) -> some View {
                     Subfeature.view(engine, inject: inject)
                 }
+            }
+            
+            extension Subfeature: Detachment {
+                typealias DetachedAction = Subfeature.Action
             }
             
             extension MyFeature: Component, BaseComponent {
@@ -220,6 +225,7 @@ final class DetachmentMacroTests: XCTestCase {
                                  initialState: initialState,
                                  actionToUpdateState: actionToUpdateState,
                                  translate: self.translate,
+                                 detachment: Subfeature.self,
                                  inject: inject
                              ).view()
                          )
@@ -284,6 +290,10 @@ final class DetachmentMacroTests: XCTestCase {
                 ) -> some View {
                     Subfeature.view(engine, inject: inject)
                 }
+            }
+            
+            extension Subfeature: Detachment {
+                typealias DetachedAction = Subfeature.Action
             }
             
             extension MyFeature: Component, BaseComponent {
@@ -366,6 +376,7 @@ final class DetachmentMacroTests: XCTestCase {
                                  initialState: initialState,
                                  actionToUpdateState: actionToUpdateState,
                                  translate: self.translateFromSubfeature,
+                                 detachment: Subfeature.self,
                                  inject: inject
                              ).view()
                          )
@@ -430,6 +441,10 @@ final class DetachmentMacroTests: XCTestCase {
                 ) -> some View {
                     Subfeature.view(engine, inject: inject)
                 }
+            }
+            
+            extension Subfeature: Detachment {
+                typealias DetachedAction = Subfeature.Action
             }
             
             extension MyFeature: Component, BaseComponent {

@@ -6,7 +6,7 @@ public final class MapEngine<State, Action: Sendable, Output>: Engine {
     private let stateThunk: () -> State
     private let internalsThunk: () -> Internals
     private let signalThunk: @MainActor (Output) -> Void
-
+    private let detachmentContainer: any DetachmentContainer
     public var state: State { stateThunk() }
     public let statePublisher: any Publisher<State>
     public var internals: Internals { internalsThunk() }
@@ -37,6 +37,7 @@ public final class MapEngine<State, Action: Sendable, Output>: Engine {
         internalsThunk = {
             engine.internals
         }
+        detachmentContainer = engine
     }
     
     public func send(_ action: Action) {
@@ -45,6 +46,10 @@ public final class MapEngine<State, Action: Sendable, Output>: Engine {
     
     public func signal(_ output: Output) {
         signalThunk(output)
+    }
+    
+    public func attach<D: Detachment>(_ sender: some ActionSender<D.DetachedAction>, at key: D.Type) {
+        detachmentContainer.attach(sender, at: key)
     }
 }
 

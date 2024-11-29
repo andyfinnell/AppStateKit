@@ -3,7 +3,7 @@ import XCTest
 @testable import AppStateKit
 import SwiftUI
 
-final class ScopeEngineTests: XCTestCase {
+final class DetachedEngineTests: XCTestCase {
     @Component
     enum ParentComponent {
         struct State: Equatable {
@@ -19,10 +19,14 @@ final class ScopeEngineTests: XCTestCase {
             state.isFinished = true
         }
         
+        private static func quack(_ state: inout State, sideEffects: SideEffects) {
+            sideEffects.schedule(.quack, for: Test.self)
+        }
+        
         @Detachment
         enum Test {
-            static func initialState(_ state: State) -> TestComponent.State {
-                TestComponent.State(count: state.count, value: "idle", lastTick: 0)
+            static func initialState(_ state: State) -> DetachedEngineTests.TestComponent.State {
+                TestComponent.State(count: state.count, value: "idle", lastTick: 0, didQuack: false)
             }
             
             static func actionToUpdateState(from state: State) -> TestComponent.Action? {
@@ -52,18 +56,24 @@ final class ScopeEngineTests: XCTestCase {
             var count: Int
             var value: String
             var lastTick: TimeInterval
+            var didQuack: Bool
             var timerID: SubscriptionID?
             
             static func ==(lhs: State, rhs: State) -> Bool {
                 lhs.count == rhs.count
                 && lhs.value == rhs.value
                 && lhs.lastTick == rhs.lastTick
+                && lhs.didQuack == rhs.didQuack
                 && (lhs.timerID != nil) == (rhs.timerID != nil)
             }
         }
         
         enum Output: Hashable {
             case markFinished
+        }
+        
+        private static func quack(_ state: inout State, sideEffects: SideEffects) {
+            state.didQuack = true
         }
         
         private static func updateCount(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, _ count: Int) {
@@ -123,6 +133,7 @@ final class ScopeEngineTests: XCTestCase {
             initialState: ParentComponent.Test.initialState,
             actionToUpdateState: ParentComponent.Test.actionToUpdateState,
             translate: ParentComponent.Test.translate,
+            detachment: ParentComponent.Test.self,
             inject: { _ in  }
         )
     }
@@ -143,8 +154,8 @@ final class ScopeEngineTests: XCTestCase {
         await fulfillment(of: [finishExpectation], timeout: 1.0)
         
         let expected = [
-            TestComponent.State(count: 0, value: "loading", lastTick: 0),
-            TestComponent.State(count: 0, value: "loaded index 0", lastTick: 0)
+            TestComponent.State(count: 0, value: "loading", lastTick: 0, didQuack: false),
+            TestComponent.State(count: 0, value: "loaded index 0", lastTick: 0, didQuack: false)
         ]
         XCTAssertEqual(history, expected)
         
@@ -168,9 +179,9 @@ final class ScopeEngineTests: XCTestCase {
         
         let subID = SubscriptionID()
         let expected = [
-            TestComponent.State(count: 0, value: "idle", lastTick: 0, timerID: subID),
-            TestComponent.State(count: 0, value: "idle", lastTick: 1.5, timerID: subID),
-            TestComponent.State(count: 0, value: "idle", lastTick: 3, timerID: subID),
+            TestComponent.State(count: 0, value: "idle", lastTick: 0, didQuack: false, timerID: subID),
+            TestComponent.State(count: 0, value: "idle", lastTick: 1.5, didQuack: false, timerID: subID),
+            TestComponent.State(count: 0, value: "idle", lastTick: 3, didQuack: false, timerID: subID),
         ]
         XCTAssertEqual(history, expected)
         
@@ -246,11 +257,46 @@ final class ScopeEngineTests: XCTestCase {
         waitForExpectations(timeout: 1, handler: nil)
         
         let expected = [
-            TestComponent.State(count: 2, value: "idle", lastTick: 0, timerID: nil),
+            TestComponent.State(count: 2, value: "idle", lastTick: 0, didQuack: false, timerID: nil),
         ]
         XCTAssertEqual(history, expected)
         
         _ = sink
     }
 
+    @MainActor
+    func testParentPassdown() {
+        let parentEngine = MainEngine(
+            dependencies: DependencyScope(),
+            state: ParentComponent.State(count: 0, isFinished: false),
+            component: ParentComponent.self
+        )
+        let subject = parentEngine.detach(
+            component: TestComponent.self,
+            initialState: ParentComponent.Test.initialState,
+            actionToUpdateState: ParentComponent.Test.actionToUpdateState,
+            translate: ParentComponent.Test.translate,
+            detachment: ParentComponent.Test.self,
+            inject: { _ in  }
+        )
+
+        var history = [TestComponent.State]()
+        let finishExpectation = expectation(description: "finish")
+        let sink = subject.statePublisher.sink { newState in
+            history.append(newState)
+            
+            finishExpectation.fulfill()
+        }
+        
+        parentEngine.send(.quack)
+        
+        waitForExpectations(timeout: 1, handler: nil)
+        
+        let expected = [
+            TestComponent.State(count: 0, value: "idle", lastTick: 0, didQuack: true, timerID: nil),
+        ]
+        XCTAssertEqual(history, expected)
+        
+        _ = sink
+    }
 }

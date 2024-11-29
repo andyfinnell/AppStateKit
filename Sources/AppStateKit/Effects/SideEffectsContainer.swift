@@ -5,17 +5,21 @@ final class SideEffectsContainer<Action: Sendable> {
     private(set) var immediateFutures: [FutureImmediateEffect<Action>]
     private(set) var subscriptions: [FutureSubscription<Action>]
     private(set) var cancellations: Set<SubscriptionID>
+    private(set) var detachedActions: [FutureDetachedAction]
     
     init(dependencyScope: DependencyScope,
          futures: [FutureEffect<Action>] = [],
          immediateFutures: [FutureImmediateEffect<Action>] = [],
          subscriptions: [FutureSubscription<Action>] = [],
-         cancellations: Set<SubscriptionID> = Set()) {
+         cancellations: Set<SubscriptionID> = Set(),
+         detachedActions: [FutureDetachedAction] = []
+    ) {
         self.dependencyScope = dependencyScope
         self.futures = futures
         self.immediateFutures = immediateFutures
         self.subscriptions = subscriptions
         self.cancellations = cancellations
+        self.detachedActions = detachedActions
     }
         
     func eraseToAnySideEffects<ToOutput>(
@@ -36,6 +40,9 @@ final class SideEffectsContainer<Action: Sendable> {
             cancel: { subscriptionID in
                 self.cancellations.insert(subscriptionID)
                 self.subscriptions.removeAll(where: { $0.id == subscriptionID })
+            },
+            detachedAction: { detachedAction in
+                self.detachedActions.append(detachedAction)
             }
         )
     }
@@ -71,6 +78,12 @@ final class SideEffectsContainer<Action: Sendable> {
                 await onFinish(subscription.id)
             }
             attach(task, subscription.id)
+        }
+    }
+    
+    func sendDetachedActions(with sender: DetachedSender) {
+        for detachedAction in detachedActions {
+            detachedAction.call(with: sender)
         }
     }
 }

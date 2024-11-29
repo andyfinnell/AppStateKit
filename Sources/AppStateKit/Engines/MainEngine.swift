@@ -5,6 +5,7 @@ public final class MainEngine<State, Action: Sendable>: Engine {
     private let processor: ActionProcessor<State, Action, Output>
     private let isEqual: (State, State) -> Bool
     private let _statePublisher = MainPublisher<State>()
+    private let detachedSender = DetachedSender()
     public private(set) var state: State
     public var statePublisher: any Publisher<State> { _statePublisher }
     public var internals: Internals { processor.internals }
@@ -42,13 +43,19 @@ public final class MainEngine<State, Action: Sendable>: Engine {
             action,
             on: getState, setState,
             using: { @MainActor [weak self] action in
-            self?.send(action)
+                self?.send(action)
             },
-            { _ in  })
+            { _ in  },
+            detachedSender: detachedSender
+        )
     }
     
     public func signal(_ output: Output) {
         // nop, always top level
+    }
+    
+    public func attach<D: Detachment>(_ sender: some ActionSender<D.DetachedAction>, at key: D.Type) {
+        detachedSender.attach(sender, at: key)
     }
 }
 

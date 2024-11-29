@@ -50,14 +50,16 @@ final class ActionProcessor<State, Action: Sendable, Output> {
         on getState: () -> State,
         _ setState: (State) -> Void,
         using sendThunk: @MainActor @Sendable @escaping (Action) -> Void,
-        _ signalThunk: @MainActor @escaping (Output) -> Void
+        _ signalThunk: @MainActor @escaping (Output) -> Void,
+        detachedSender: DetachedSender
     ) {
         actions.append(action)
         processNextActionIfPossible(
             on: getState,
             setState,
             using: sendThunk,
-            signalThunk
+            signalThunk,
+            detachedSender: detachedSender
         )
     }
 }
@@ -67,7 +69,8 @@ private extension ActionProcessor {
         on getState: () -> State,
         _ setState: (State) -> Void,
         using sendThunk: @MainActor @Sendable @escaping (Action) -> Void,
-        _ signalThunk: @MainActor @escaping (Output) -> Void
+        _ signalThunk: @MainActor @escaping (Output) -> Void,
+        detachedSender: DetachedSender
     ) {
         guard !isProcessing,
               let nextAction = actions.first else {
@@ -80,6 +83,8 @@ private extension ActionProcessor {
         reduce(&state, nextAction, sideEffects.eraseToAnySideEffects(signal: signalThunk))
         setState(state)
         isProcessing = false
+        
+        sideEffects.sendDetachedActions(with: detachedSender)
         
         // Perform immediate effects
         sideEffects.applyImmediateEffects(using: sendThunk)
@@ -111,7 +116,13 @@ private extension ActionProcessor {
         }
         
         // recurse
-        processNextActionIfPossible(on: getState, setState, using: sendThunk, signalThunk)
+        processNextActionIfPossible(
+            on: getState,
+            setState,
+            using: sendThunk,
+            signalThunk,
+            detachedSender: detachedSender
+        )
     }
 }
 

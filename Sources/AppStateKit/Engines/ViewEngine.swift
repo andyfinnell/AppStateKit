@@ -9,6 +9,7 @@ public final class ViewEngine<State, Action: Sendable, Output>: Engine {
     private let sendThunk: @MainActor (Action) -> Void
     private let signalThunk: @MainActor (Output) -> Void
     private let internalsThunk: () -> Internals
+    private let detachmentContainer: any DetachmentContainer
     private let _statePublisher = MainPublisher<State>()
     private var sink: AnySink?
     
@@ -30,6 +31,7 @@ public final class ViewEngine<State, Action: Sendable, Output>: Engine {
         internalsThunk = {
             engine.internals
         }
+        detachmentContainer = engine
         state = engine.state // initialize
         self.isEqual = isEqual
         
@@ -46,6 +48,10 @@ public final class ViewEngine<State, Action: Sendable, Output>: Engine {
         signalThunk(output)
     }
 
+    public func attach<D: Detachment>(_ sender: some ActionSender<D.DetachedAction>, at key: D.Type) {
+        detachmentContainer.attach(sender, at: key)
+    }
+    
     public subscript<T>(dynamicMember keyPath: KeyPath<State, T>) -> T {
         state[keyPath: keyPath]
     }

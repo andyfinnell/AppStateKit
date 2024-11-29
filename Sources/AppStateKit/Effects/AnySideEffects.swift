@@ -6,6 +6,7 @@ public struct AnySideEffects<Action: Sendable, Output> {
     private let signalThunk: (Output) -> Void
     private let subscribe: (FutureSubscription<Action>) -> Void
     private let cancelThunk: (SubscriptionID) -> Void
+    private let detachedAction: (FutureDetachedAction) -> Void
     
     init(
         dependencyScope: DependencyScope,
@@ -13,7 +14,8 @@ public struct AnySideEffects<Action: Sendable, Output> {
         appendImmediate: @escaping (FutureImmediateEffect<Action>) -> Void,
         signal: @escaping (Output) -> Void,
         subscribe: @escaping (FutureSubscription<Action>) -> Void,
-        cancel: @escaping (SubscriptionID) -> Void
+        cancel: @escaping (SubscriptionID) -> Void,
+        detachedAction: @escaping (FutureDetachedAction) -> Void
     ) {
         self.dependencyScope = dependencyScope
         self.append = append
@@ -21,6 +23,7 @@ public struct AnySideEffects<Action: Sendable, Output> {
         self.signalThunk = signal
         self.subscribe = subscribe
         self.cancelThunk = cancel
+        self.detachedAction = detachedAction
     }
         
     public func perform<each ParameterType: Sendable, ReturnType>(
@@ -236,7 +239,8 @@ public struct AnySideEffects<Action: Sendable, Output> {
                 let newSubscription = subscription.map(transform)
                 subscribe(newSubscription)
             },
-            cancel: cancelThunk
+            cancel: cancelThunk,
+            detachedAction: detachedAction
         )
     }
     
@@ -244,6 +248,10 @@ public struct AnySideEffects<Action: Sendable, Output> {
         append(FutureEffect {
             action
         })
+    }
+    
+    public func schedule<D: Detachment>(_ action: D.DetachedAction, for key: D.Type) {
+        detachedAction(FutureDetachedAction(action: action, target: key))
     }
     
     public func signal(_ output: Output) {

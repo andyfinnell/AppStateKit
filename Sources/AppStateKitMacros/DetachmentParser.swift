@@ -26,6 +26,7 @@ struct DetachmentParser {
         }
 
         return Detachment(
+            name: decl.name.text,
             componentName: componentName,
             hasActionToUpdateState: hasActionToUpdateStateMethod,
             translateMethodName: translateMethodName
@@ -133,18 +134,15 @@ private extension DetachmentParser {
     }
     
     static func isTypeScoped(_ typeSyntax: TypeSyntax, named name: String) -> (String?, Bool) {
-        if let memberType = typeSyntax.as(MemberTypeSyntax.self.self),
+        if let memberType = typeSyntax.as(MemberTypeSyntax.self),
             memberType.name.text == name {
-            if let identifierType = memberType.baseType.as(IdentifierTypeSyntax.self) {
-                return (identifierType.name.text, true)
-            } else {
-                return (nil, true)
-            }
+            let typename = "\(memberType.baseType)"
+            return (typename, true)
         } else {
             return (nil, false)
         }
     }
-    
+        
     static func isOptionalTypeScoped(_ typeSyntax: TypeSyntax, named name: String) -> (String?, Bool) {
         guard let optionalType = typeSyntax.as(OptionalTypeSyntax.self) else {
             return (nil, false)

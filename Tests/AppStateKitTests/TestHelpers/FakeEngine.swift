@@ -32,4 +32,9 @@ final class FakeEngine<State, Action: Sendable, Output>: Engine {
         signaledOutput.append(output)
         signalExpectation?.fulfill()
     }
+    
+    let detachedSender = DetachedSender()
+    func attach<D: Detachment>(_ sender: some ActionSender<D.DetachedAction>, at key: D.Type) {
+        detachedSender.attach(sender, at: key)
+    }
 }
