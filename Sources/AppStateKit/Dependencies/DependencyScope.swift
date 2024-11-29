@@ -21,7 +21,7 @@ public final class DependencyScope {
     /// Find or create a specific dependency
     public subscript<D: Dependable>(key: D.Type) -> D.T {
         get {
-            let id = ObjectIdentifier(D.self)
+            let id = ObjectIdentifier(key)
             if let cached = cached(id: id, as: D.T.self) {
                 return cached
             } else {

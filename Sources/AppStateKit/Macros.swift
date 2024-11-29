@@ -43,10 +43,13 @@ public macro Updatable(output: Bool = false) = #externalMacro(module: "AppStateK
 public macro PassthroughOutput() = #externalMacro(module: "AppStateKitMacros", type: "PassthroughOutputMacro")
 
 @attached(member, names: arbitrary)
-public macro JSONStorageEffects<T>(for type: T.Type, defaultValue expr: T) = #externalMacro(module: "AppStateKitMacros", type: "JSONStorageEffectsMacro")
+public macro JSONStorageEffects<T: Codable>(for type: T.Type) = #externalMacro(module: "AppStateKitMacros", type: "JSONStorageEffectsMacro")
 
 @attached(member, names: arbitrary)
-public macro JSONStorageEffects<T: Codable>(for type: T.Type) = #externalMacro(module: "AppStateKitMacros", type: "JSONStorageEffectsMacro")
+public macro JSONStorable(hasDefault: Bool) = #externalMacro(module: "AppStateKitMacros", type: "JSONStorableMacro")
+
+@attached(member, names: arbitrary)
+public macro JSONStorable() = #externalMacro(module: "AppStateKitMacros", type: "JSONStorableMacro")
 
 @attached(peer)
 public macro Subscribe<E: Dependable, T>(to effect: E.Type) = #externalMacro(module: "AppStateKitMacros", type: "SubscribeMacro") where E.T == Effect<AsyncStream<T>, Never>

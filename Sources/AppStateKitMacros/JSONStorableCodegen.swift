@@ -1,12 +1,12 @@
 import SwiftSyntax
 import SwiftSyntaxBuilder
 
-struct JSONStorageCodegen {
+struct JSONStorableCodegen {
     static func codegen(from jsonStorage: JSONStorageModel) -> [DeclSyntax] {
         let storeDependencyDecl: DeclSyntax
         if let defaultValue = jsonStorage.defaultValueExpression {
             storeDependencyDecl = """
-            private struct \(raw: jsonStorage.typename)StoreDependency: Dependable {
+            struct StoreDependency: Dependable {
                 static var isGlobal: Bool { true }
             
                 static func makeDefault(with space: DependencyScope) -> any CodableStorage<\(raw: jsonStorage.typename)> {
@@ -16,7 +16,7 @@ struct JSONStorageCodegen {
             """
         } else {
             storeDependencyDecl = """
-            private struct \(raw: jsonStorage.typename)StoreDependency: Dependable {
+            struct StoreDependency: Dependable {
                 static var isGlobal: Bool { true }
 
                 static func makeDefault(with space: DependencyScope) -> any CodableStorage<\(raw: jsonStorage.typename)> {
@@ -27,9 +27,9 @@ struct JSONStorageCodegen {
         }
         
         let fetchDecl: DeclSyntax = """
-            private enum Fetch\(raw: jsonStorage.typename)Effect: Dependable {
+            enum FetchEffect: Dependable {
                 static func perform(dependencies: DependencyScope) async -> AsyncStream<\(raw: jsonStorage.typename)> {
-                    await dependencies[\(raw: jsonStorage.typename)StoreDependency.self].makeStream()
+                    await dependencies[\(raw: jsonStorage.typename).StoreDependency.self].makeStream()
                 }
 
                 static func makeDefault(with space: DependencyScope) -> Effect<AsyncStream<\(raw: jsonStorage.typename)>, Never> {
@@ -41,9 +41,9 @@ struct JSONStorageCodegen {
             """
         
         let saveDecl: DeclSyntax = """
-            private enum Save\(raw: jsonStorage.typename)Effect: Dependable {
+            enum SaveEffect: Dependable {
                 static func perform(dependencies: DependencyScope, _ state: \(raw: jsonStorage.typename)) async throws {
-                    try await dependencies[\(raw: jsonStorage.typename)StoreDependency.self].store(state)
+                    try await dependencies[\(raw: jsonStorage.typename).StoreDependency.self].store(state)
                 }
 
                 static func makeDefault(with space: DependencyScope) -> Effect<Void, Error, \(raw: jsonStorage.typename)> {
@@ -58,38 +58,10 @@ struct JSONStorageCodegen {
             }
             """
 
-        let fetchSideEffect = SideEffect(
-            methodName: "fetch\(jsonStorage.typename)",
-            subscribeName: "subscribeToFetch\(jsonStorage.typename)",
-            parameters: [],
-            returnType: "AsyncStream<\(jsonStorage.typename)>",
-            isThrowing: false,
-            isAsync: true,
-            effectReference: .typename("Fetch\(jsonStorage.typename)Effect"),
-            isImmediate: false
-        )
-
-        let saveSideEffect = SideEffect(
-            methodName: "save\(jsonStorage.typename)",
-            subscribeName: "subscribeToSave\(jsonStorage.typename)",
-            parameters: [
-                SideEffectParameter(label: nil, type: jsonStorage.typename)
-            ],
-            returnType: "Void",
-            isThrowing: true,
-            isAsync: true,
-            effectReference: .typename("Save\(jsonStorage.typename)Effect"),
-            isImmediate: false
-        )
-
         return [
             storeDependencyDecl,
             fetchDecl,
             saveDecl,
-            ExtendSideEffectsCodegen.codegenMethod(from: fetchSideEffect),
-            ExtendSideEffectsCodegen.codegenSubscribeMethod(from: fetchSideEffect),
-            ExtendSideEffectsCodegen.codegenMethod(from: saveSideEffect),
-            ExtendSideEffectsCodegen.codegenSubscribeMethod(from: saveSideEffect),
         ].compactMap { $0 }
     }
 }

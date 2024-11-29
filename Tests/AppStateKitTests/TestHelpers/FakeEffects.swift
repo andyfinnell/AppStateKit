@@ -99,6 +99,7 @@ enum ImportURLEffect {
 @ExtendSideEffects(with: ImportURLEffect, (URL) async throws -> String)
 extension AnySideEffects {}
 
+@JSONStorable(hasDefault: true)
 struct TestModel: Codable, Equatable {
     let name: String
     let score: Int
@@ -109,13 +110,16 @@ struct TestModel: Codable, Equatable {
     }
 }
 
-@JSONStorageEffects(for: TestModel.self, defaultValue: TestModel.defaultValue())
+@JSONStorageEffects(for: TestModel.self)
 extension AnySideEffects {}
 
 struct TestSettings: Codable, Equatable {
     let name: String
     let score: Int
 }
+
+@JSONStorable
+extension TestSettings {}
 
 @JSONStorageEffects(for: TestSettings.self)
 extension AnySideEffects {}

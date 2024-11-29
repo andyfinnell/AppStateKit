@@ -14,7 +14,7 @@ public enum JSONStorageEffectsMacro: MemberMacro {
             return []
         }
         
-        let decls = JSONStorageCodegen.codegen(from: model)
+        let decls = JSONStorageEffectsCodegen.codegen(from: model)
         
         return decls.compactMap { $0 }
     }
@@ -46,6 +46,4 @@ private extension JSONStorageEffectsMacro {
             defaultValueExpression: defaultValueExpr
         )
     }
-
-
 }

@@ -7,19 +7,19 @@ import XCTest
 import AppStateKitMacros
 #endif
 
-final class JSONStorageMacroTests: XCTestCase {
+final class JSONStorableMacroTests: XCTestCase {
     func testExpansionWithDefaultValue() throws {
 #if canImport(AppStateKitMacros)
         assertMacroExpansion(
             """
-            @JSONStorageEffects(for: TestModel.self, defaultValue: TestModel.defaultValue())
-            extension AnySideEffects {}
+            @JSONStorable(hasDefault: true)
+            extension TestModel {}
             """,
             expandedSource: """
             
-            extension AnySideEffects {
+            extension TestModel {
 
-                private struct TestModelStoreDependency: Dependable {
+                struct StoreDependency: Dependable {
                     static var isGlobal: Bool {
                         true
                     }
@@ -31,9 +31,9 @@ final class JSONStorageMacroTests: XCTestCase {
                     }
                 }
 
-                private enum FetchTestModelEffect: Dependable {
+                enum FetchEffect: Dependable {
                     static func perform(dependencies: DependencyScope) async -> AsyncStream<TestModel> {
-                        await dependencies[TestModelStoreDependency.self].makeStream()
+                        await dependencies[TestModel.StoreDependency.self].makeStream()
                     }
 
                     static func makeDefault(with space: DependencyScope) -> Effect<AsyncStream<TestModel>, Never> {
@@ -43,9 +43,9 @@ final class JSONStorageMacroTests: XCTestCase {
                     }
                 }
 
-                private enum SaveTestModelEffect: Dependable {
+                enum SaveEffect: Dependable {
                     static func perform(dependencies: DependencyScope, _ state: TestModel) async throws {
-                        try await dependencies[TestModelStoreDependency.self].store(state)
+                        try await dependencies[TestModel.StoreDependency.self].store(state)
                     }
 
                     static func makeDefault(with space: DependencyScope) -> Effect<Void, Error, TestModel> {
@@ -57,34 +57,6 @@ final class JSONStorageMacroTests: XCTestCase {
                             }
                         }
                     }
-                }
-
-                func fetchTestModel(
-                    transform: @Sendable @escaping (AsyncStream<TestModel>) async -> Action
-                ) {
-                    perform(FetchTestModelEffect.self, transform: transform)
-                }
-
-                func subscribeToFetchTestModel(
-                    transform: @Sendable @escaping (AsyncStream<TestModel>, (Action) async -> Void) async throws -> Void
-                ) -> SubscriptionID {
-                    subscribe(FetchTestModelEffect.self, transform: transform)
-                }
-
-                func saveTestModel(
-                    _ p0: TestModel,
-                    transform: @Sendable @escaping () async -> Action,
-                    onFailure: @Sendable @escaping (Error) async -> Action
-                ) {
-                    tryPerform(SaveTestModelEffect.self, with: p0, transform: transform, onFailure: onFailure)
-                }
-
-                func subscribeToSaveTestModel(
-                    _ p0: TestModel,
-                    transform: @Sendable @escaping (Void, (Action) async -> Void) async throws -> Void,
-                    onFailure: @Sendable @escaping (Error) async -> Action
-                ) -> SubscriptionID {
-                    trySubscribe(SaveTestModelEffect.self, with: p0, transform: transform, onFailure: onFailure)
                 }
             }
             """,
@@ -99,14 +71,14 @@ final class JSONStorageMacroTests: XCTestCase {
 #if canImport(AppStateKitMacros)
         assertMacroExpansion(
             """
-            @JSONStorageEffects(for: TestModel.self)
-            extension AnySideEffects {}
+            @JSONStorable
+            extension TestModel {}
             """,
             expandedSource: """
             
-            extension AnySideEffects {
+            extension TestModel {
 
-                private struct TestModelStoreDependency: Dependable {
+                struct StoreDependency: Dependable {
                     static var isGlobal: Bool {
                         true
                     }
@@ -116,9 +88,9 @@ final class JSONStorageMacroTests: XCTestCase {
                     }
                 }
 
-                private enum FetchTestModelEffect: Dependable {
+                enum FetchEffect: Dependable {
                     static func perform(dependencies: DependencyScope) async -> AsyncStream<TestModel> {
-                        await dependencies[TestModelStoreDependency.self].makeStream()
+                        await dependencies[TestModel.StoreDependency.self].makeStream()
                     }
 
                     static func makeDefault(with space: DependencyScope) -> Effect<AsyncStream<TestModel>, Never> {
@@ -128,9 +100,9 @@ final class JSONStorageMacroTests: XCTestCase {
                     }
                 }
 
-                private enum SaveTestModelEffect: Dependable {
+                enum SaveEffect: Dependable {
                     static func perform(dependencies: DependencyScope, _ state: TestModel) async throws {
-                        try await dependencies[TestModelStoreDependency.self].store(state)
+                        try await dependencies[TestModel.StoreDependency.self].store(state)
                     }
 
                     static func makeDefault(with space: DependencyScope) -> Effect<Void, Error, TestModel> {
@@ -142,34 +114,6 @@ final class JSONStorageMacroTests: XCTestCase {
                             }
                         }
                     }
-                }
-
-                func fetchTestModel(
-                    transform: @Sendable @escaping (AsyncStream<TestModel>) async -> Action
-                ) {
-                    perform(FetchTestModelEffect.self, transform: transform)
-                }
-
-                func subscribeToFetchTestModel(
-                    transform: @Sendable @escaping (AsyncStream<TestModel>, (Action) async -> Void) async throws -> Void
-                ) -> SubscriptionID {
-                    subscribe(FetchTestModelEffect.self, transform: transform)
-                }
-
-                func saveTestModel(
-                    _ p0: TestModel,
-                    transform: @Sendable @escaping () async -> Action,
-                    onFailure: @Sendable @escaping (Error) async -> Action
-                ) {
-                    tryPerform(SaveTestModelEffect.self, with: p0, transform: transform, onFailure: onFailure)
-                }
-
-                func subscribeToSaveTestModel(
-                    _ p0: TestModel,
-                    transform: @Sendable @escaping (Void, (Action) async -> Void) async throws -> Void,
-                    onFailure: @Sendable @escaping (Error) async -> Action
-                ) -> SubscriptionID {
-                    trySubscribe(SaveTestModelEffect.self, with: p0, transform: transform, onFailure: onFailure)
                 }
             }
             """,
