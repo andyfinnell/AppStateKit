@@ -36,6 +36,12 @@ public macro bind<State, Action, Output, P>(_ engine: ViewEngine<State, Action, 
 @freestanding(expression)
 public macro bindIfPresent<State, Action, Output, P>(_ engine: ViewEngine<State, Action, Output>, _ keyPath: KeyPath<State, P?>) -> Binding<Bool> = #externalMacro(module: "AppStateKitMacros", type: "BindIfPresentMacro")
 
+@freestanding(expression)
+public macro bindElements<State, Action, Output, P>(_ engine: ViewEngine<State, Action, Output>, _ keyPath: KeyPath<State, [P]>) -> [Binding<P>] = #externalMacro(module: "AppStateKitMacros", type: "BindElementsMacro")
+
+@freestanding(expression)
+public macro bindBatch<State, Action, Output, P>(_ engine: ViewEngine<State, Action, Output>, _ keyPath: KeyPath<State, [P]>) -> [Binding<P>] = #externalMacro(module: "AppStateKitMacros", type: "BindBatchMacro")
+
 @attached(peer)
 public macro Updatable(output: Bool = false) = #externalMacro(module: "AppStateKitMacros", type: "UpdatableMacro")
 

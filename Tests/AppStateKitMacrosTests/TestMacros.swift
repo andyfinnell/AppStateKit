@@ -14,6 +14,8 @@ let testMacros: [String: Macro.Type] = [
     "Detachment": DetachmentMacro.self,
     "bind": BindMacro.self,
     "bindIfPresent": BindIfPresentMacro.self,
+    "bindElements": BindElementsMacro.self,
+    "bindBatch": BindBatchMacro.self,
     "Updatable": UpdatableMacro.self,
     "JSONStorageEffects": JSONStorageEffectsMacro.self,
     "JSONStorable": JSONStorableMacro.self,
