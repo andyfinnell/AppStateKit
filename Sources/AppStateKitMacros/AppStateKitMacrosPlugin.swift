@@ -17,6 +17,7 @@ struct AppStateKitMacrosPlugin: CompilerPlugin {
         BindElementsMacro.self,
         BindBatchMacro.self,
         UpdatableMacro.self,
+        BatchUpdatableMacro.self,
         JSONStorageEffectsMacro.self,
         JSONStorableMacro.self,
         PassthroughOutputMacro.self,

@@ -68,7 +68,28 @@ private extension ComponentActionCodegen {
             } else {
                 return "" // TODO: failure state
             }
-            
+
+        case let .batchUpdateStateProperty(propertyName, shouldOutputExpr: shouldOutputExpr):
+            if let parameterName = implementationParameterName(from: action, at: 0) {
+                let assign = """
+                    for (i, value) in \(parameterName) {
+                        state.\(propertyName)[i] = value
+                    }
+                    """
+                var outputCode = ""
+                if let shouldOutputExpr {
+                    outputCode = """
+                        
+                        if \(shouldOutputExpr) {
+                            sideEffects.signal(.updated\(propertyName.uppercaseFirstLetter())(\(parameterName)))
+                        }
+                        """
+                }
+                return assign + outputCode
+            } else {
+                return "" // TODO: failure state
+            }
+
         case let .passthroughOutput(outputName):
             let code = """
                 sideEffects.signal(.\(outputName)\(implementationArgumentsInCall(from: action)))

@@ -235,3 +235,18 @@ enum TestSettingsComponent {
     }
 
 }
+
+@Component
+enum SimpleScoreboardComponent {
+    struct State: Equatable {
+        @BatchUpdatable(output: true) var scores: [Int]
+    }
+    
+    static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
+        VStack {
+            ForEach(engine.scores.indices, id: \.self) {
+                Text("\($0)")
+            }
+        }
+    }
+}

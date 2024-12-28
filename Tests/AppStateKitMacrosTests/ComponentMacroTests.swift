@@ -492,6 +492,203 @@ final class ComponentMacroTests: XCTestCase {
         #endif
     }
 
+    func testBasicBatchUpdatableLeafComponent() throws {
+        #if canImport(AppStateKitMacros)
+        assertMacroExpansion(
+            """
+            @Component
+            enum MyFeature {
+                struct State {
+                    @BatchUpdatable var names: [String]
+                    var score: Int
+                }
+            
+                private static func increase(_ state: inout State, sideEffects: SideEffects) {
+                    state.score += 1
+                }
+                        
+                static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
+                    HStack {
+                        ForEach(engine.names, id: \\.self) { name in
+                            Text(name)
+                        }
+                        Text("\\(engine.score)")
+                    }
+                }
+            }
+            """,
+            expandedSource: """
+            
+            enum MyFeature {
+                struct State {
+                    var names: [String]
+                    var score: Int
+                }
+                @MainActor
+
+                private static func increase(_ state: inout State, sideEffects: SideEffects) {
+                    state.score += 1
+                }
+                @MainActor
+                        
+                static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
+                    HStack {
+                        ForEach(engine.names, id: \\.self) { name in
+                            Text(name)
+                        }
+                        Text("\\(engine.score)")
+                    }
+                }
+
+                enum Action: Equatable {
+                    case updateNames([Int: String])
+                    case increase
+                }
+
+                @MainActor
+                private static func updateNames(_ state: inout State, sideEffects: SideEffects, _ p0: [Int: String]) {
+                    for (i, value) in p0 {
+                    state.names[i] = value
+                    }
+                }
+
+                typealias Output = Never
+
+                typealias SideEffects = AnySideEffects<Action, Output>
+
+                @MainActor
+                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
+                    switch action {
+                    case let .updateNames(p0):
+                        updateNames(&state, sideEffects: sideEffects, p0)
+
+                    case .increase:
+                        increase(&state, sideEffects: sideEffects)
+
+                    }
+                }
+
+                @MainActor
+                struct EngineView: View {
+                    @LazyState var engine: ViewEngine<State, Action, Output>
+
+                    var body: some View {
+                        view(engine)
+                    }
+                }
+            }
+
+            extension MyFeature: Component, BaseComponent {
+            }
+            """,
+            macros: testMacros
+        )
+        #else
+        throw XCTSkip("macros are only supported when running tests for the host platform")
+        #endif
+    }
+
+    func testBasicBatchUpdatableWithOutputLeafComponent() throws {
+        #if canImport(AppStateKitMacros)
+        assertMacroExpansion(
+            """
+            @Component
+            enum MyFeature {
+                struct State {
+                    @BatchUpdatable(output: true) var names: [String]
+                    var score: Int
+                }
+            
+                private static func increase(_ state: inout State, sideEffects: SideEffects) {
+                    state.score += 1
+                }
+                        
+                static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
+                    HStack {
+                        ForEach(engine.names, id: \\.self) { name in
+                            Text(name)
+                        }
+                        Text("\\(engine.score)")
+                    }
+                }
+            }
+            """,
+            expandedSource: """
+            
+            enum MyFeature {
+                struct State {
+                    var names: [String]
+                    var score: Int
+                }
+                @MainActor
+
+                private static func increase(_ state: inout State, sideEffects: SideEffects) {
+                    state.score += 1
+                }
+                @MainActor
+                        
+                static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
+                    HStack {
+                        ForEach(engine.names, id: \\.self) { name in
+                            Text(name)
+                        }
+                        Text("\\(engine.score)")
+                    }
+                }
+
+                enum Action: Equatable {
+                    case updateNames([Int: String])
+                    case increase
+                }
+
+                @MainActor
+                private static func updateNames(_ state: inout State, sideEffects: SideEffects, _ p0: [Int: String]) {
+                    for (i, value) in p0 {
+                    state.names[i] = value
+                    }
+                    if true {
+                        sideEffects.signal(.updatedNames(p0))
+                    }
+                }
+
+                enum Output: Equatable {
+                    case updatedNames([Int: String])
+                }
+
+                typealias SideEffects = AnySideEffects<Action, Output>
+
+                @MainActor
+                static func reduce(_ state: inout State, action: Action, sideEffects: AnySideEffects<Action, Output>) {
+                    switch action {
+                    case let .updateNames(p0):
+                        updateNames(&state, sideEffects: sideEffects, p0)
+
+                    case .increase:
+                        increase(&state, sideEffects: sideEffects)
+
+                    }
+                }
+
+                @MainActor
+                struct EngineView: View {
+                    @LazyState var engine: ViewEngine<State, Action, Output>
+
+                    var body: some View {
+                        view(engine)
+                    }
+                }
+            }
+
+            extension MyFeature: Component, BaseComponent {
+            }
+            """,
+            macros: testMacros
+        )
+        #else
+        throw XCTSkip("macros are only supported when running tests for the host platform")
+        #endif
+    }
+
     func testBasicComponent() throws {
         #if canImport(AppStateKitMacros)
         assertMacroExpansion(

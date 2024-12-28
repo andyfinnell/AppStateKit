@@ -46,6 +46,9 @@ public macro bindBatch<State, Action, Output, P>(_ engine: ViewEngine<State, Act
 public macro Updatable(output: Bool = false) = #externalMacro(module: "AppStateKitMacros", type: "UpdatableMacro")
 
 @attached(peer)
+public macro BatchUpdatable(output: Bool = false) = #externalMacro(module: "AppStateKitMacros", type: "BatchUpdatableMacro")
+
+@attached(peer)
 public macro PassthroughOutput() = #externalMacro(module: "AppStateKitMacros", type: "PassthroughOutputMacro")
 
 @attached(member, names: arbitrary)
