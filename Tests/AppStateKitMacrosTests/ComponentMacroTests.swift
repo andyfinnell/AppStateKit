@@ -599,6 +599,11 @@ final class ComponentMacroTests: XCTestCase {
                     var score: Int
                 }
             
+                enum ExtraOutput: Equatable {
+                    case beginEditing
+                    case panel(Panel.Action, index: Int)
+                }
+            
                 private static func increase(_ state: inout State, sideEffects: SideEffects) {
                     state.score += 1
                 }
@@ -619,6 +624,11 @@ final class ComponentMacroTests: XCTestCase {
                 struct State {
                     var names: [String]
                     var score: Int
+                }
+
+                enum ExtraOutput: Equatable {
+                    case beginEditing
+                    case panel(Panel.Action, index: Int)
                 }
                 @MainActor
 
@@ -653,6 +663,8 @@ final class ComponentMacroTests: XCTestCase {
 
                 enum Output: Equatable {
                     case updatedNames([Int: String])
+                    case beginEditing
+                    case panel(Panel.Action, index: Int)
                 }
 
                 typealias SideEffects = AnySideEffects<Action, Output>

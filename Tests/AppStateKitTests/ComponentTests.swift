@@ -242,6 +242,11 @@ enum SimpleScoreboardComponent {
         @BatchUpdatable(output: true) var scores: [Int]
     }
     
+    enum ExtraOutput: Equatable {
+        case beginEditing
+        case endEditing
+    }
+    
     static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
         VStack {
             ForEach(engine.scores.indices, id: \.self) {

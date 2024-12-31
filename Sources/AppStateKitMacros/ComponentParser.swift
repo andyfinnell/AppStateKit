@@ -27,6 +27,9 @@ struct ComponentParser {
             } else if let enumDecl = member.decl.as(EnumDeclSyntax.self) {
                 if let detachmentRef = parseDetachment(enumDecl) {
                     detachments.append(detachmentRef)
+                } else {
+                    let localOutputs = parseExtraOutput(enumDecl)
+                    outputs.append(contentsOf: localOutputs)
                 }
             }
             
@@ -772,5 +775,37 @@ private extension ComponentParser {
             typename: enumDecl.name.text,
             methodName: enumDecl.name.text.lowercasedFirstWord()
         )
+    }
+    
+    static func parseExtraOutput(_ enumDecl: EnumDeclSyntax) -> [ComponentOutput] {
+        guard enumDecl.name.text == "ExtraOutput" else {
+            return []
+        }
+        
+        var output = [ComponentOutput]()
+        for member in enumDecl.memberBlock.members {
+            guard let caseClause = member.decl.as(EnumCaseDeclSyntax.self) else {
+                continue
+            }
+            for element in caseClause.elements {
+                let label = element.name.text
+                var outputParameters = [Parameter]()
+                if let parameters = element.parameterClause?.parameters {
+                    outputParameters = parameters.map { parameter in
+                        Parameter(
+                            label: parameter.firstName?.text,
+                            type: parameter.type
+                        )
+                    }
+                }
+                output.append(ComponentOutput(
+                    label: label,
+                    parameters: outputParameters,
+                    composition: nil
+                ))
+            }
+        }
+        
+        return output
     }
 }
