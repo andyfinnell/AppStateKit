@@ -891,7 +891,7 @@ final class ComponentMacroTests: XCTestCase {
 
                 @MainActor
                 @ViewBuilder
-                private static func child(_ engine: ViewEngine<State, Action, Output>) -> some View {
+                private static func child(_ engine: ViewEngine<State, Action, Output>) -> ChildFeature.EngineView {
                     ChildFeature.EngineView(
                         engine: engine.map(
                             state: {
@@ -1012,7 +1012,7 @@ final class ComponentMacroTests: XCTestCase {
 
                 @MainActor
                 @ViewBuilder
-                private static func children(_ engine: ViewEngine<State, Action, Output>, at index: Int) -> some View {
+                private static func children(_ engine: ViewEngine<State, Action, Output>, at index: Int) -> ChildFeature.EngineView {
                     ChildFeature.EngineView(
                         engine: engine.map(
                             state: {
@@ -1023,6 +1023,19 @@ final class ComponentMacroTests: XCTestCase {
                             }
                         ).view()
                     )
+                }
+            
+                @MainActor
+                @ViewBuilder
+                private static func forEachChildren(
+                    _ engine: ViewEngine<State, Action, Output>,
+                    @ViewBuilder content: @escaping (ChildFeature.EngineView) -> some View = {
+                        $0
+                    }
+                ) -> some View {
+                    ForEach(engine.children.indices, id: \\.self) { index in
+                    content(children(engine, at: index))
+                    }
                 }
             }
             
@@ -1136,7 +1149,7 @@ final class ComponentMacroTests: XCTestCase {
 
                 @MainActor
                 @ViewBuilder
-                private static func children(_ engine: ViewEngine<State, Action, Output>, forKey key: String) -> some View {
+                private static func children(_ engine: ViewEngine<State, Action, Output>, forKey key: String) -> ChildFeature.EngineView? {
                     if let innerState = engine.state.children[key] {
                         ChildFeature.EngineView(
                             engine: engine.map(
@@ -1148,6 +1161,21 @@ final class ComponentMacroTests: XCTestCase {
                                 }
                             ).view()
                         )
+                    }
+                }
+            
+                @MainActor
+                @ViewBuilder
+                private static func forEachChildren(
+                    _ engine: ViewEngine<State, Action, Output>,
+                    @ViewBuilder content: @escaping (ChildFeature.EngineView) -> some View = {
+                        $0
+                    }
+                ) -> some View {
+                    ForEach(engine.children.keys.sorted(), id: \\.self) { key in
+                    children(engine, forKey: key).map {
+                        content($0)
+                    }
                     }
                 }
             }
@@ -1262,7 +1290,7 @@ final class ComponentMacroTests: XCTestCase {
 
                 @MainActor
                 @ViewBuilder
-                private static func children(_ engine: ViewEngine<State, Action, Output>, byID id: ChildFeature.State.ID) -> some View {
+                private static func children(_ engine: ViewEngine<State, Action, Output>, byID id: ChildFeature.State.ID) -> ChildFeature.EngineView? {
                     if let innerState = engine.state.children[byID: id] {
                         ChildFeature.EngineView(
                             engine: engine.map(
@@ -1274,6 +1302,23 @@ final class ComponentMacroTests: XCTestCase {
                                 }
                             ).view()
                         )
+                    }
+                }
+            
+                @MainActor
+                @ViewBuilder
+                private static func forEachChildren(
+                    _ engine: ViewEngine<State, Action, Output>,
+                    @ViewBuilder content: @escaping (ChildFeature.EngineView) -> some View = {
+                        $0
+                    }
+                ) -> some View {
+                    ForEach(engine.children.map {
+                            $0.id
+                        }, id: \\.self) { id in
+                    children(engine, byID: id).map {
+                        content($0)
+                    }
                     }
                 }
             }
@@ -1381,7 +1426,7 @@ final class ComponentMacroTests: XCTestCase {
 
                 @MainActor
                 @ViewBuilder
-                private static func child(_ engine: ViewEngine<State, Action, Output>) -> some View {
+                private static func child(_ engine: ViewEngine<State, Action, Output>) -> ChildFeature.EngineView? {
                     if let innerState = engine.state.child {
                         ChildFeature.EngineView(
                             engine: engine.map(
@@ -1502,7 +1547,7 @@ final class ComponentMacroTests: XCTestCase {
             
                 @MainActor
                 @ViewBuilder
-                private static func child(_ engine: ViewEngine<State, Action, Output>) -> some View {
+                private static func child(_ engine: ViewEngine<State, Action, Output>) -> ChildFeature.EngineView {
                     ChildFeature.EngineView(
                         engine: engine.map(
                             state: {
@@ -1622,7 +1667,7 @@ final class ComponentMacroTests: XCTestCase {
             
                 @MainActor
                 @ViewBuilder
-                private static func child(_ engine: ViewEngine<State, Action, Output>) -> some View {
+                private static func child(_ engine: ViewEngine<State, Action, Output>) -> ChildFeature.EngineView {
                     ChildFeature.EngineView(
                         engine: engine.map(
                             state: {
@@ -1748,7 +1793,7 @@ final class ComponentMacroTests: XCTestCase {
 
                 @MainActor
                 @ViewBuilder
-                private static func child(_ engine: ViewEngine<State, Action, Output>) -> some View {
+                private static func child(_ engine: ViewEngine<State, Action, Output>) -> ChildFeature.EngineView {
                     ChildFeature.EngineView(
                         engine: engine.map(
                             state: {

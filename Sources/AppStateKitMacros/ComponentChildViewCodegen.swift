@@ -5,6 +5,8 @@ struct ComponentChildViewCodegen {
     static func codegen(from component: Component) -> [DeclSyntax] {
         component.compositions.compactMap {
             codegen(from: $0.composition, translateCompositionMethodNames: component.translateCompositionMethodNames)
+        } + component.compositions.compactMap {
+            codegenForEach(from: $0.composition, translateCompositionMethodNames: component.translateCompositionMethodNames)
         } + component.detachments.compactMap {
             codegen(from: $0)
         }
@@ -77,7 +79,7 @@ private extension ComponentChildViewCodegen {
         return ", " + parameters.joined(separator: ", ")
     }
     
-    static func generateOptionalIfLet(_ composition: Composition, content: (String?) -> String) -> String {
+    static func generateOptionalIfLet(_ composition: Composition, content: (String?) -> String) -> (body: String, isOptional: Bool) {
         let dereferenceGenerator = DereferenceGenerator(
             keyName: "key",
             indexName: "index", 
@@ -88,13 +90,14 @@ private extension ComponentChildViewCodegen {
         let (innerStateExtract, stateNeedsCopy) = dereferenceGenerator.generateStateExtraction(for: dereference)
 
         if stateNeedsCopy {
-            return """
+            let code = """
             if let innerState = \(innerStateExtract) {
             \(content("innerState"))
             }
             """
+            return (body: code, isOptional: true)
         } else {
-            return content(nil)
+            return (body: content(nil), isOptional: false)
         }
     }
     
@@ -194,7 +197,7 @@ private extension ComponentChildViewCodegen {
         }
         let parameterList = generateParameterList(extraction)
                 
-        let body = generateOptionalIfLet(composition) { fallbackState in
+        let (body, isOptional) = generateOptionalIfLet(composition) { fallbackState in
             generateCallToChildView(
                 composition: composition,
                 extraction: extraction,
@@ -202,18 +205,146 @@ private extension ComponentChildViewCodegen {
                 translateCompositionMethodNames: translateCompositionMethodNames
             )
         }
-        
+        let returnType = isOptional ? "\(extraction.componentType).EngineView?" : "\(extraction.componentType).EngineView"
         let viewDecl = """
             @MainActor
             @ViewBuilder
-            private static func \(extraction.name)(_ engine: ViewEngine<State, Action, Output>\(parameterList)) -> some View {
+            private static func \(extraction.name)(_ engine: ViewEngine<State, Action, Output>\(parameterList)) -> \(returnType) {
             \(body)
             }
             """
         
         return DeclSyntax(stringLiteral: viewDecl)
     }
+
+    static func generateArgumentList(_ extraction: Extraction) -> String {
+        let arguments = ["engine"]
+        + extraction.accessors.map { accessor in
+            switch accessor {
+            case .index:
+                "at: index"
+            case .key:
+                "forKey: key"
+            case .id:
+                "byID: id"
+            }
+        }
+        return arguments.joined(separator: ", ")
+    }
+
+    static func generateElementFunctionCall(_ extraction: Extraction, inComposition composition: Composition) -> String {
+        let dereferenceGenerator = DereferenceGenerator(
+            keyName: "key",
+            indexName: "index",
+            idName: "id",
+            stateName: "engine.state"
+        )
+        let dereference = dereferenceGenerator.generate(for: composition)
+        let isOptional = dereference.contains(where: {
+            $0.typeKind == .optional || $0.typeKind == .dictionary || $0.typeKind == .identifiableArray
+        })
+        let baseCall = "\(extraction.name)(\(generateArgumentList(extraction)))"
+
+        if isOptional {
+            let code = """
+            \(baseCall).map { content($0) }
+            """
+            return code
+        } else {
+            let code = """
+            content(\(baseCall))
+            """
+            return code
+        }
+    }
     
+    static func generateForEach(
+        for accessor: Accessor,
+        inCollection collectionName: String,
+        body: String
+    ) -> String {
+        switch accessor {
+        case .key:
+            """
+            ForEach(\(collectionName).keys.sorted(), id: \\.self) { key in
+                \(body)
+            }
+            """
+        case .index:
+            """
+            ForEach(\(collectionName).indices, id: \\.self) { index in
+                \(body)
+            }
+            """
+        case .id:
+            """
+            ForEach(\(collectionName).map { $0.id }, id: \\.self) { id in
+                \(body)
+            }
+            """
+        }
+    }
+
+    static func generateForEachCollectionName(
+        for accessor: Accessor,
+        startingWith collectionName: String
+    ) -> String {
+        switch accessor {
+        case .key:
+            "\(collectionName)[key]"
+        case .index:
+            "\(collectionName)[index]"
+        case .id:
+            "\(collectionName)[byID: id]"
+        }
+    }
+
+    static func generateForEachCollectionNames(
+        for accessors: [Accessor],
+        startingWith collectionName: String
+    ) -> [String] {
+        var collectionNames = [collectionName]
+        var current = collectionName
+        for accessor in accessors {
+            let name = generateForEachCollectionName(for: accessor, startingWith: current)
+            collectionNames.append(name)
+            current = name
+        }
+        return collectionNames
+    }
+    
+    static func codegenForEach(from composition: Composition, translateCompositionMethodNames: [String: ComponentMethod]) -> DeclSyntax? {
+        guard let extraction = extract(composition), !extraction.accessors.isEmpty else {
+            return nil
+        }
+        
+        var body = generateElementFunctionCall(extraction, inComposition: composition)
+        let collectionNames = generateForEachCollectionNames(
+            for: extraction.accessors,
+            startingWith: "engine.\(extraction.name)"
+        )
+        for (collectionName, accessor) in zip(collectionNames, extraction.accessors.reversed()) {
+            body = generateForEach(
+                for: accessor,
+                inCollection: collectionName,
+                body: body
+            )
+        }
+        
+        let viewDecl = """
+            @MainActor
+            @ViewBuilder
+            private static func forEach\(extraction.name.uppercaseFirstLetter())(
+                _ engine: ViewEngine<State, Action, Output>,
+                @ViewBuilder content: @escaping (\(extraction.componentType).EngineView) -> some View = { $0 }
+            ) -> some View {
+                \(body)
+            }
+            """
+        
+        return DeclSyntax(stringLiteral: viewDecl)
+    }
+
     static func codegen(from detachment: DetachmentRef) -> DeclSyntax? {
         let viewDecl: DeclSyntax = """
             @MainActor

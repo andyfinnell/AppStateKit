@@ -52,9 +52,7 @@ enum CounterListComponent {
     }
         
     static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
-        ForEach(0..<engine.counters.count) { i in
-            counters(engine, at: i)
-        }
+        forEachCounters(engine)
     }
 }
 
@@ -82,9 +80,7 @@ enum CounterDictionaryComponent {
     }
         
     static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
-        ForEach(engine.counters.keys.sorted(), id: \.self) { key in
-            counters(engine, forKey: key)
-        }
+        forEachCounters(engine)
     }
 }
 
@@ -96,9 +92,7 @@ enum CounterIdentifiableComponent {
     }
         
     static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
-        ForEach(engine.counters.map { $0.id }, id: \.self) { id in
-            counters(engine, byID: id)
-        }
+        forEachCounters(engine)
     }
 }
 
@@ -183,9 +177,7 @@ enum ScoreboardComponent {
     
     static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
         VStack {
-            ForEach(engine.scores.indices, id: \.self) {
-                scores(engine, at: $0)
-            }
+            forEachScores(engine)
         }
     }
 }

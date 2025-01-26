@@ -108,7 +108,7 @@ final class AppComponentMacroTests: XCTestCase {
 
                 @MainActor
                 @ViewBuilder
-                private static func counters(_ engine: ViewEngine<State, Action, Output>) -> some View {
+                private static func counters(_ engine: ViewEngine<State, Action, Output>) -> CounterListComponent.EngineView {
                     CounterListComponent.EngineView(
                         engine: engine.map(
                             state: {
