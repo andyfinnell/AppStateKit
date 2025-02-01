@@ -233,16 +233,7 @@ private extension ComponentChildViewCodegen {
     }
 
     static func generateElementFunctionCall(_ extraction: Extraction, inComposition composition: Composition) -> String {
-        let dereferenceGenerator = DereferenceGenerator(
-            keyName: "key",
-            indexName: "index",
-            idName: "id",
-            stateName: "engine.state"
-        )
-        let dereference = dereferenceGenerator.generate(for: composition)
-        let isOptional = dereference.contains(where: {
-            $0.typeKind == .optional || $0.typeKind == .dictionary || $0.typeKind == .identifiableArray || $0.typeKind == .array
-        })
+        let isOptional = isOptional(from: composition)
         let baseCall = "\(extraction.name)(\(generateArgumentList(extraction)))"
 
         if isOptional {
@@ -255,6 +246,57 @@ private extension ComponentChildViewCodegen {
             content(\(baseCall))
             """
             return code
+        }
+    }
+    
+    static func isOptional(from composition: Composition) -> Bool {
+        let dereferenceGenerator = DereferenceGenerator(
+            keyName: "key",
+            indexName: "index",
+            idName: "id",
+            stateName: "engine.state"
+        )
+        let dereference = dereferenceGenerator.generate(for: composition)
+        let isOptional = dereference.contains(where: {
+            $0.typeKind == .optional || $0.typeKind == .dictionary || $0.typeKind == .identifiableArray || $0.typeKind == .array
+        })
+        return isOptional
+    }
+    
+    static func generateForEachBaseReturnType(
+        from composition: Composition,
+        extraction: Extraction
+    ) -> String {
+        let isOptional = isOptional(from: composition)
+
+        // For some reason ForEach forces type erasure here?
+        return isOptional ? "(some View)?" : "some View"
+    }
+    
+    static func generateForEachReturnType(
+        for accessor: Accessor,
+        contentType: String
+    ) -> String {
+        switch accessor {
+        case let .key(keyType):
+            "ForEach<[\(keyType)], \(keyType), \(contentType)>"
+        case .index:
+            "ForEach<[Int].Indices, Int, \(contentType)>"
+        case let .id(idType):
+            "ForEach<[\(idType)], \(idType), \(contentType)>"
+        }
+    }
+
+    static func generateForEachReturnType(
+        from composition: Composition,
+        extraction: Extraction
+    ) -> String {
+        let returnType = generateForEachBaseReturnType(
+            from: composition,
+            extraction: extraction
+        )
+        return extraction.accessors.reversed().reduce(returnType) { returnType, accessor in
+            generateForEachReturnType(for: accessor, contentType: returnType)
         }
     }
     
@@ -330,6 +372,7 @@ private extension ComponentChildViewCodegen {
                 body: body
             )
         }
+        let returnType = generateForEachReturnType(from: composition, extraction: extraction)
         
         let viewDecl = """
             @MainActor
@@ -337,7 +380,7 @@ private extension ComponentChildViewCodegen {
             private static func forEach\(extraction.name.uppercaseFirstLetter())(
                 _ engine: ViewEngine<State, Action, Output>,
                 @ViewBuilder content: @escaping (\(extraction.componentType).EngineView) -> some View = { $0 }
-            ) -> some View {
+            ) -> \(returnType) {
                 \(body)
             }
             """

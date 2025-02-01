@@ -1035,7 +1035,7 @@ final class ComponentMacroTests: XCTestCase {
                     @ViewBuilder content: @escaping (ChildFeature.EngineView) -> some View = {
                         $0
                     }
-                ) -> some View {
+                ) -> ForEach<[Int].Indices, Int, (some View)?> {
                     ForEach(engine.children.indices, id: \\.self) { index in
                     children(engine, at: index).map {
                         content($0)
@@ -1176,7 +1176,7 @@ final class ComponentMacroTests: XCTestCase {
                     @ViewBuilder content: @escaping (ChildFeature.EngineView) -> some View = {
                         $0
                     }
-                ) -> some View {
+                ) -> ForEach<[String], String, (some View)?> {
                     ForEach(engine.children.keys.sorted(), id: \\.self) { key in
                     children(engine, forKey: key).map {
                         content($0)
@@ -1317,7 +1317,7 @@ final class ComponentMacroTests: XCTestCase {
                     @ViewBuilder content: @escaping (ChildFeature.EngineView) -> some View = {
                         $0
                     }
-                ) -> some View {
+                ) -> ForEach<[ChildFeature.State.ID], ChildFeature.State.ID, (some View)?> {
                     ForEach(engine.children.map {
                             $0.id
                         }, id: \\.self) { id in
