@@ -952,11 +952,11 @@ final class ComponentMacroTests: XCTestCase {
                     state.name = newName
                 }
                 @MainActor
-            
+
                 static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
                     VStack {
                         Text(engine.name)
-            
+
                         ForEach(engine.children.indices) { i in
                             children(engine, at: i)
                         }
@@ -967,14 +967,14 @@ final class ComponentMacroTests: XCTestCase {
                     case updateName(newName: String)
                     case children(ChildFeature.Action, index: Int)
                 }
-            
+
                 typealias Output = Never
 
                 typealias SideEffects = AnySideEffects<Action, Output>
 
                 @MainActor
                 private static func children(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, action innerAction: ChildFeature.Action, index innerIndex: Int) {
-                    guard innerIndex >= state.children.startIndex, innerIndex < state.children.endIndex else {
+                    guard innerIndex >= state.children.startIndex, innerIndex < state.children.endIndex, var innerState = state.children[safetyDance: innerIndex] else {
                         return
                     }
                     let innerSideEffects = sideEffects.map({
@@ -983,10 +983,11 @@ final class ComponentMacroTests: XCTestCase {
                         , translate: { (_: ChildFeature.Output) -> Action? in
                         })
                     ChildFeature.reduce(
-                        &state.children[innerIndex],
+                        &innerState,
                         action: innerAction,
                         sideEffects: innerSideEffects
                     )
+                    state.children[safetyDance: innerIndex] = innerState
 
                 }
 
@@ -1000,11 +1001,11 @@ final class ComponentMacroTests: XCTestCase {
                             children(&state, sideEffects: sideEffects, action: innerAction, index: innerIndex)
                     }
                 }
-            
+
                 @MainActor
                 struct EngineView: View {
                     @LazyState var engine: ViewEngine<State, Action, Output>
-            
+
                     var body: some View {
                         view(engine)
                     }
@@ -1012,19 +1013,21 @@ final class ComponentMacroTests: XCTestCase {
 
                 @MainActor
                 @ViewBuilder
-                private static func children(_ engine: ViewEngine<State, Action, Output>, at index: Int) -> ChildFeature.EngineView {
-                    ChildFeature.EngineView(
-                        engine: engine.map(
-                            state: {
-                                $0.children[index]
-                            },
-                            action: {
-                                Action.children($0, index: index)
-                            }
-                        ).view()
-                    )
+                private static func children(_ engine: ViewEngine<State, Action, Output>, at index: Int) -> ChildFeature.EngineView? {
+                    if let innerState = engine.state.children[safetyDance: index] {
+                        ChildFeature.EngineView(
+                            engine: engine.map(
+                                state: {
+                                    $0.children[safetyDance: index] ?? innerState
+                                },
+                                action: {
+                                    Action.children($0, index: index)
+                                }
+                            ).view()
+                        )
+                    }
                 }
-            
+
                 @MainActor
                 @ViewBuilder
                 private static func forEachChildren(
@@ -1034,11 +1037,13 @@ final class ComponentMacroTests: XCTestCase {
                     }
                 ) -> some View {
                     ForEach(engine.children.indices, id: \\.self) { index in
-                    content(children(engine, at: index))
+                    children(engine, at: index).map {
+                        content($0)
+                    }
                     }
                 }
             }
-            
+
             extension MyFeature: Component, BaseComponent {
             }
             """,

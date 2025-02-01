@@ -26,8 +26,8 @@ struct DereferenceGenerator {
             switch c {
             case let .array(element):
                 dereferences.append(Dereference(
-                    segment: "[\(indexName)]",
-                    join: "",
+                    segment: "[safetyDance: \(indexName)]",
+                    join: "?",
                     typeKind: .array
                 ))
                 current = element
@@ -71,9 +71,9 @@ struct DereferenceGenerator {
         var derefText = ""
         for (i, segment) in dereference.enumerated() {
             switch segment.typeKind {
-            case .array, .property:
+            case .property:
                 break
-            case .dictionary, .optional, .identifiableArray:
+            case .dictionary, .optional, .identifiableArray, .array:
                 needsCopy = true
             }
 

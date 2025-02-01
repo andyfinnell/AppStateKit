@@ -241,7 +241,7 @@ private extension ComponentChildViewCodegen {
         )
         let dereference = dereferenceGenerator.generate(for: composition)
         let isOptional = dereference.contains(where: {
-            $0.typeKind == .optional || $0.typeKind == .dictionary || $0.typeKind == .identifiableArray
+            $0.typeKind == .optional || $0.typeKind == .dictionary || $0.typeKind == .identifiableArray || $0.typeKind == .array
         })
         let baseCall = "\(extraction.name)(\(generateArgumentList(extraction)))"
 
