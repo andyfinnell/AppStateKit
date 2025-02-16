@@ -17,7 +17,7 @@ public enum BindMacro: ExpressionMacro {
               let keyPathExpr = node.arguments.last?.expression else {
             throw BindError.missingArguments
         }
-        let actionName = try actionNameFromKeyPath(keyPathExpr)
+        let actionName = try BindParser.parseActionNameFromKeyPath(keyPathExpr)
         let expr: ExprSyntax = """
             \(engineExpr).binding(\(keyPathExpr), send: { .\(raw: actionName)($0) })
             """
@@ -25,20 +25,3 @@ public enum BindMacro: ExpressionMacro {
     }
 }
 
-private extension BindMacro {
-    static func actionNameFromKeyPath(_ expr: ExprSyntax) throws -> String {
-        // Grab the last segment, prepend "update"
-        guard let keyPathExpr = expr.as(KeyPathExprSyntax.self) else {
-            throw BindError.unexpectedKeyPathExpression
-        }
-        
-        let lastPathComponent = keyPathExpr.components
-            .compactMap { $0.component.as(KeyPathPropertyComponentSyntax.self) }
-            .last
-        guard let lastPathComponent else {
-            throw BindError.unexpectedKeyPathExpression
-        }
-        
-        return "update\(lastPathComponent.declName.baseName.text.uppercaseFirstLetter())"
-    }
-}

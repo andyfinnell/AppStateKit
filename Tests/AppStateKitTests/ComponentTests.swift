@@ -247,3 +247,21 @@ enum SimpleScoreboardComponent {
         }
     }
 }
+
+@Component
+enum NewBindingsComponent {
+    struct State: Equatable {
+        @Updatable var counter: Int = 0
+        @Updatable var message: String = "Hi"
+    }
+    
+    static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
+        VStack {
+            Text(engine.message)
+            
+            #withBinding(engine, \.message, {
+                TextField("Message", text: $0)
+            })
+        }
+    }
+}

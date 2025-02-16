@@ -55,7 +55,7 @@ public final class ViewEngine<State, Action: Sendable, Output>: Engine {
     public subscript<T>(dynamicMember keyPath: KeyPath<State, T>) -> T {
         state[keyPath: keyPath]
     }
-    
+        
     public func binding<T>(_ keyPath: KeyPath<State, T>, send: @escaping (T) -> Action?) -> Binding<T> {
         Binding<T>(get: {
             self.state[keyPath: keyPath]

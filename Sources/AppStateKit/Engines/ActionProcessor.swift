@@ -54,7 +54,7 @@ final class ActionProcessor<State, Action: Sendable, Output> {
         detachedSender: DetachedSender
     ) {
         actions.append(action)
-        processNextActionIfPossible(
+        processNextActions(
             on: getState,
             setState,
             using: sendThunk,
@@ -65,24 +65,47 @@ final class ActionProcessor<State, Action: Sendable, Output> {
 }
 
 private extension ActionProcessor {
-    func processNextActionIfPossible(
+    func processNextActions(
         on getState: () -> State,
         _ setState: (State) -> Void,
         using sendThunk: @MainActor @Sendable @escaping (Action) -> Void,
         _ signalThunk: @MainActor @escaping (Output) -> Void,
         detachedSender: DetachedSender
     ) {
-        guard !isProcessing,
-              let nextAction = actions.first else {
+        // Make sure we're not recursing on ourselves
+        guard !isProcessing else {
             return
         }
+        
         isProcessing = true
-        actions.removeFirst()
+        defer {
+            isProcessing = false
+        }
+        
+        while let nextAction = actions.first {
+            actions.removeFirst()
+            
+            processNextAction(
+                nextAction,
+                on: getState, setState,
+                using: sendThunk, signalThunk,
+                detachedSender: detachedSender
+            )
+        }
+    }
+    
+    func processNextAction(
+        _ nextAction: Action,
+        on getState: () -> State,
+        _ setState: (State) -> Void,
+        using sendThunk: @MainActor @Sendable @escaping (Action) -> Void,
+        _ signalThunk: @MainActor @escaping (Output) -> Void,
+        detachedSender: DetachedSender
+    ) {
         let sideEffects = SideEffectsContainer<Action>(dependencyScope: dependencies)
         var state = getState()
         reduce(&state, nextAction, sideEffects.eraseToAnySideEffects(signal: signalThunk))
         setState(state)
-        isProcessing = false
         
         sideEffects.sendDetachedActions(with: detachedSender)
         
@@ -91,8 +114,10 @@ private extension ActionProcessor {
         
         // Perform effects
         let blocks = sideEffects.apply(using: sendThunk)
-        continuation.yield(blocks)
-
+        if !blocks.isEmpty {
+            continuation.yield(blocks)
+        }
+        
         // Start subscriptions
         sideEffects.startSubscriptions(
             using: sendThunk,
@@ -114,15 +139,6 @@ private extension ActionProcessor {
             task.cancel()
             subscriptions.removeValue(forKey: subscriptionID)
         }
-        
-        // recurse
-        processNextActionIfPossible(
-            on: getState,
-            setState,
-            using: sendThunk,
-            signalThunk,
-            detachedSender: detachedSender
-        )
     }
 }
 

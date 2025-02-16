@@ -16,6 +16,7 @@ let testMacros: [String: Macro.Type] = [
     "bindIfPresent": BindIfPresentMacro.self,
     "bindElements": BindElementsMacro.self,
     "bindBatch": BindBatchMacro.self,
+    "withBinding": WithBindingMacro.self,
     "Updatable": UpdatableMacro.self,
     "BatchUpdatable": BatchUpdatableMacro.self,
     "JSONStorageEffects": JSONStorageEffectsMacro.self,

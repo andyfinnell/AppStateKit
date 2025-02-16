@@ -42,6 +42,13 @@ public macro bindElements<State, Action, Output, P>(_ engine: ViewEngine<State, 
 @freestanding(expression)
 public macro bindBatch<State, Action, Output, P>(_ engine: ViewEngine<State, Action, Output>, _ keyPath: KeyPath<State, [P]>) -> [Binding<P>] = #externalMacro(module: "AppStateKitMacros", type: "BindBatchMacro")
 
+@freestanding(expression)
+public macro withBinding<State, Action, Output, P, Content: View>(
+    _ engine: ViewEngine<State, Action, Output>,
+    _ keyPath: KeyPath<State, P>,
+    @ViewBuilder _ content: @escaping (Binding<P>) -> Content
+) -> WithBinding<Content, P> = #externalMacro(module: "AppStateKitMacros", type: "WithBindingMacro")
+
 @attached(peer)
 public macro Updatable(output: Bool = false) = #externalMacro(module: "AppStateKitMacros", type: "UpdatableMacro")
 

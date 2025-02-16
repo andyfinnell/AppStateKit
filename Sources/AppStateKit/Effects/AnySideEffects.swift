@@ -231,9 +231,9 @@ public struct AnySideEffects<Action: Sendable, Output> {
                 guard let action = translate(output) else {
                     return
                 }
-                append(FutureEffect {
+                appendImmediate(FutureImmediateEffect({
                     action
-                })
+                }))
             },
             subscribe: { subscription in
                 let newSubscription = subscription.map(transform)
