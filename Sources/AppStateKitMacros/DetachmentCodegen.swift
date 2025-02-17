@@ -13,8 +13,8 @@ struct DetachmentCodegen {
         // TODO: if Output is never, don't put `nil`
         let defaultTranslate: DeclSyntax = """
             
-            static func translate(from output: \(raw: detachment.componentName).Output) -> Action? {
-                nil
+            static func translate(from output: \(raw: detachment.componentName).Output) -> TranslateResult<Action, Output> {
+                .drop
             }
             """
 

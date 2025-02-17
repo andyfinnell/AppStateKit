@@ -77,7 +77,7 @@ final class SideEffectsTests: XCTestCase {
         }
 
         let childSubject = sideEffects.map({ Action.child($0) },
-                                           translate: { (_: ChildOutput) in .updated })
+                                           translate: { (_: ChildOutput) in .perform(.updated) })
         
         childSubject.update(index: 2, content: "frank") {
             .updated($0)

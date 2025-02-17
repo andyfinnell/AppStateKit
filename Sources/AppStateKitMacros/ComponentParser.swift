@@ -107,7 +107,7 @@ struct ComponentParser {
         guard doesType(
             parameter.type,
             haveName: "ViewEngine",
-            withOneTypeParameters: "State", "Action", "Output"
+            withTypeParameters: "State", "Action", "Output"
         ) else {
             return false
         }
@@ -139,7 +139,7 @@ struct ComponentParser {
         guard doesType(
             parameter.type,
             haveName: "ViewEngine",
-            withOneTypeParameters: "State", "Action", "Output"
+            withTypeParameters: "State", "Action", "Output"
         ) else {
             return false
         }
@@ -170,7 +170,11 @@ private extension ComponentParser {
                 && functionDecl.signature.effectSpecifiers?.asyncSpecifier == nil
                 && functionDecl.signature.effectSpecifiers?.throwsClause?.throwsSpecifier == nil
                 && isStatic
-                && optionalTypeName(returnClause.type) == "Action" else {
+                && doesType(
+                    returnClause.type,
+                    haveName: "TranslateResult",
+                    withTypeParameters: "Action", "Output"
+                ) else {
             // TODO: should this be a warning if everything else matches?
             return nil
         }
@@ -191,15 +195,7 @@ private extension ComponentParser {
             translateMethod: method
         )
     }
-    
-    static func optionalTypeName(_ typeSyntax: TypeSyntax) -> String? {
-        guard let optionalType = typeSyntax.as(OptionalTypeSyntax.self),
-              let identifier = optionalType.wrappedType.as(IdentifierTypeSyntax.self) else {
-            return nil
-        }
-        return identifier.name.text
-    }
-    
+        
     static func extractComponentNameFromOutput(_ typeSyntax: TypeSyntax) -> String? {
         guard let memberSyntax = typeSyntax.as(MemberTypeSyntax.self),
               memberSyntax.name.text == "Output" else {
@@ -228,7 +224,7 @@ private extension ComponentParser {
         // Should only have a property at this level
         switch composition.composition {
         case let .property(name, innerComposition):
-            var actions = [
+            let actions = [
                 Action(
                     label: name,
                     parameters: parametersFromComposition(innerComposition),
@@ -236,25 +232,11 @@ private extension ComponentParser {
                     implementation: nil
                 )
             ]
-            if composition.passthroughOutput {
-                actions.append(
-                    passthroughActionForOutputComposition(propertyName: name, innerComposition: innerComposition)
-                )
-            }
             return actions
             
         case .array, .dictionary, .named, .optional, .identifiableArray:
             return []
         }
-    }
-
-    static func passthroughActionForOutputComposition(propertyName name: String, innerComposition: Composition) -> Action {
-        Action(
-            label: "passthrough\(name.uppercaseFirstLetter())Output",
-            parameters: outputParametersFromComposition(innerComposition),
-            composition: nil,
-            implementation: .passthroughOutput(name)
-        )
     }
     
     static func outputsFromComposition(_ composition: ComponentComposition) -> [ComponentOutput] {
@@ -262,7 +244,6 @@ private extension ComponentParser {
         switch composition.composition {
         case let .property(name, innerComposition):
             if composition.passthroughOutput {
-                let passthroughAction = passthroughActionForOutputComposition(propertyName: name, innerComposition: innerComposition)
                 let translateMethod = translateOutputToActionMethod(propertyName: name, innerComposition: innerComposition)
                 return [
                     ComponentOutput(
@@ -270,7 +251,6 @@ private extension ComponentParser {
                         parameters: outputParametersFromComposition(innerComposition),
                         composition: ComponentOutputComposition(
                             componentName: composition.composition.componentName,
-                            passthroughAction: passthroughAction,
                             translateOutputMethod: translateMethod
                         )
                     )
@@ -311,7 +291,7 @@ private extension ComponentParser {
         ComponentMethod(
             name: "translate\(name.uppercaseFirstLetter())OutputToAction",
             parameters: outputParametersFromComposition(innerComposition),
-            returnType: optionalType(of: identifierType("Action"))
+            returnType: identifierType("TranslateResult", withArguments: "Action", "Output")
         )
     }
 
@@ -361,18 +341,6 @@ private extension ComponentParser {
         case let .optional(wrapped):
             return outputParametersFromComposition(wrapped)
         }
-    }
-
-    static func optionalType(of baseType: TypeSyntax) -> TypeSyntax {
-        TypeSyntax(OptionalTypeSyntax(wrappedType: baseType))
-    }
-    
-    static func identifierType(_ name: String) -> TypeSyntax {
-        TypeSyntax(IdentifierTypeSyntax(name: TokenSyntax(stringLiteral: name)))
-    }
-    
-    static func memberType(_ name: String, of baseType: TypeSyntax) -> TypeSyntax {
-        TypeSyntax(MemberTypeSyntax(baseType: baseType, name: TokenSyntax(stringLiteral: name)))
     }
 
     static func computeCompositionAndActionsFromStateStruct(
@@ -714,49 +682,8 @@ private extension ComponentParser {
         return doesType(
             parameter.type,
             haveName: "AnySideEffects",
-            withOneTypeParameters: "Action", "Output"
+            withTypeParameters: "Action", "Output"
         ) || doesType(parameter.type, haveName: "SideEffects")
-    }
-
-    static func extractParameterType(_ identifier: IdentifierTypeSyntax, ifTypeEquals typename: String) -> TypeSyntax? {
-        guard let generics = identifier.genericArgumentClause,
-              let firstArgument = generics.arguments.first,
-              generics.arguments.count == 1,
-              identifier.name.text == typename else {
-            return nil
-        }
-
-        return firstArgument.argument
-    }
-        
-    static func doesType(_ type: TypeSyntax, haveName typename: String, withOneTypeParameters parameterTypenames: String...) -> Bool {
-        guard let identifier = type.as(IdentifierTypeSyntax.self),
-              identifier.name.text == typename else {
-            return false
-        }
-
-        guard let generics = identifier.genericArgumentClause,
-              generics.arguments.count == parameterTypenames.count else {
-            return false
-        }
-        
-        for (argument, parameterTypename) in zip(generics.arguments, parameterTypenames) {
-            guard let argumentIdentifier = argument.argument.as(IdentifierTypeSyntax.self),
-                  argumentIdentifier.name.text == parameterTypename else {
-                return false
-            }
-        }
-        
-        return true
-    }
-
-    static func doesType(_ type: TypeSyntax, haveName typename: String) -> Bool {
-        guard let identifier = type.as(IdentifierTypeSyntax.self),
-              identifier.name.text == typename else {
-            return false
-        }
-
-        return identifier.genericArgumentClause == nil
     }
 
     static func parseDetachment(_ enumDecl: EnumDeclSyntax) -> DetachmentRef? {

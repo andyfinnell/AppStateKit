@@ -15,7 +15,7 @@ public final class MapEngine<State, Action: Sendable, Output>: Engine {
         engine: E,
         state toLocalState: @escaping (E.State) -> State,
         action fromLocalAction: @escaping (Action) -> E.Action,
-        translate: @escaping (Output) -> E.Action?
+        translate: @escaping (Output) -> TranslateResult<E.Action, E.Output>
     ) {
         // Intentionally holding parent in memory
         sendThunk = { @MainActor action in
@@ -23,10 +23,13 @@ public final class MapEngine<State, Action: Sendable, Output>: Engine {
         }
         // Intentionally holding parent in memory
         signalThunk = { @MainActor output in
-            guard let parentAction = translate(output) else {
-                return
+            switch translate(output) {
+            case let .perform(parentAction):
+                engine.send(parentAction)
+            case let .passThrough(parentOutput):
+                engine.signal(parentOutput)
+            case .drop: break
             }
-            engine.send(parentAction)
         }
 
         stateThunk = {
@@ -57,7 +60,7 @@ public extension Engine {
     func map<LocalState, LocalAction, LocalOutput>(
         state toLocalState: @escaping (State) -> LocalState,
         action fromLocalAction: @escaping (LocalAction) -> Action,
-        translate: @escaping (LocalOutput) -> Action?
+        translate: @escaping (LocalOutput) -> TranslateResult<Action, Output>
     ) -> MapEngine<LocalState, LocalAction, LocalOutput> {
         MapEngine(
             engine: self,
@@ -75,7 +78,7 @@ public extension Engine {
             engine: self,
             state: toLocalState,
             action: fromLocalAction,
-            translate: { _ -> Action? in }
+            translate: { _ -> TranslateResult<Action, Output> in }
         )
     }
 

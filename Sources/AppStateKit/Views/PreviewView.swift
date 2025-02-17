@@ -12,7 +12,7 @@ struct PreviewView<C: Component>: View {
             C.reduce(&state, action: action, sideEffects: sideEffects.map({
                         $0
                     }, translate: { _ in
-                        nil
+                            .drop
                     }))
         }
 
@@ -24,7 +24,7 @@ struct PreviewView<C: Component>: View {
                     }, action: {
                         $0
                     }, translate: { _ in
-                        nil
+                            .drop
                     }).view())
         }
     }

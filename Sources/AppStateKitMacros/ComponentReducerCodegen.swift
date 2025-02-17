@@ -96,9 +96,9 @@ private extension ComponentReducerCodegen {
         if let method = translateCompositionMethodNames[childModule] {
             translateMethod = generateOutputCompositionClosure(for: method, accessors: accessors)
         } else if component.isOutputNever {
-            translateMethod = "{ (_: \(childModule).Output) -> Action? in }"
+            translateMethod = "{ (_: \(childModule).Output) -> TranslateResult<Action, Output> in }"
         } else {
-            translateMethod = "{ (_: \(childModule).Output) in nil }"
+            translateMethod = "{ (_: \(childModule).Output) in .drop }"
         }
         
         let definition: DeclSyntax = """

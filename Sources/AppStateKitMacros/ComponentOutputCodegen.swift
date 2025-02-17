@@ -61,18 +61,18 @@ private extension ComponentOutputCodegen {
         let (signature, parameterNames) = ComponentMethodCodegen.codegenSignature(for: composition.translateOutputMethod)
         let funcDecl: DeclSyntax = """
             private static \(raw: signature) {
-                .\(raw: composition.passthroughAction.label)\(raw: generateActionArguments(for: composition.passthroughAction, usingArguments: parameterNames))
+                .passThrough(.\(raw: output.label)\(raw: generateOutputArguments(for: output, usingArguments: parameterNames)))
             }
             """
         return funcDecl
     }
     
-    static func generateActionArguments(for action: Action, usingArguments arguments: [String]) -> String {
-        guard !action.parameters.isEmpty else {
+    static func generateOutputArguments(for output: ComponentOutput, usingArguments arguments: [String]) -> String {
+        guard !output.parameters.isEmpty else {
             return ""
         }
         
-        let arguments = zip(action.parameters, arguments).map { parameter, argument in
+        let arguments = zip(output.parameters, arguments).map { parameter, argument in
             if let label = parameter.label {
                 return "\(label): \(argument)"
             } else {

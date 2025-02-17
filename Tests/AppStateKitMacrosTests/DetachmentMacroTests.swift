@@ -59,8 +59,8 @@ final class DetachmentMacroTests: XCTestCase {
                         nil
                     }
 
-                    static func translate(from output: Subfeature.Output) -> Action? {
-                        nil
+                    static func translate(from output: Subfeature.Output) -> TranslateResult<Action, Output> {
+                        .drop
                     }
 
                     @MainActor
@@ -210,8 +210,8 @@ final class DetachmentMacroTests: XCTestCase {
                         .updateScore(state.score)
                     }
 
-                    static func translate(from output: Subfeature.Output) -> Action? {
-                        nil
+                    static func translate(from output: Subfeature.Output) -> TranslateResult<Action, Output> {
+                        .drop
                     }
 
                     @MainActor
@@ -323,8 +323,8 @@ final class DetachmentMacroTests: XCTestCase {
                         Subfeature.State(score: state.score)
                     }
             
-                    static func translateFromSubfeature(from output: Subfeature.Output) -> Action? {
-                        .increase
+                    static func translateFromSubfeature(from output: Subfeature.Output) -> TranslateResult<Action, Output> {
+                        .perform(.increase)
                     }
                 }
             
@@ -357,8 +357,8 @@ final class DetachmentMacroTests: XCTestCase {
                         Subfeature.State(score: state.score)
                     }
 
-                    static func translateFromSubfeature(from output: Subfeature.Output) -> Action? {
-                        .increase
+                    static func translateFromSubfeature(from output: Subfeature.Output) -> TranslateResult<Action, Output> {
+                        .perform(.increase)
                     }
 
                     static func actionToUpdateState(from state: State) -> Subfeature.Action? {

@@ -112,7 +112,7 @@ private extension DetachmentParser {
             return nil
         }
         
-        guard isOptionalType(returnClause.type, named: "Action") else {
+        guard doesType(returnClause.type, haveName: "TranslateResult", withTypeParameters: "Action", "Output") else {
             return nil
         }
         
@@ -124,36 +124,4 @@ private extension DetachmentParser {
         return functionDecl.name.text
     }
 
-    static func isType(_ typeSyntax: TypeSyntax, named name: String) -> Bool {
-        if let identifierType = typeSyntax.as(IdentifierTypeSyntax.self),
-           identifierType.name.text == name {
-            return true
-        } else {
-            return false
-        }
-    }
-    
-    static func isTypeScoped(_ typeSyntax: TypeSyntax, named name: String) -> (String?, Bool) {
-        if let memberType = typeSyntax.as(MemberTypeSyntax.self),
-            memberType.name.text == name {
-            let typename = "\(memberType.baseType)"
-            return (typename, true)
-        } else {
-            return (nil, false)
-        }
-    }
-        
-    static func isOptionalTypeScoped(_ typeSyntax: TypeSyntax, named name: String) -> (String?, Bool) {
-        guard let optionalType = typeSyntax.as(OptionalTypeSyntax.self) else {
-            return (nil, false)
-        }
-        return isTypeScoped(optionalType.wrappedType, named: name)
-    }
-    
-    static func isOptionalType(_ typeSyntax: TypeSyntax, named name: String) -> Bool {
-        guard let optionalType = typeSyntax.as(OptionalTypeSyntax.self) else {
-            return false
-        }
-        return isType(optionalType.wrappedType, named: name)
-    }
 }

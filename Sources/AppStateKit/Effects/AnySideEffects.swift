@@ -214,7 +214,7 @@ public struct AnySideEffects<Action: Sendable, Output> {
 
     public func map<ToAction, ToOutput>(
         _ transform: @Sendable @escaping (ToAction) -> Action,
-        translate: @escaping (ToOutput) -> Action? = { _ in nil }
+        translate: @escaping (ToOutput) -> TranslateResult<Action, Output> = { _ in .drop }
     ) -> AnySideEffects<ToAction, ToOutput> {
         // TODO: maybe a good time to create a child dependencyScope?
         AnySideEffects<ToAction, ToOutput>(
@@ -228,12 +228,18 @@ public struct AnySideEffects<Action: Sendable, Output> {
                 appendImmediate(newFuture)
             },
             signal: { output in
-                guard let action = translate(output) else {
-                    return
+                switch translate(output) {
+                case let .perform(action):
+                    appendImmediate(FutureImmediateEffect({
+                        action
+                    }))
+
+                case let .passThrough(newOutput):
+                    signalThunk(newOutput)
+                    
+                case .drop:
+                    break // do nothing, let it drop
                 }
-                appendImmediate(FutureImmediateEffect({
-                    action
-                }))
             },
             subscribe: { subscription in
                 let newSubscription = subscription.map(transform)

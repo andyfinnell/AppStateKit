@@ -17,7 +17,7 @@ public final class DetachedEngine<State, Action: Sendable, Output>: Engine {
         engine: E,
         initialState: (E.State) -> State,
         state toLocalState: @escaping (E.State) -> Action?,
-        translate: @escaping (C.Output) -> E.Action?,
+        translate: @escaping (C.Output) -> TranslateResult<E.Action, E.Output>,
         dependencies toLocalDependencies: (DependencyScope) -> DependencyScope,
         isEqual: @escaping (State, State) -> Bool,
         component: C.Type,
@@ -29,10 +29,13 @@ public final class DetachedEngine<State, Action: Sendable, Output>: Engine {
         )
         // Intentionally holding parent in memory
         signalThunk = { @MainActor output in
-            guard let parentAction = translate(output) else {
-                return
+            switch translate(output) {
+            case let .perform(parentAction):
+                engine.send(parentAction)
+            case let .passThrough(parentOutput):
+                engine.signal(parentOutput)
+            case .drop: break
             }
-            engine.send(parentAction)
         }
         state = initialState(engine.state) // initialize
         self.isEqual = isEqual
@@ -88,7 +91,7 @@ extension Engine {
         component: C.Type,
         initialState: (State) -> C.State,
         actionToUpdateState: @escaping (State) -> C.Action?,
-        translate: @escaping (C.Output) -> Action?,
+        translate: @escaping (C.Output) -> TranslateResult<Action, Output>,
         detachment: D.Type,
         inject: (DependencyScope) -> Void
     ) -> DetachedEngine<C.State, C.Action, C.Output> where D.DetachedAction == C.Action {
@@ -108,7 +111,7 @@ extension Engine {
         component: C.Type,
         initialState: (State) -> C.State,
         actionToUpdateState: @escaping (State) -> C.Action?,
-        translate: @escaping (C.Output) -> Action?,
+        translate: @escaping (C.Output) -> TranslateResult<Action, Output>,
         detachment: D.Type,
         inject: (DependencyScope) -> Void
     ) -> DetachedEngine<C.State, C.Action, C.Output> where C.State: Equatable, D.DetachedAction == C.Action {
@@ -135,7 +138,7 @@ extension Engine {
             engine: self,
             initialState: initialState,
             state: actionToUpdateState,
-            translate: { _ -> Action? in },
+            translate: { _ -> TranslateResult<Action, Output> in },
             dependencies: { $0.scoped(inject: inject) },
             isEqual: { _, _ in false },
             component: component,
@@ -154,7 +157,7 @@ extension Engine {
             engine: self,
             initialState: initialState,
             state: actionToUpdateState,
-            translate: { _ -> Action? in  },
+            translate: { _ -> TranslateResult<Action, Output> in  },
             dependencies: { $0.scoped(inject: inject) },
             isEqual: { $0 == $1 },
             component: component,

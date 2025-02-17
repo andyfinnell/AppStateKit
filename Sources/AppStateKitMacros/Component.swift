@@ -59,7 +59,6 @@ struct DetachmentRef {
 
 struct ComponentOutputComposition {
     let componentName: String
-    let passthroughAction: Action
     let translateOutputMethod: ComponentMethod
 }
 

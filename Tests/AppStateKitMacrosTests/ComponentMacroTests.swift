@@ -859,7 +859,7 @@ final class ComponentMacroTests: XCTestCase {
                 @MainActor
                 private static func child(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, action innerAction: ChildFeature.Action) {
 
-                    let innerSideEffects = sideEffects.map(Action.child, translate: { (_: ChildFeature.Output) -> Action? in
+                    let innerSideEffects = sideEffects.map(Action.child, translate: { (_: ChildFeature.Output) -> TranslateResult<Action, Output> in
                         })
                     ChildFeature.reduce(
                         &state.child,
@@ -980,7 +980,7 @@ final class ComponentMacroTests: XCTestCase {
                     let innerSideEffects = sideEffects.map({
                         Action.children($0, index: innerIndex)
                     }
-                        , translate: { (_: ChildFeature.Output) -> Action? in
+                        , translate: { (_: ChildFeature.Output) -> TranslateResult<Action, Output> in
                         })
                     ChildFeature.reduce(
                         &innerState,
@@ -1121,7 +1121,7 @@ final class ComponentMacroTests: XCTestCase {
                     let innerSideEffects = sideEffects.map({
                         Action.children($0, key: innerKey)
                     }
-                        , translate: { (_: ChildFeature.Output) -> Action? in
+                        , translate: { (_: ChildFeature.Output) -> TranslateResult<Action, Output> in
                         })
                     ChildFeature.reduce(
                         &innerState,
@@ -1262,7 +1262,7 @@ final class ComponentMacroTests: XCTestCase {
                     let innerSideEffects = sideEffects.map({
                         Action.children($0, id: innerID)
                     }
-                        , translate: { (_: ChildFeature.Output) -> Action? in
+                        , translate: { (_: ChildFeature.Output) -> TranslateResult<Action, Output> in
                         })
                     ChildFeature.reduce(
                         &innerState,
@@ -1398,7 +1398,7 @@ final class ComponentMacroTests: XCTestCase {
                     guard var innerState = state.child else {
                         return
                     }
-                    let innerSideEffects = sideEffects.map(Action.child, translate: { (_: ChildFeature.Output) -> Action? in
+                    let innerSideEffects = sideEffects.map(Action.child, translate: { (_: ChildFeature.Output) -> TranslateResult<Action, Output> in
                         })
                     ChildFeature.reduce(
                         &innerState,
@@ -1466,8 +1466,8 @@ final class ComponentMacroTests: XCTestCase {
                     var child: ChildFeature.State
                 }
                 
-                private static func translateChild(from output: ChildFeature.Output) -> Action? {
-                    .updateName(newName: "bob")
+                private static func translateChild(from output: ChildFeature.Output) -> TranslateResult<Action, Output> {
+                    .perform(.updateName(newName: "bob"))
                 }
             
                 private static func updateName(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, newName: String) {
@@ -1491,8 +1491,8 @@ final class ComponentMacroTests: XCTestCase {
                     var child: ChildFeature.State
                 }
                 
-                private static func translateChild(from output: ChildFeature.Output) -> Action? {
-                    .updateName(newName: "bob")
+                private static func translateChild(from output: ChildFeature.Output) -> TranslateResult<Action, Output> {
+                    .perform(.updateName(newName: "bob"))
                 }
                 @MainActor
             
@@ -1640,7 +1640,7 @@ final class ComponentMacroTests: XCTestCase {
                 private static func child(_ state: inout State, sideEffects: AnySideEffects<Action, Output>, action innerAction: ChildFeature.Action) {
 
                     let innerSideEffects = sideEffects.map(Action.child, translate: { (_: ChildFeature.Output) in
-                            nil
+                            .drop
                         })
                     ChildFeature.reduce(
                         &state.child,
@@ -1714,7 +1714,8 @@ final class ComponentMacroTests: XCTestCase {
                 }
             }
             """,
-            expandedSource: """
+            expandedSource:
+            """
             
             enum MyFeature {
                 struct State {
@@ -1734,7 +1735,6 @@ final class ComponentMacroTests: XCTestCase {
                 enum Action: Equatable {
                     case updateName(String)
                     case child(ChildFeature.Action)
-                    case passthroughChildOutput(ChildFeature.Output)
                 }
 
                 @MainActor
@@ -1745,18 +1745,13 @@ final class ComponentMacroTests: XCTestCase {
                     }
                 }
 
-                @MainActor
-                private static func passthroughChildOutput(_ state: inout State, sideEffects: SideEffects, _ p0: ChildFeature.Output) {
-                    sideEffects.signal(.child(p0))
-                }
-
                 enum Output: Equatable {
                     case updatedName(String)
                     case child(ChildFeature.Output)
                 }
 
-                private static func translateChildOutputToAction(_ p0: ChildFeature.Output) -> Action? {
-                    .passthroughChildOutput(p0)
+                private static func translateChildOutputToAction(_ p0: ChildFeature.Output) -> TranslateResult<Action, Output> {
+                    .passThrough(.child(p0))
                 }
 
                 typealias SideEffects = AnySideEffects<Action, Output>
@@ -1781,9 +1776,6 @@ final class ComponentMacroTests: XCTestCase {
 
                     case let .child(innerAction):
                             child(&state, sideEffects: sideEffects, action: innerAction)
-                    case let .passthroughChildOutput(p0):
-                        passthroughChildOutput(&state, sideEffects: sideEffects, p0)
-
                     }
                 }
 

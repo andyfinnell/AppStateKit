@@ -30,8 +30,8 @@ final class MapEngineTests: XCTestCase {
             
         }
 
-        private static func translateTest(from output: TestComponent.Output) -> Action? {
-            .finishBigEffect
+        private static func translateTest(from output: TestComponent.Output) -> TranslateResult<Action, Output> {
+            .perform(.finishBigEffect)
         }
         
         static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
@@ -72,7 +72,7 @@ final class MapEngineTests: XCTestCase {
         subject = await parentEngine.map(
             state: { $0.test },
             action: ParentComponent.Action.test,
-            translate: { _ in .finishBigEffect }
+            translate: { _ in .perform(.finishBigEffect) }
         )
     }
 

@@ -33,10 +33,10 @@ final class DetachedEngineTests: XCTestCase {
                 .updateCount(state.count)
             }
             
-            static func translate(from output: TestComponent.Output) -> Action? {
+            static func translate(from output: TestComponent.Output) -> TranslateResult<Action, Output> {
                 switch output {
                 case .markFinished:
-                    return .markFinished
+                        .perform(.markFinished)
                 }
             }
         }
