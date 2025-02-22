@@ -1,6 +1,7 @@
 import Foundation
 import AppStateKit
 import SwiftUI
+import BaseKit
 
 @Component
 enum CounterComponent {
