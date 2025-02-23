@@ -476,7 +476,7 @@ private extension ComponentParser {
             return typeDecl
         }
         let type: TypeSyntax = """
-            [Int: \(arraySyntax.element)]
+            \(arraySyntax.element)
             """
         return type
     }

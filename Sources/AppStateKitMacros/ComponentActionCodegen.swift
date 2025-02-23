@@ -72,8 +72,8 @@ private extension ComponentActionCodegen {
         case let .batchUpdateStateProperty(propertyName, shouldOutputExpr: shouldOutputExpr):
             if let parameterName = implementationParameterName(from: action, at: 0) {
                 let assign = """
-                    for (i, value) in \(parameterName) {
-                        state.\(propertyName)[i] = value
+                    for i in 0..<state.\(propertyName).count {
+                        state.\(propertyName)[i] = \(parameterName)
                     }
                     """
                 var outputCode = ""

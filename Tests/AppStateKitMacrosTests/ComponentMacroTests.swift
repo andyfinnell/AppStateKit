@@ -541,14 +541,14 @@ final class ComponentMacroTests: XCTestCase {
                 }
 
                 enum Action: Equatable {
-                    case updateNames([Int: String])
+                    case updateNames(String)
                     case increase
                 }
 
                 @MainActor
-                private static func updateNames(_ state: inout State, sideEffects: SideEffects, _ p0: [Int: String]) {
-                    for (i, value) in p0 {
-                    state.names[i] = value
+                private static func updateNames(_ state: inout State, sideEffects: SideEffects, _ p0: String) {
+                    for i in 0 ..< state.names.count {
+                    state.names[i] = p0
                     }
                 }
 
@@ -647,14 +647,14 @@ final class ComponentMacroTests: XCTestCase {
                 }
 
                 enum Action: Equatable {
-                    case updateNames([Int: String])
+                    case updateNames(String)
                     case increase
                 }
 
                 @MainActor
-                private static func updateNames(_ state: inout State, sideEffects: SideEffects, _ p0: [Int: String]) {
-                    for (i, value) in p0 {
-                    state.names[i] = value
+                private static func updateNames(_ state: inout State, sideEffects: SideEffects, _ p0: String) {
+                    for i in 0 ..< state.names.count {
+                    state.names[i] = p0
                     }
                     if true {
                         sideEffects.signal(.updatedNames(p0))
@@ -662,7 +662,7 @@ final class ComponentMacroTests: XCTestCase {
                 }
 
                 enum Output: Equatable {
-                    case updatedNames([Int: String])
+                    case updatedNames(String)
                     case beginEditing
                     case panel(Panel.Action, index: Int)
                 }
