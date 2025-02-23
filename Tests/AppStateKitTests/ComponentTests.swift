@@ -67,9 +67,7 @@ enum CounterOptionalComponent {
     static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
         VStack {
             Text("Hello")
-        }.sheet(isPresented: #bindIfPresent(engine, \.counter), content: {
-            Text("Hellow again")
-        })
+        }
     }
 }
 
@@ -259,10 +257,6 @@ enum NewBindingsComponent {
     static func view(_ engine: ViewEngine<State, Action, Output>) -> some View {
         VStack {
             Text(engine.message)
-            
-            #withBinding(engine, \.message, {
-                TextField("Message", text: $0)
-            })
         }
     }
 }

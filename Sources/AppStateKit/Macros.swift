@@ -30,25 +30,6 @@ public macro ExtendImmediateSideEffects<N, T>(with name: N, _ expr: T) = #extern
 @attached(member, names: named(actionToUpdateState(from:)), named(translate(from:)), named(view(_:inject:)))
 public macro Detachment() = #externalMacro(module: "AppStateKitMacros", type: "DetachmentMacro")
 
-@freestanding(expression)
-public macro bind<State, Action, Output, P>(_ engine: ViewEngine<State, Action, Output>, _ keyPath: KeyPath<State, P>) -> Binding<P> = #externalMacro(module: "AppStateKitMacros", type: "BindMacro")
-
-@freestanding(expression)
-public macro bindIfPresent<State, Action, Output, P>(_ engine: ViewEngine<State, Action, Output>, _ keyPath: KeyPath<State, P?>) -> Binding<Bool> = #externalMacro(module: "AppStateKitMacros", type: "BindIfPresentMacro")
-
-@freestanding(expression)
-public macro bindElements<State, Action, Output, P>(_ engine: ViewEngine<State, Action, Output>, _ keyPath: KeyPath<State, [P]>) -> [Binding<P>] = #externalMacro(module: "AppStateKitMacros", type: "BindElementsMacro")
-
-@freestanding(expression)
-public macro bindBatch<State, Action, Output, P>(_ engine: ViewEngine<State, Action, Output>, _ keyPath: KeyPath<State, [P]>) -> [Binding<P>] = #externalMacro(module: "AppStateKitMacros", type: "BindBatchMacro")
-
-@freestanding(expression)
-public macro withBinding<State, Action, Output, P, Content: View>(
-    _ engine: ViewEngine<State, Action, Output>,
-    _ keyPath: KeyPath<State, P>,
-    @ViewBuilder _ content: @escaping (Binding<P>) -> Content
-) -> WithBinding<Content, P> = #externalMacro(module: "AppStateKitMacros", type: "WithBindingMacro")
-
 @attached(peer)
 public macro Updatable(output: Bool = false) = #externalMacro(module: "AppStateKitMacros", type: "UpdatableMacro")
 

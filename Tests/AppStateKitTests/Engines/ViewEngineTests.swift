@@ -41,9 +41,6 @@ final class ViewEngineTests: XCTestCase {
             VStack {
                 Text(engine.value)
                 
-                TextField("Label", text: #bind(engine, \.value))
-                
-                Toggle("Toggles", sources: #bindElements(engine, \.toggles), isOn: \.self)
             }
         }
     }
@@ -99,57 +96,4 @@ final class ViewEngineTests: XCTestCase {
         XCTAssertEqual(subject.value, "idle")
     }
     
-    @MainActor
-    func testBinding() {
-        let binding = subject.binding(\.value, send: { .updateValue($0) })
-        
-        let stateChanged = expectation(description: "state changed")
-        let sink = subject.statePublisher.sink { newState in
-            stateChanged.fulfill()
-        }
-
-        parentEngine.state = TestComponent.State(value: "changed")
-
-        waitForExpectations(timeout: 1, handler: nil)
-
-        XCTAssertEqual(binding.wrappedValue, "changed")
-        
-        let expectation = expectation(description: "sent action")
-        parentEngine.sendExpectation = expectation
-        binding.wrappedValue = "changed from UI"
-
-        waitForExpectations(timeout: 1, handler: nil)
-
-        XCTAssertEqual(parentEngine.sentActions, [.updateValue("changed from UI")])
-        
-        _ = sink
-    }
-    
-    @MainActor
-    func testBindingElements() {
-        let bindings = subject.binding(\.toggles, send: { .updateToggles($0, index: $1) })
-        
-        let expectation = expectation(description: "sent action")
-        parentEngine.sendExpectation = expectation
-        bindings[1].wrappedValue = true
-
-        waitForExpectations(timeout: 1, handler: nil)
-
-        XCTAssertEqual(parentEngine.sentActions, [.updateToggles(true, index: 1)])
-    }
-    
-    @MainActor
-    func testBindingBatch() {
-        let bindings = subject.binding(\.flags, send: { .updateFlags($0) })
-        
-        let expectation = expectation(description: "sent action")
-        parentEngine.sendExpectation = expectation
-        bindings[1].wrappedValue = true
-        bindings[3].wrappedValue = true
-
-        waitForExpectations(timeout: 1, handler: nil)
-
-        XCTAssertEqual(parentEngine.sentActions, [.updateFlags([1: true, 3: true])])
-    }
-
 }
