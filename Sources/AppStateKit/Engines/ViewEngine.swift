@@ -58,6 +58,12 @@ public final class ViewEngine<State, Action: Sendable, Output>: Engine {
         
 }
 
+extension ViewEngine: Equatable {
+    nonisolated public static func ==(lhs: ViewEngine<State, Action, Output>, rhs: ViewEngine<State, Action, Output>) -> Bool {
+        lhs === rhs
+    }
+}
+
 private extension ViewEngine {
     func setState(_ state: State) {
         guard !isEqual(self.state, state) else {
