@@ -9,7 +9,6 @@ let testMacros: [String: Macro.Type] = [
     "Component": ComponentMacro.self,
     "AppComponent": AppComponentMacro.self,
     "Effect": EffectMacro.self,
-    "ExtendDependencyScope": ExtendDependencyScopeMacro.self,
     "ExtendSideEffects": ExtendSideEffectsMacro.self,
     "Detachment": DetachmentMacro.self,
     "Updatable": UpdatableMacro.self,

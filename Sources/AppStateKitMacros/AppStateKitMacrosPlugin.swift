@@ -9,7 +9,6 @@ struct AppStateKitMacrosPlugin: CompilerPlugin {
         ComponentMacro.self,
         AppComponentMacro.self,
         EffectMacro.self,
-        ExtendDependencyScopeMacro.self,
         ExtendSideEffectsMacro.self,
         DetachmentMacro.self,
         UpdatableMacro.self,

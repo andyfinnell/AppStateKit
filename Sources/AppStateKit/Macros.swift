@@ -18,9 +18,6 @@ public macro Effect() = #externalMacro(module: "AppStateKitMacros", type: "Effec
 public macro ImmediateEffect() = #externalMacro(module: "AppStateKitMacros", type: "ImmediateEffectMacro")
 
 @attached(member, names: arbitrary)
-public macro ExtendDependencyScope<T>(with t: T) = #externalMacro(module: "AppStateKitMacros", type: "ExtendDependencyScopeMacro")
-
-@attached(member, names: arbitrary)
 public macro ExtendSideEffects<N, T>(with name: N.Type, _ expr: T.Type) = #externalMacro(module: "AppStateKitMacros", type: "ExtendSideEffectsMacro")
 
 @attached(member, names: arbitrary)

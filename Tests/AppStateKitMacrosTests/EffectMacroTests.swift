@@ -46,32 +46,6 @@ final class EffectMacroTests: XCTestCase {
 #endif
     }
 
-    func testExtendDependencyScope() throws {
-#if canImport(AppStateKitMacros)
-        assertMacroExpansion(
-            """
-            @ExtendDependencyScope(with: LoadAtIndexEffect)
-            extension DependencyScope {
-            
-            }
-            """,
-            expandedSource: """
-            
-            extension DependencyScope {
-            
-                var loadAtIndex: LoadAtIndexEffect.T {
-                    self[LoadAtIndexEffect.self]
-                }
-
-            }
-            """,
-            macros: testMacros
-        )
-#else
-        throw XCTSkip("macros are only supported when running tests for the host platform")
-#endif
-    }
-
     func testExtendSideEffects() throws {
 #if canImport(AppStateKitMacros)
         assertMacroExpansion(
