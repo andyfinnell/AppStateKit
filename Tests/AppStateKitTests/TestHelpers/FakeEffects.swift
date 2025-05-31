@@ -13,7 +13,7 @@ enum LoadAtIndexEffect {
     }
 }
 
-@ExtendSideEffects(with: LoadAtIndexEffect, (index: Int) async -> String)
+@ExtendSideEffects(with: LoadAtIndexEffect.self, ((index: Int) async -> String).self)
 extension AnySideEffects {}
 
 @Effect
@@ -23,7 +23,7 @@ enum SaveEffect {
     }
 }
 
-@ExtendSideEffects(with: SaveEffect, (index: Int, content: String) -> Void)
+@ExtendSideEffects(with: SaveEffect.self, ((index: Int, content: String) -> Void).self)
 extension AnySideEffects {}
 
 @Effect
@@ -33,7 +33,7 @@ enum UpdateEffect {
     }
 }
 
-@ExtendSideEffects(with: UpdateEffect, (index: Int, content: String) -> String)
+@ExtendSideEffects(with: UpdateEffect.self, ((index: Int, content: String) -> String).self)
 extension AnySideEffects {}
 
 @Effect
@@ -76,7 +76,7 @@ enum TimerEffect {
     }
 }
 
-@ExtendSideEffects(with: TimerEffect, (delay: TimeInterval, count: Int) -> AsyncStream<TimeInterval>)
+@ExtendSideEffects(with: TimerEffect.self, ((delay: TimeInterval, count: Int) -> AsyncStream<TimeInterval>).self)
 extension AnySideEffects {}
 
 @Effect
@@ -86,7 +86,7 @@ enum GenerateEffect {
     }
 }
 
-@ExtendSideEffects(with: GenerateEffect, () -> String)
+@ExtendSideEffects(with: GenerateEffect.self, (() -> String).self)
 extension AnySideEffects {}
 
 @Effect
@@ -96,7 +96,7 @@ enum ImportURLEffect {
     }
 }
 
-@ExtendSideEffects(with: ImportURLEffect, (URL) async throws -> String)
+@ExtendSideEffects(with: ImportURLEffect.self, ((URL) async throws -> String).self)
 extension AnySideEffects {}
 
 @JSONStorable(hasDefault: true)
@@ -164,7 +164,7 @@ enum GenerateNames {
     }
 }
 
-@ExtendSideEffects(with: GenerateNames, () -> AsyncStream<String>)
+@ExtendSideEffects(with: GenerateNames.self, (() -> AsyncStream<String>).self)
 extension AnySideEffects {}
 
 @ImmediateEffect
@@ -174,5 +174,5 @@ enum PrintEffect {
     }
 }
 
-@ExtendImmediateSideEffects(with: PrintEffect, (String) -> Void)
+@ExtendImmediateSideEffects(with: PrintEffect.self, ((String) -> Void).self)
 extension AnySideEffects {}

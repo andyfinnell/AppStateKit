@@ -51,7 +51,7 @@ final class ImmediateEffectMacroTests: XCTestCase {
 #if canImport(AppStateKitMacros)
         assertMacroExpansion(
             """
-            @ExtendImmediateSideEffects(with: LoadAtIndexEffect, (index: Int) throws -> String)
+            @ExtendImmediateSideEffects(with: LoadAtIndexEffect.self, ((index: Int) throws -> String).self)
             extension AnySideEffects {
             
             }

@@ -39,7 +39,15 @@ enum ExtendSideEffectsParser {
 
 private extension ExtendSideEffectsParser {
     static func parseName(_ expression: ExprSyntax) -> String? {
-        guard let ref = expression.as(DeclReferenceExprSyntax.self) else {
+        var baseExpression = expression
+        // If it's appended with `.self`, strip off `.self`
+        if let member = baseExpression.as(MemberAccessExprSyntax.self),
+           let memberBaseExpr = member.base,
+            member.declName.baseName.text == "self" {
+            baseExpression = memberBaseExpr
+        }
+
+        guard let ref = baseExpression.as(DeclReferenceExprSyntax.self) else {
             return nil
         }
         return ref.baseName.text
@@ -60,7 +68,21 @@ private extension ExtendSideEffectsParser {
         typename: String,
         isImmediate: Bool
     ) -> SideEffect? {
-        if let infixOperator = expression.as(InfixOperatorExprSyntax.self) {
+        var baseExpression = expression
+        // If it's appended with `.self`, strip off `.self`
+        if let member = baseExpression.as(MemberAccessExprSyntax.self),
+           let memberBaseExpr = member.base,
+            member.declName.baseName.text == "self" {
+            baseExpression = memberBaseExpr
+        }
+
+        // If were wrapped in ().self then unwrap that tuple
+        if let tuple = baseExpression.as(TupleExprSyntax.self),
+           let labeledExpr = tuple.elements.first {
+            baseExpression = labeledExpr.expression
+        }
+        
+        if let infixOperator = baseExpression.as(InfixOperatorExprSyntax.self) {
             return parseClosureType(
                 infixOperator,
                 withMethodName: methodName,

@@ -21,10 +21,10 @@ public macro ImmediateEffect() = #externalMacro(module: "AppStateKitMacros", typ
 public macro ExtendDependencyScope<T>(with t: T) = #externalMacro(module: "AppStateKitMacros", type: "ExtendDependencyScopeMacro")
 
 @attached(member, names: arbitrary)
-public macro ExtendSideEffects<N, T>(with name: N, _ expr: T) = #externalMacro(module: "AppStateKitMacros", type: "ExtendSideEffectsMacro")
+public macro ExtendSideEffects<N, T>(with name: N.Type, _ expr: T.Type) = #externalMacro(module: "AppStateKitMacros", type: "ExtendSideEffectsMacro")
 
 @attached(member, names: arbitrary)
-public macro ExtendImmediateSideEffects<N, T>(with name: N, _ expr: T) = #externalMacro(module: "AppStateKitMacros", type: "ExtendImmediateSideEffectsMacro")
+public macro ExtendImmediateSideEffects<N, T>(with name: N.Type, _ expr: T.Type) = #externalMacro(module: "AppStateKitMacros", type: "ExtendImmediateSideEffectsMacro")
 
 @attached(extension, conformances: Detachment, names: named(DetachedAction))
 @attached(member, names: named(actionToUpdateState(from:)), named(translate(from:)), named(view(_:inject:)))

@@ -76,7 +76,7 @@ final class EffectMacroTests: XCTestCase {
 #if canImport(AppStateKitMacros)
         assertMacroExpansion(
             """
-            @ExtendSideEffects(with: LoadAtIndexEffect, (index: Int) async throws -> String)
+            @ExtendSideEffects(with: LoadAtIndexEffect.self, ((index: Int) async throws -> String).self)
             extension AnySideEffects {
             
             }
@@ -115,7 +115,7 @@ final class EffectMacroTests: XCTestCase {
 #if canImport(AppStateKitMacros)
         assertMacroExpansion(
             """
-            @ExtendSideEffects(with: ImportURLEffect, (URL) async throws -> String)
+            @ExtendSideEffects(with: ImportURLEffect.self, ((URL) async throws -> String).self)
             extension AnySideEffects {
             
             }
@@ -188,7 +188,7 @@ final class EffectMacroTests: XCTestCase {
 #if canImport(AppStateKitMacros)
         assertMacroExpansion(
             """
-            @ExtendSideEffects(with: FilterEffect, (including: @escaping (String) -> Bool) async -> Int)
+            @ExtendSideEffects(with: FilterEffect.self, ((including: @escaping (String) -> Bool) async -> Int).self)
             extension AnySideEffects {
             
             }
